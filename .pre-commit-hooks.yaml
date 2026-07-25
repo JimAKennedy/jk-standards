@@ -1,0 +1,47 @@
+# Hooks published by jk-standards. Consume from a pinned tag:
+#
+#   - repo: https://github.com/JimAKennedy/jk-standards
+#     rev: v0.1.0
+#     hooks:
+#       - id: doc-taxonomy
+#       - id: status-prose
+#       - id: file-line-refs
+#
+# Each hook scans the roots configured in the consuming repo's
+# jk-standards.yaml; matched filenames are used only as the trigger.
+# doc-drift and generated-freshness are CI-oriented (they need a git base
+# ref / generator toolchains) and are exposed via the reusable workflow
+# rather than as hooks.
+
+- id: doc-taxonomy
+  name: docs carry a lifecycle class
+  entry: jk-standards doc-taxonomy
+  language: python
+  types_or: [markdown, mdx]
+  pass_filenames: false
+
+- id: status-prose
+  name: no stale status prose in gated docs
+  entry: jk-standards status-prose
+  language: python
+  types_or: [markdown, mdx]
+  pass_filenames: false
+
+- id: file-line-refs
+  name: no file:line references in enduring docs
+  entry: jk-standards file-line-refs
+  language: python
+  pass_filenames: false
+
+- id: count-drift
+  name: no hardcoded inventory counts
+  entry: jk-standards count-drift
+  language: python
+  types_or: [markdown, mdx]
+  pass_filenames: false
+
+- id: behavioral-claims
+  name: behavioral claims cite real tests
+  entry: jk-standards behavioral-claims
+  language: python
+  pass_filenames: false

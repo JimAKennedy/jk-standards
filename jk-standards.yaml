@@ -1,0 +1,29 @@
+# jk-standards' own configuration — the toolkit gates itself with itself.
+version: 1
+
+doc_roots:
+  - path: docs
+    extensions: [".md"]
+
+taxonomy:
+  classes: [generated, gated, archived]
+
+file_line_refs:
+  source_roots:
+    - path: src
+      extensions: [".py"]
+
+# Inventory facts about the toolkit itself (how many checks, hooks, skills)
+# must not be restated as numerals in the docs — they change as checks land.
+count_drift:
+  triggers:
+    - 'checks?\s+(?:in\s+total|total)'
+    - 'hooks?\s+(?:in\s+total|total)'
+    - 'skills?\s+(?:in\s+total|total)'
+
+drift_map: .github/docs-drift-map.yml
+
+behavioral_claims:
+  sources:
+    - type: pytest
+      path: tests

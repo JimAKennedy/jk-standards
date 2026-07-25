@@ -1,0 +1,29 @@
+# Docs drift map for jk-standards itself.
+#
+# When a PR touches any file matching a mapping's `sources` glob, the PR
+# must ALSO touch the mapped `doc` — OR any commit in the PR range must
+# carry a `Docs-Not-Affected: <reason>` trailer. Enforced by the toolkit's
+# own doc-drift check in the dogfood CI job.
+#
+# Do NOT map: archived docs (frozen), generated docs (freshness-checked),
+# or speculative pairs — only real, current, checkable claims.
+
+version: 1
+
+mappings:
+  - sources:
+      - "src/jk_standards/checks/**"
+      - "src/jk_standards/testindex.py"
+    doc: "docs/checks.md"
+    reason: "checks.md documents each check's rule, mechanism, and escape hatches. A behavior change in any check without a doc update is exactly the drift this toolkit exists to prevent."
+
+  - sources:
+      - "src/jk_standards/config.py"
+      - "src/jk_standards/cli.py"
+    doc: "docs/configuration.md"
+    reason: "configuration.md documents the jk-standards.yaml schema and CLI. New config fields or CLI flags must land with their documentation."
+
+  - sources:
+      - "skills/**"
+    doc: "docs/skills.md"
+    reason: "skills.md is the index of shipped skills and their intended use. Adding or renaming a skill changes what consumers vendor via skills-lock.json."

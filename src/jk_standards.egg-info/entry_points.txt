@@ -1,0 +1,2 @@
+[console_scripts]
+jk-standards = jk_standards.cli:main

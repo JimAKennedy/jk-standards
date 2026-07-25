@@ -1,3 +1,18 @@
+Metadata-Version: 2.4
+Name: jk-standards
+Version: 0.1.0
+Summary: Reusable engineering-discipline toolkit: documentation anti-drift checks, pre-commit hooks, reusable CI workflows, and agent skills
+Author: Jim Kennedy
+License: Apache-2.0
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pyyaml>=6.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: ruff>=0.4; extra == "dev"
+Dynamic: license-file
+
 # jk-standards
 
 Reusable engineering-discipline toolkit: documentation anti-drift checks, pre-commit
@@ -86,13 +101,10 @@ roots, class vocabulary, drift-map path, count trigger nouns, test-index sources
 
 ## Status
 
-v0.1.0: the doc anti-drift checks are implemented (extracted from poly, where the
-originals run in production CI), with pre-commit hooks, the reusable workflow, the
-first three skills, and a pytest suite. This repo dogfoods its own machinery: its
-docs carry class front-matter, its drift map couples the check sources to
-`docs/checks.md`, and its behavioral claims cite its own tests — see the `dogfood`
-CI job. `MIGRATION-poly.md` records the changes poly needs to consume this repo
-and adopt the skills-lock mechanism.
+Scaffold. The checks are being extracted from poly, where they run in production
+CI today. This repo dogfoods its own machinery: its docs carry class front-matter,
+its drift map pairs each check with its skill, and its behavioral claims cite its
+own tests.
 
 ## License
 

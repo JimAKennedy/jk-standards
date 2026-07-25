@@ -59,6 +59,11 @@ count_drift:
 
 drift_map: .github/docs-drift-map.yml   # existing file, format-compatible
 
+doc_drift:
+  deps_only_manifests:        # parity with poly PR #140: Dependabot version
+    - site/package.json       # bumps must not trigger the testing-strategy
+    - webui/package.json      # mapping (dependabot.yml landed in PR #130)
+
 generated:
   - doc: site/src/content/docs/appendix-parameters.mdx
     command: node scripts/generate-param-docs.mjs

@@ -46,6 +46,11 @@ count_drift:
 
 drift_map: .github/docs-drift-map.yml
 
+doc_drift:
+  deps_only_manifests:        # package.json files whose deps-only version
+    - site/package.json       # bumps (Dependabot) don't trigger mappings
+
+
 generated:                    # regenerate-and-diff pairs
   - doc: docs/engine-spec.md
     command: node scripts/generate-param-docs.mjs

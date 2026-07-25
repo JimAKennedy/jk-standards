@@ -80,6 +80,7 @@ class Config:
     file_line_source_roots: list[SourceRoot] = field(default_factory=list)
     count_triggers: list[str] = field(default_factory=list)
     drift_map: str = ".github/docs-drift-map.yml"
+    deps_only_manifests: list[str] = field(default_factory=list)
     generated: list[GeneratedDoc] = field(default_factory=list)
     claim_sources: list[ClaimSource] = field(default_factory=list)
 
@@ -136,6 +137,9 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
 
     cfg.count_triggers = [str(t) for t in data.get("count_drift", {}).get("triggers", [])]
     cfg.drift_map = str(data.get("drift_map", cfg.drift_map))
+    cfg.deps_only_manifests = [
+        str(f) for f in data.get("doc_drift", {}).get("deps_only_manifests", [])
+    ]
     cfg.generated = [
         GeneratedDoc(
             doc=str(_require(g, "doc", "generated entry")),

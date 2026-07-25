@@ -112,3 +112,13 @@ justification recorded in history
 
 The trailer is a range-level assertion: one trailer satisfies every
 triggered mapping in the PR.
+
+Manifests listed in `doc_drift.deps_only_manifests` are excluded from
+triggering mappings when their diff touches only version strings inside
+`dependencies`/`devDependencies`
+[verified: test_doc_drift::test_deps_only_bump_does_not_trigger] — a
+Dependabot bump is not a taxonomy change. A `scripts`-block edit in the
+same file still triggers
+[verified: test_doc_drift::test_scripts_block_change_still_triggers], and
+manifests not listed get no exemption
+[verified: test_doc_drift::test_unlisted_manifest_still_triggers_on_deps_bump].

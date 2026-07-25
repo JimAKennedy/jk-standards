@@ -13,10 +13,17 @@ only map real, current, checkable claims.
 Note on bypass scope: any trailer in the range satisfies every triggered
 mapping — the trailer is a PR-level assertion, mirroring the original
 semantics this check was extracted from.
+
+Deps-only manifests: files listed in `doc_drift.deps_only_manifests` (e.g.
+`site/package.json`) are excluded from triggering mappings when their diff
+touches only version strings inside dependencies/devDependencies. A
+Dependabot bump is not a taxonomy change — the mapping's signal is a
+`scripts`-block or framework edit, not a version string on an existing dep.
 """
 
 from __future__ import annotations
 
+import re
 from fnmatch import fnmatchcase
 from pathlib import Path
 
@@ -27,13 +34,43 @@ from jk_standards.config import Config
 
 TRAILER = "Docs-Not-Affected"
 
+_DEPS_BLOCK_RE = re.compile(r"\s*\"(dependencies|devDependencies)\"\s*:\s*\{")
+_VERSION_LINE_RE = re.compile(r"\s*\"[^\"]+\"\s*:\s*\"[^\"]+\",?\s*$")
 
-def _matches(pattern: str, changed: list[str]) -> list[str]:
+
+def _matches(pattern: str, changed: list[str], excluded: set[str]) -> list[str]:
     # fnmatch has no ** semantics; a prefix fallback covers the recursive case.
     if "**" in pattern:
         base = pattern.split("**")[0]
-        return [f for f in changed if f.startswith(base)]
-    return [f for f in changed if fnmatchcase(f, pattern)]
+        return [f for f in changed if f.startswith(base) and f not in excluded]
+    return [f for f in changed if fnmatchcase(f, pattern) and f not in excluded]
+
+
+def is_deps_only_diff(diff: str) -> bool:
+    """True if every +/- line in a package.json diff is a version string
+    inside a dependencies/devDependencies block. Context lines track block
+    membership by brace depth."""
+    in_deps = False
+    brace_depth = 0
+    saw_change = False
+    for line in diff.splitlines():
+        if line.startswith(("+++", "---", "@@", "diff ", "index ")):
+            continue
+        if not line.startswith(("+", "-")):
+            if _DEPS_BLOCK_RE.match(line):
+                in_deps = True
+                brace_depth = 1
+                continue
+            if in_deps:
+                brace_depth += line.count("{") - line.count("}")
+                if brace_depth <= 0:
+                    in_deps = False
+            continue
+        saw_change = True
+        if in_deps and _VERSION_LINE_RE.match(line[1:]):
+            continue
+        return False
+    return saw_change
 
 
 def run(root: Path, cfg: Config, base: str | None = None) -> int:
@@ -58,12 +95,23 @@ def run(root: Path, cfg: Config, base: str | None = None) -> int:
             output.summary(f"  {bypass}")
 
     changed_set = set(changed)
+    deps_only = {
+        f
+        for f in cfg.deps_only_manifests
+        if f in changed_set and is_deps_only_diff(gitutil.file_diff(root, base_ref, f))
+    }
+    if deps_only:
+        output.summary(
+            f"doc-drift: deps-only bump on {', '.join(sorted(deps_only))} — "
+            f"ignored for mapping triggers"
+        )
+
     errors = 0
     satisfied = 0
     for mapping in mappings:
         doc = mapping["doc"]
         triggered = sorted(
-            {f for pattern in mapping["sources"] for f in _matches(pattern, changed)}
+            {f for pattern in mapping["sources"] for f in _matches(pattern, changed, deps_only)}
         )
         if not triggered:
             continue

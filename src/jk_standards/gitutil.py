@@ -48,6 +48,11 @@ def changed_files(root: Path, base: str) -> list[str]:
     return [line for line in diff.splitlines() if line]
 
 
+def file_diff(root: Path, base: str, path: str) -> str:
+    merge_base = _git(root, "merge-base", base, "HEAD").strip()
+    return _git(root, "diff", f"{merge_base}...HEAD", "--", path)
+
+
 def commit_trailers(root: Path, base: str, trailer: str) -> list[str]:
     """All `<trailer>: value` lines in commit messages on the PR range."""
     merge_base = _git(root, "merge-base", base, "HEAD").strip()

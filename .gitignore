@@ -1,0 +1,8 @@
+# OS/editor noise
+.DS_Store
+*.swp
+
+# local tool state
+.gsd/
+node_modules/
+__pycache__/

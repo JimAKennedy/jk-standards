@@ -10,7 +10,7 @@ from jk_standards.checks import (
     generated_freshness,
     status_prose,
 )
-from jk_standards.config import Config, GeneratedDoc, SourceRoot, ClaimSource
+from jk_standards.config import ClaimSource, Config, GeneratedDoc, SourceRoot
 
 
 def write(root: Path, rel: str, text: str) -> Path:

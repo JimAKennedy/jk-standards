@@ -17,7 +17,7 @@ _GTEST_RE = re.compile(
     r"\bTEST(?:_F)?\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)"
 )
 _JS_TEST_RE = re.compile(r"\btest\s*\(\s*['\"`]([^'\"`]+)['\"`]")
-_PYTEST_RE = re.compile(r"^\s*def\s+(test_\w+)\s*\(", re.M)
+_PYTEST_RE = re.compile(r"^\s*def\s+(test_\w+)\s*\(", re.MULTILINE)
 
 _JS_SUFFIXES = (".spec.ts", ".test.mjs", ".test.js")
 

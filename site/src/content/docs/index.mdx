@@ -1,0 +1,25 @@
+---
+class: gated
+title: jk-standards
+description: Reusable engineering-discipline toolkit — documentation anti-drift checks, pre-commit hooks, reusable CI workflows, and agent skills.
+---
+
+Well-run projects accumulate discipline mechanisms — doc-drift gates,
+sanitizer matrices, escape hatches that demand written reasons — but they
+stay trapped in the repo that invented them. jk-standards extracts those
+mechanisms into a versioned, consumable standard so every project can
+exhibit the same discipline without re-deriving it.
+
+The design principle throughout: **every check is simple (regex/diff-level),
+every escape hatch is in-band, greppable, and carries a written reason.**
+Sophistication lives in the system design, not the analysis techniques —
+which is what makes the whole thing portable.
+
+## Where to go next
+
+- **[Guide](/guide/introduction/)** — what the toolkit is and how to
+  adopt it in a new repository.
+- **[Reference](/reference/checks/)** — every check, config field, and
+  shipped skill, generated from the source of truth.
+- **[How-to](/how-to/adopt-in-a-repo/)** — concrete recipes for common
+  adoption tasks.

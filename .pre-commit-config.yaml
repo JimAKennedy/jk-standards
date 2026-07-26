@@ -1,6 +1,15 @@
-# jk-standards' own pre-commit config: upstream basics plus its own hooks
-# consumed the same way a downstream repo would (repo: local here because
-# the hooks are defined in this repo; consumers use the GitHub repo + tag).
+# pre-commit config for developers AND pre-commit.ci.
+#
+# Contains only hooks that don't need this repo's own package installed.
+# The self-referential hooks (doc-taxonomy, status-prose, file-line-refs)
+# live in .pre-commit-config.local.yaml and are exercised by the GHA
+# `pre-commit` job — pre-commit.ci can't clone `repo: .` (it treats `.` as
+# a git URL and fails at build), and `ci: skip:` doesn't help because the
+# clone happens before skip is evaluated. Splitting configs is the fix.
+#
+# Downstream consumers pull the self-referential hooks from a pinned tag
+# on this repo (see README + .pre-commit-hooks.yaml).
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -16,26 +25,3 @@ repos:
     hooks:
       - id: ruff
       - id: ruff-format
-
-  - repo: local
-    hooks:
-      - id: doc-taxonomy
-        name: docs carry a lifecycle class
-        entry: jk-standards doc-taxonomy
-        language: python
-        additional_dependencies: ["."]
-        types: [markdown]
-        pass_filenames: false
-      - id: status-prose
-        name: no stale status prose in gated docs
-        entry: jk-standards status-prose
-        language: python
-        additional_dependencies: ["."]
-        types: [markdown]
-        pass_filenames: false
-      - id: file-line-refs
-        name: no file:line references in enduring docs
-        entry: jk-standards file-line-refs
-        language: python
-        additional_dependencies: ["."]
-        pass_filenames: false

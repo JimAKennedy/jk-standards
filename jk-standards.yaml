@@ -4,6 +4,8 @@ version: 1
 doc_roots:
   - path: docs
     extensions: [".md"]
+  - path: site/src/content/docs
+    extensions: [".mdx"]
 
 taxonomy:
   classes: [generated, gated, archived]

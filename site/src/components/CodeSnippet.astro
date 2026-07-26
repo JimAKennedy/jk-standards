@@ -1,0 +1,151 @@
+---
+import { Code } from 'astro:components';
+import fs from 'node:fs';
+import path from 'node:path';
+
+interface Props {
+  file: string;
+  region: string;
+  caption?: string;
+}
+
+const { file, region, caption } = Astro.props;
+
+const projectRoot = path.resolve(process.cwd(), '..');
+const filePath = path.join(projectRoot, file);
+
+const EXT_TO_LANG: Record<string, string> = {
+  '.py': 'python',
+  '.toml': 'toml',
+  '.yaml': 'yaml',
+  '.yml': 'yaml',
+  '.json': 'json',
+  '.mjs': 'js',
+  '.js': 'js',
+  '.ts': 'ts',
+  '.tsx': 'tsx',
+  '.astro': 'astro',
+  '.mdx': 'mdx',
+  '.md': 'md',
+  '.sh': 'bash',
+  '.bash': 'bash',
+  '.css': 'css',
+  '.html': 'html',
+};
+
+const ext = path.extname(file).toLowerCase();
+const lang = EXT_TO_LANG[ext] ?? 'plaintext';
+
+let content: string;
+try {
+  content = fs.readFileSync(filePath, 'utf-8');
+} catch (err) {
+  throw new Error(
+    `CodeSnippet: could not read source file "${file}" (region "${region}"): ${(err as Error).message}`,
+  );
+}
+
+const lines = content.split('\n');
+
+const REGION_PATTERNS = [
+  `// region:${region}`,
+  `# region:${region}`,
+  `<!-- region:${region} -->`,
+];
+const ENDREGION_PATTERNS = [
+  `// endregion:${region}`,
+  `# endregion:${region}`,
+  `<!-- endregion:${region} -->`,
+];
+
+const startIdx = lines.findIndex((l) => REGION_PATTERNS.includes(l.trim()));
+const endIdx = lines.findIndex((l) => ENDREGION_PATTERNS.includes(l.trim()));
+
+if (startIdx === -1) {
+  throw new Error(
+    `CodeSnippet: region "${region}" start marker not found in "${file}" (expected one of: "// region:${region}", "# region:${region}", "<!-- region:${region} -->")`,
+  );
+}
+if (endIdx === -1) {
+  throw new Error(
+    `CodeSnippet: region "${region}" end marker not found in "${file}" (expected one of: "// endregion:${region}", "# endregion:${region}", "<!-- endregion:${region} -->")`,
+  );
+}
+if (endIdx <= startIdx) {
+  throw new Error(
+    `CodeSnippet: region "${region}" end marker precedes start marker in "${file}"`,
+  );
+}
+
+const rawLines = lines.slice(startIdx + 1, endIdx);
+const nonEmpty = rawLines.filter((l) => l.trim().length > 0);
+const minIndent = nonEmpty.reduce((min, l) => {
+  const indent = l.match(/^(\s*)/)?.[1].length ?? 0;
+  return Math.min(min, indent);
+}, Infinity);
+const code = rawLines
+  .map((l) => l.slice(minIndent === Infinity ? 0 : minIndent))
+  .join('\n')
+  .trimEnd();
+
+const githubUrl = `https://github.com/JimAKennedy/jk-standards/blob/main/${file}`;
+---
+
+<div class="code-snippet">
+  <div class="code-snippet-header">
+    <a href={githubUrl} class="code-snippet-file" target="_blank" rel="noopener">{file}</a>
+  </div>
+  <div class="code-snippet-body">
+    <Code code={code} lang={lang as any} />
+  </div>
+  {caption && <div class="code-snippet-caption">{caption}</div>}
+</div>
+
+<style>
+  .code-snippet {
+    background: var(--sl-color-bg-inline-code);
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 6px;
+    margin: 1.5rem 0;
+    overflow: hidden;
+  }
+
+  .code-snippet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    background: var(--sl-color-bg-nav);
+    border-bottom: 1px solid var(--sl-color-hairline);
+    font-family: var(--sl-font-system-mono);
+    font-size: 0.75rem;
+  }
+
+  .code-snippet-file {
+    font-weight: 500;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+
+  .code-snippet-file:hover {
+    text-decoration: underline;
+  }
+
+  .code-snippet-body {
+    padding: 0;
+  }
+
+  .code-snippet-body :global(pre) {
+    margin: 0;
+    border-radius: 0;
+    padding: 1rem 0.75rem;
+  }
+
+  .code-snippet-caption {
+    padding: 0.3rem 0.75rem 0.5rem;
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-text);
+    opacity: 0.7;
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+</style>

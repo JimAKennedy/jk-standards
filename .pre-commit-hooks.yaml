@@ -13,12 +13,14 @@
 # ref / generator toolchains) and are exposed via the reusable workflow
 # rather than as hooks.
 
+# region:hook-doc-taxonomy
 - id: doc-taxonomy
   name: docs carry a lifecycle class
   entry: jk-standards doc-taxonomy
   language: python
   types_or: [markdown, mdx]
   pass_filenames: false
+# endregion:hook-doc-taxonomy
 
 - id: status-prose
   name: no stale status prose in gated docs

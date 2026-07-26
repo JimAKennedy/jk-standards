@@ -29,3 +29,16 @@ behavioral_claims:
   sources:
     - type: pytest
       path: tests
+
+# Site JSON fixtures projected from Python source. `generated-freshness`
+# runs each command, diffs against the tracked file, and restores the
+# snapshot — so a source change without a regenerated fixture fails CI.
+generated:
+  - doc: site/src/generated/checks.json
+    command: jk-standards emit checks
+  - doc: site/src/generated/config-schema.json
+    command: jk-standards emit config-schema
+  - doc: site/src/generated/skills.json
+    command: jk-standards emit skills
+  - doc: site/src/generated/coverage.json
+    command: jk-standards emit coverage

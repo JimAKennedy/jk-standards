@@ -15,13 +15,26 @@ import os
 import sys
 from pathlib import Path
 
-from jk_standards import __version__
+from jk_standards import __version__, emit
 from jk_standards.checks import CHECKS, STATIC_CHECKS
 from jk_standards.config import ConfigError, load_config
 from jk_standards.gitutil import GitError
 
 
+def _emit_main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="jk-standards emit")
+    parser.add_argument("name", choices=[*emit.EMITTERS, "all"])
+    parser.add_argument("--root", type=Path, default=Path.cwd())
+    parser.add_argument("--check", action="store_true", help="fail on drift instead of writing")
+    args = parser.parse_args(argv)
+    return emit.run(args.root.resolve(), args.name, args.check)
+
+
 def main(argv: list[str] | None = None) -> int:
+    raw = sys.argv[1:] if argv is None else argv
+    if raw and raw[0] == "emit":
+        return _emit_main(raw[1:])
+
     parser = argparse.ArgumentParser(prog="jk-standards", description=__doc__)
     parser.add_argument("check", choices=[*CHECKS, "all", "list"])
     parser.add_argument("--root", type=Path, default=Path.cwd())

@@ -4,6 +4,12 @@ title: Adopt in a repo
 description: Wire the pre-commit hooks and reusable workflow into a fresh repository.
 ---
 
+import CodeSnippet from '../../../components/CodeSnippet.astro';
+
 {/* TODO(S04): full walk-through with CodeSnippet-embedded configs. */}
 
-Placeholder page — content lands in slice S04.
+Each shipped hook is defined once in `.pre-commit-hooks.yaml`. Consumers pin
+to a released tag; this snippet is the exact definition your `pre-commit`
+install will resolve:
+
+<CodeSnippet file=".pre-commit-hooks.yaml" region="hook-doc-taxonomy" caption="One shipped hook — consume from a pinned tag." />

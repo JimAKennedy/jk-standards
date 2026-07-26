@@ -4,12 +4,19 @@ title: Configuration
 description: Every field of jk-standards.yaml plus the CLI surface.
 ---
 
+import CodeSnippet from '../../../components/CodeSnippet.astro';
+
 Status: current (2026-07-25)
 
 All project-specific surface lives in one file, `jk-standards.yaml`, at the
 consuming repo's root (override with `--config`). Every key is optional; an
 absent file yields defaults (doc root `docs/`, standard class vocabulary,
 count-drift and behavioral-claims skipped because they need project input).
+
+The toolkit pins its own ruff version in `pyproject.toml` — this snippet is
+sliced live from the source file, so a drift in either place fails the build:
+
+<CodeSnippet file="pyproject.toml" region="ruff-config" caption="Ruff pin and line-length live in pyproject.toml." />
 
 ```yaml
 version: 1

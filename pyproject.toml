@@ -28,9 +28,11 @@ jk-standards = "jk_standards.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# region:ruff-config
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
+# endregion:ruff-config
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

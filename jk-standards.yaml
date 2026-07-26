@@ -33,6 +33,12 @@ behavioral_claims:
 # Site JSON fixtures projected from Python source. `generated-freshness`
 # runs each command, diffs against the tracked file, and restores the
 # snapshot — so a source change without a regenerated fixture fails CI.
+#
+# coverage.json is intentionally NOT gated here: coverage numbers are
+# environment-dependent (Python version, platform branches) and would drift
+# between local dev and CI even with no source change. The emitter still
+# runs at site-build time (site/package.json prebuild) so the site always
+# shows current coverage; it just isn't diff-gated.
 generated:
   - doc: site/src/generated/checks.json
     command: jk-standards emit checks
@@ -40,5 +46,3 @@ generated:
     command: jk-standards emit config-schema
   - doc: site/src/generated/skills.json
     command: jk-standards emit skills
-  - doc: site/src/generated/coverage.json
-    command: jk-standards emit coverage

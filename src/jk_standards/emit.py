@@ -14,6 +14,7 @@ in `EMITTERS`, add it to `jk-standards.yaml` `generated:`.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Callable
@@ -143,8 +144,17 @@ def emit_coverage(root: Path) -> bytes:
     # committed fixture unchanged so `generated-freshness` reports "fresh"
     # rather than crashing on missing tooling. Dogfood repos install `[dev]`
     # and go through the strict regenerate-and-diff path below.
+    #
+    # If we're already inside a pytest run (PYTEST_CURRENT_TEST is set) we
+    # must not recurse into `coverage run -m pytest tests/` — that would
+    # re-invoke this same code path and hang the runner. Same fallback.
     coverage_file = root / ".coverage"
+    in_pytest = "PYTEST_CURRENT_TEST" in os.environ
     if not coverage_file.exists():
+        if in_pytest:
+            existing = root / GENERATED_DIR / "coverage.json"
+            if existing.is_file():
+                return existing.read_bytes()
         try:
             subprocess.run(
                 ["coverage", "run", "-m", "pytest", "tests/"],

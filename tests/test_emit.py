@@ -15,7 +15,13 @@ GENERATED_DIR = REPO_ROOT / "site" / "src" / "generated"
 
 
 def test_each_emitter_is_byte_idempotent():
+    # Skip 'coverage' — it shells out to `coverage run -m pytest tests/`, which
+    # would recursively invoke pytest (and this test) if .coverage isn't already
+    # on disk. In CI's fresh checkout that hangs the runner. Coverage's own
+    # idempotency is covered by the fixture round-trip in `test_coverage_json_totals_shape`.
     for name, (fn, _filename) in emit.EMITTERS.items():
+        if name == "coverage":
+            continue
         first = fn(REPO_ROOT)
         second = fn(REPO_ROOT)
         assert first == second, f"emitter '{name}' is not byte-idempotent"

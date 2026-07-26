@@ -4,5 +4,17 @@
 
 # local tool state
 .gsd/
+.bg-shell/
+.mcp.json
 node_modules/
 __pycache__/
+
+# Python build/install byproducts
+*.egg-info/
+build/
+dist/
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.ruff_cache/

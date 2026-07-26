@@ -13,7 +13,14 @@ authors = [{ name = "Jim Kennedy" }]
 dependencies = ["pyyaml>=6.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.4"]
+dev = [
+  "pytest>=8.0",
+  "ruff==0.16.*",
+  "coverage[toml]>=7.4",
+  "build>=1.2",
+  "twine>=5.0",
+  "pre-commit>=3.7",
+]
 
 [project.scripts]
 jk-standards = "jk_standards.cli:main"
@@ -27,3 +34,21 @@ src = ["src", "tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["jk_standards"]
+
+[tool.coverage.report]
+# Coverage floor — bug-fix ratchet. Raise this when the measured number
+# drifts up; never lower it. Current gaps: cli.py (no CLI-level tests) and
+# config.py loader branches.
+fail_under = 75
+show_missing = true
+skip_covered = false
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]

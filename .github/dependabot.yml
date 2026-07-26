@@ -1,0 +1,59 @@
+# Dependabot config for jk-standards.
+#
+# Watches the two ecosystems this repo actually ships with:
+#   1. github-actions -- all pinned action SHAs/tags in .github/workflows/
+#   2. pip            -- pyproject.toml runtime + dev deps
+#
+# Grouping: minor + patch land in one grouped PR per ecosystem per week so
+# routine bumps read as a single review. Majors open individual PRs because
+# they carry breaking-change risk (esp. ruff, whose default rule set expands
+# in minor releases too — see the fab7dfb postmortem).
+#
+# open-pull-requests-limit caps the inbox flood at 5 concurrent PRs per
+# ecosystem.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    reviewers:
+      - JimAKennedy
+    assignees:
+      - JimAKennedy
+    labels:
+      - dependencies
+      - dependabot
+      - github-actions
+    commit-message:
+      prefix: chore(actions)
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    reviewers:
+      - JimAKennedy
+    assignees:
+      - JimAKennedy
+    labels:
+      - dependencies
+      - dependabot
+      - pip
+    commit-message:
+      prefix: chore(pip)
+    groups:
+      pip-minor-patch:
+        update-types:
+          - minor
+          - patch

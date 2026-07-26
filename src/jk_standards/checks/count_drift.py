@@ -51,7 +51,7 @@ def run(root: Path, cfg: Config) -> int:
         rf"\b(?P<num>\d{{1,4}}|{_SPELLED})"
         rf"(?:[-\s]+(?:[A-Za-z][A-Za-z-]*\s+){{0,3}})?"
         rf"(?P<phrase>{'|'.join(cfg.count_triggers)})",
-        re.I,
+        re.IGNORECASE,
     )
 
     errors = 0

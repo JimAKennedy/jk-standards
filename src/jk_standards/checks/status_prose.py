@@ -21,30 +21,32 @@ from jk_standards.config import Config, iter_docs
 
 _DEFAULT_FORBIDDEN = [
     (
-        re.compile(r"\bnot\s+yet\s+(implemented|applied|evaluated|resolved|wired)\b", re.I),
+        re.compile(
+            r"\bnot\s+yet\s+(implemented|applied|evaluated|resolved|wired)\b", re.IGNORECASE
+        ),
         "progress claim — describe the current contract or delete; state belongs in CHANGELOG/issues",
     ),
     (
-        re.compile(r"\bnot\s+implemented\s+yet\b", re.I),
+        re.compile(r"\bnot\s+implemented\s+yet\b", re.IGNORECASE),
         "progress claim — describe the current contract or delete; state belongs in CHANGELOG/issues",
     ),
     (
-        re.compile(r"\bTODO\s+markers?\s+remain\b", re.I),
+        re.compile(r"\bTODO\s+markers?\s+remain\b", re.IGNORECASE),
         "progress claim — counts drift the moment code moves; belongs in a generated dashboard",
     ),
     (
-        re.compile(r"^\s*Status:\s+Phase\s+[A-Z]\b", re.I),
+        re.compile(r"^\s*Status:\s+Phase\s+[A-Z]\b", re.IGNORECASE),
         "phase-tracking prose — belongs in the roadmap/issues, not in gated docs",
     ),
 ]
 
-_STATUS_LINE_RE = re.compile(r"^Status:\s+", re.I)
+_STATUS_LINE_RE = re.compile(r"^Status:\s+", re.IGNORECASE)
 _DATE_ANCHOR_RE = re.compile(r"\(20\d{2}-\d{2}-\d{2}\)")
 
 
 def run(root: Path, cfg: Config) -> int:
     forbidden = list(_DEFAULT_FORBIDDEN) + [
-        (re.compile(p.pattern, re.I), p.hint) for p in cfg.status_forbidden_extra
+        (re.compile(p.pattern, re.IGNORECASE), p.hint) for p in cfg.status_forbidden_extra
     ]
     errors = 0
     for path in iter_docs(root, cfg):

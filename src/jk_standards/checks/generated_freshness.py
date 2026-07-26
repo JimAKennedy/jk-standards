@@ -30,7 +30,9 @@ def run(root: Path, cfg: Config) -> int:
             continue
 
         tracked = doc_path.read_bytes()
-        result = subprocess.run(entry.command, shell=True, cwd=root, capture_output=True, text=True)
+        result = subprocess.run(
+            entry.command, shell=True, cwd=root, capture_output=True, text=True, check=False
+        )
         if result.returncode != 0:
             output.error(
                 entry.doc,

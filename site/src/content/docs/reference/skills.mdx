@@ -1,0 +1,47 @@
+---
+class: gated
+title: Skills
+description: Agent skills shipped by the toolkit — teach conventions at authoring time.
+---
+
+Status: current (2026-07-25)
+
+Agent skills shipped by this repo, under `skills/<name>/SKILL.md`. They are
+the authoring-time half of the discipline: the checks enforce the
+conventions; the skills teach coding agents to write within them in the
+first place.
+
+| Skill | Teaches |
+|---|---|
+| doc-anti-drift | Writing and maintaining docs under the anti-drift discipline: lifecycle classes, drift-map upkeep, dated status claims, symbol-based references, test-cited behavioral claims |
+| escape-hatch-discipline | Designing and using suppressions: in-band, greppable, reasoned; narrowest-scope-first; ratchet baselines |
+| sanitizer-ci-setup | Layered quality gates for native projects: ASan/UBSan/TSan matrices, sanitizer-aware tests, fuzzer wiring, notification paths that can't be ignored |
+
+## Consuming
+
+Vendor skills into a project with a `skills-lock.json` entry pointing at
+this repo, and install with the lock-file installer:
+
+```json
+{
+  "version": 1,
+  "skills": {
+    "doc-anti-drift": {
+      "source": "JimAKennedy/jk-standards",
+      "sourceType": "github",
+      "skillPath": "skills/doc-anti-drift/SKILL.md",
+      "computedHash": "<sha256 of SKILL.md>"
+    }
+  }
+}
+```
+
+```
+python scripts/install_skills.py                      # → .agents/skills/
+python scripts/install_skills.py --dest .claude/skills # Claude Code layout
+```
+
+The installer verifies each skill's SHA-256 against the lock file, so a
+consuming repo pins skill content the same way it pins hook and workflow
+versions. Vendored skill directories are gitignored in consumers;
+project-authored skills stay tracked alongside them.

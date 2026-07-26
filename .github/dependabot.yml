@@ -1,8 +1,9 @@
 # Dependabot config for jk-standards.
 #
-# Watches the two ecosystems this repo actually ships with:
+# Watches the three ecosystems this repo actually ships with:
 #   1. github-actions -- all pinned action SHAs/tags in .github/workflows/
 #   2. pip            -- pyproject.toml runtime + dev deps
+#   3. npm (/site)    -- Astro/Starlight guide site
 #
 # Grouping: minor + patch land in one grouped PR per ecosystem per week so
 # routine bumps read as a single review. Majors open individual PRs because
@@ -54,6 +55,29 @@ updates:
       prefix: chore(pip)
     groups:
       pip-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    reviewers:
+      - JimAKennedy
+    assignees:
+      - JimAKennedy
+    labels:
+      - dependencies
+      - dependabot
+      - npm
+      - site
+    commit-message:
+      prefix: chore(site-deps)
+    groups:
+      site-minor-patch:
         update-types:
           - minor
           - patch

@@ -1,16 +1,14 @@
-# jk-standards' own pre-commit config: upstream basics plus its own hooks
-# consumed the same way a downstream repo would (repo: local here because
-# the hooks are defined in this repo; consumers use the GitHub repo + tag).
-
-# pre-commit.ci is a third-party hosted runner that clones the PR merge ref
-# into its own container and runs pre-commit. It can't resolve `repo: .` —
-# `.` is treated as a git URL and `git fetch . HEAD` fails. Skip our
-# self-referential hooks there; the GHA `pre-commit` job (which does check
-# out the repo) still runs them and gates the PR. pre-commit.ci then only
-# runs the upstream hooks it's actually good at (trailing-whitespace fixes,
-# ruff autofixes) and can still open autofix PRs for those.
-ci:
-  skip: [doc-taxonomy, status-prose, file-line-refs]
+# pre-commit config for developers AND pre-commit.ci.
+#
+# Contains only hooks that don't need this repo's own package installed.
+# The self-referential hooks (doc-taxonomy, status-prose, file-line-refs)
+# live in .pre-commit-config.local.yaml and are exercised by the GHA
+# `pre-commit` job — pre-commit.ci can't clone `repo: .` (it treats `.` as
+# a git URL and fails at build), and `ci: skip:` doesn't help because the
+# clone happens before skip is evaluated. Splitting configs is the fix.
+#
+# Downstream consumers pull the self-referential hooks from a pinned tag
+# on this repo (see README + .pre-commit-hooks.yaml).
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -27,17 +25,3 @@ repos:
     hooks:
       - id: ruff
       - id: ruff-format
-
-  # Dogfood the shipped hooks the same way a downstream repo does: point at
-  # this repo (as a local path), and pre-commit clones + pip-installs it into
-  # a cached env, putting the `jk-standards` console-script on PATH.
-  #
-  # `local` repos with additional_dependencies: ["."] silently no-op — `.`
-  # resolves against pre-commit's staged working dir, not the repo root. Use
-  # this pattern for local hooks that need a Python package to be installed.
-  - repo: .
-    rev: HEAD
-    hooks:
-      - id: doc-taxonomy
-      - id: status-prose
-      - id: file-line-refs

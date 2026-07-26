@@ -1,0 +1,23 @@
+# Self-referential dogfood hooks — exercises this repo's own shipped hooks
+# the same way a downstream consumer would. Invoked explicitly by the GHA
+# `pre-commit` job:
+#
+#   pre-commit run --config .pre-commit-config.local.yaml --all-files
+#
+# NOT loaded by pre-commit.ci: that service tries to clone `repo: .` as a
+# URL and fails at build. See .pre-commit-config.yaml header for the full
+# split rationale.
+#
+# Developers can run these locally the same way, or install both configs
+# as separate hooks:
+#
+#   pre-commit install --config .pre-commit-config.local.yaml \
+#                      --hook-type pre-commit
+
+repos:
+  - repo: .
+    rev: HEAD
+    hooks:
+      - id: doc-taxonomy
+      - id: status-prose
+      - id: file-line-refs

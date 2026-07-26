@@ -51,15 +51,19 @@ def _rel_to_root(path: Path, root: Path) -> str:
 
 
 def emit_checks(root: Path) -> bytes:
+    # source_file is derived from the module's dotted name, not __file__,
+    # so it stays stable across install locations (editable-install repo vs
+    # pip-installed-from-git into a tempdir — the reusable-workflow context).
     entries = []
     for name, fn in CHECKS.items():
         module = sys.modules[fn.__module__]
+        source_file = fn.__module__.replace(".", "/") + ".py"
         entries.append(
             {
                 "name": name,
                 "is_static": name in STATIC_CHECKS,
                 "summary": _module_summary(module),
-                "source_file": _rel_to_root(Path(module.__file__), root),
+                "source_file": f"src/{source_file}",
             }
         )
     entries.sort(key=lambda e: e["name"])

@@ -17,25 +17,16 @@ repos:
       - id: ruff
       - id: ruff-format
 
-  - repo: local
+  # Dogfood the shipped hooks the same way a downstream repo does: point at
+  # this repo (as a local path), and pre-commit clones + pip-installs it into
+  # a cached env, putting the `jk-standards` console-script on PATH.
+  #
+  # `local` repos with additional_dependencies: ["."] silently no-op — `.`
+  # resolves against pre-commit's staged working dir, not the repo root. Use
+  # this pattern for local hooks that need a Python package to be installed.
+  - repo: .
+    rev: HEAD
     hooks:
       - id: doc-taxonomy
-        name: docs carry a lifecycle class
-        entry: jk-standards doc-taxonomy
-        language: python
-        additional_dependencies: ["."]
-        types: [markdown]
-        pass_filenames: false
       - id: status-prose
-        name: no stale status prose in gated docs
-        entry: jk-standards status-prose
-        language: python
-        additional_dependencies: ["."]
-        types: [markdown]
-        pass_filenames: false
       - id: file-line-refs
-        name: no file:line references in enduring docs
-        entry: jk-standards file-line-refs
-        language: python
-        additional_dependencies: ["."]
-        pass_filenames: false

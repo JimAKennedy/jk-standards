@@ -1,6 +1,17 @@
 # jk-standards' own pre-commit config: upstream basics plus its own hooks
 # consumed the same way a downstream repo would (repo: local here because
 # the hooks are defined in this repo; consumers use the GitHub repo + tag).
+
+# pre-commit.ci is a third-party hosted runner that clones the PR merge ref
+# into its own container and runs pre-commit. It can't resolve `repo: .` —
+# `.` is treated as a git URL and `git fetch . HEAD` fails. Skip our
+# self-referential hooks there; the GHA `pre-commit` job (which does check
+# out the repo) still runs them and gates the PR. pre-commit.ci then only
+# runs the upstream hooks it's actually good at (trailing-whitespace fixes,
+# ruff autofixes) and can still open autofix PRs for those.
+ci:
+  skip: [doc-taxonomy, status-prose, file-line-refs]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

@@ -10,8 +10,14 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# The sanitizer-nightly-smoke job calls the reusable sanitizer-nightly.yml,
+# whose notify job requests `issues: write`. A reusable workflow cannot be
+# granted more than the caller's token scope, so the caller must declare
+# `issues: write` here or the whole run fails at startup. Individual jobs
+# still re-declare their own least-privilege scope.
 permissions:
   contents: read
+  issues: write
 
 jobs:
   test:

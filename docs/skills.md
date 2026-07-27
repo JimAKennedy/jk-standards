@@ -4,7 +4,7 @@ class: gated
 
 # Skills index
 
-Status: current (2026-07-25)
+Status: current (2026-07-27)
 
 Agent skills shipped by this repo, under `skills/<name>/SKILL.md`. They are
 the authoring-time half of the discipline: the checks enforce the
@@ -13,6 +13,7 @@ first place.
 
 | Skill | Teaches |
 |---|---|
+| ci-hygiene | Structuring CI for correctness and cost: layered cost-ordered gates, SHA-pinned actions on a weekly dependabot cadence, a single aggregation gate for branch protection, and artifact-retention conventions (the generic layer beneath sanitizer-ci-setup) |
 | doc-anti-drift | Writing and maintaining docs under the anti-drift discipline: lifecycle classes, drift-map upkeep, dated status claims, symbol-based references, test-cited behavioral claims |
 | escape-hatch-discipline | Designing and using suppressions: in-band, greppable, reasoned; narrowest-scope-first; ratchet baselines |
 | sanitizer-ci-setup | Layered quality gates for native projects: ASan/UBSan/TSan matrices, sanitizer-aware tests, fuzzer wiring, notification paths that can't be ignored |

@@ -62,6 +62,8 @@ wired by hand.
 Authoring-time discipline for AI coding agents — the conventions the checks enforce,
 taught at write time:
 
+- **ci-hygiene** — layered cost-ordered gates, SHA-pinned actions on a dependabot
+  cadence, a single aggregation gate for branch protection, artifact-retention conventions
 - **doc-anti-drift** — classify every doc, date every status claim, cite symbols not
   line numbers, mark behavioral claims, maintain the drift map
 - **escape-hatch-discipline** — every suppression in-band, greppable, and reasoned

@@ -26,6 +26,11 @@
       "path": "skills/escape-hatch-discipline/SKILL.md"
     },
     {
+      "description": "Keep the audio callback thread real-time-safe — no heap allocation, locks, blocking syscalls, exceptions, or unbounded container growth — and gate it with a greppable check honoring an RT-SAFE-OK waiver. Use when writing or reviewing audio-callback / DSP render code, or wiring an RT-safety check into CI for a C/C++ audio project.",
+      "name": "realtime-audio-safety",
+      "path": "skills/realtime-audio-safety/SKILL.md"
+    },
+    {
       "description": "Wire ASan/UBSan/TSan and fuzzing into CI for C/C++ projects — nightly sanitizer matrices, issue-dedupe notification paths, sanitizer-aware stress tests, integration-surface instrumentation. Use when setting up or auditing the native-code sanitizer layer of a project's CI.",
       "name": "sanitizer-ci-setup",
       "path": "skills/sanitizer-ci-setup/SKILL.md"

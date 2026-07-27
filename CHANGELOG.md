@@ -4,6 +4,31 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-27
+
+### Added
+
+- **`realtime-audio-safety` skill**
+  (`skills/realtime-audio-safety/SKILL.md`): the toolkit's first native-code
+  authoring discipline — teaches how to keep the audio callback thread
+  real-time-safe (no heap allocation, locks, blocking syscalls, exceptions, or
+  unbounded container growth), documents the `check-realtime-safety.sh` recipe
+  and the `RT-SAFE-OK: <reason>` escape hatch, and names RealtimeSanitizer as
+  the dynamic backstop. Indexed in `docs/skills.md` and projected into
+  `site/src/generated/skills.json`.
+- **`check-realtime-safety.sh` scanner**
+  (`skills/realtime-audio-safety/check-realtime-safety.sh`): a shipped
+  grep-gate that flags forbidden real-time-thread operations in audio-callback
+  code with `file:line` reporting and an in-band `RT-SAFE-OK: <reason>` waiver
+  whose live suppression count is surfaced on every run — the shell analog of
+  the `boundaries` check.
+- **Subprocess-driven RT-safety test + fixtures**
+  (`tests/test_realtime_safety.py`,
+  `tests/fixtures/realtime-audio-safety/violating_callback.cpp`,
+  `tests/fixtures/realtime-audio-safety/waived_callback.cpp`): proves the
+  scanner flags a violating audio callback (exit 1) and passes an
+  `RT-SAFE-OK`-waived one (exit 0).
+
 ## [0.4.0] - 2026-07-27
 
 ### Added

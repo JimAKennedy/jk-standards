@@ -78,6 +78,9 @@ taught at write time:
 - **doc-anti-drift** — classify every doc, date every status claim, cite symbols not
   line numbers, mark behavioral claims, maintain the drift map
 - **escape-hatch-discipline** — every suppression in-band, greppable, and reasoned
+- **realtime-audio-safety** — keep the audio callback thread real-time-safe (no heap
+  allocation, locks, blocking syscalls, exceptions, or unbounded growth), gated by the
+  greppable `check-realtime-safety.sh` scanner with an `RT-SAFE-OK` waiver, RealtimeSanitizer as the dynamic backstop
 - **sanitizer-ci-setup** — the nightly ASan/UBSan/TSan matrix + fuzzer wiring recipe
 
 A consuming repo vendors these skills through a `skills-lock.json` and the
@@ -157,6 +160,13 @@ Actions). Assumes dev deps are installed (`pip install -e ".[dev]"`).
 for `--no-site`).
 
 ## Status
+
+v0.5.0: ships the `realtime-audio-safety` skill — the toolkit's first native-code
+authoring discipline — teaching how to keep the audio callback thread real-time-safe
+and gating it with the shipped `check-realtime-safety.sh` scanner, a greppable
+grep-gate honoring an in-band `RT-SAFE-OK: <reason>` waiver with a live suppression
+count, proven by a subprocess-driven pytest against violating and waived C++
+audio-callback fixtures, with RealtimeSanitizer named as the dynamic backstop.
 
 v0.4.0: introduces the `architecture-standard` — the toolkit's first normative
 gated standard, defining the `ARCHITECTURE.md` invariant↔mechanism contract

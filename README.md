@@ -164,12 +164,21 @@ for `--no-site`).
 
 ## Status
 
-v0.5.0: ships the `realtime-audio-safety` skill — the toolkit's first native-code
-authoring discipline — teaching how to keep the audio callback thread real-time-safe
-and gating it with the shipped `check-realtime-safety.sh` scanner, a greppable
-grep-gate honoring an in-band `RT-SAFE-OK: <reason>` waiver with a live suppression
-count, proven by a subprocess-driven pytest against violating and waived C++
-audio-callback fixtures, with RealtimeSanitizer named as the dynamic backstop.
+v0.5.0: opens the toolkit's native-code authoring layer — three C++/DSP skills plus
+a gated conventions doc set indexed on the site. `realtime-audio-safety` keeps the
+audio callback thread real-time-safe and is gated by the shipped
+`check-realtime-safety.sh` scanner, a greppable grep-gate honoring an in-band
+`RT-SAFE-OK: <reason>` waiver with a live suppression count, proven by a
+subprocess-driven pytest against violating and waived C++ audio-callback fixtures,
+with RealtimeSanitizer named as the dynamic backstop. `versioned-state-serialization`
+teaches serializing persistent state so old data still loads after a format change
+(version tag first, branch on it when reading — the "preset compatibility time bomb"
+anti-pattern). `determinism-testing` teaches making DSP output reproducible so golden
+tests catch regressions — deriving oscillator/LFO phase from absolute transport time
+and gating byte-identical renders in CI. Underpinning the skills, a `conventions/`
+doc set — `cpp-language-standard`, `msvc-portability`, and `warning-flags`, each
+`class: gated` — codifies the C++ standard baseline, the MSVC portability rules, and
+the shared warning set shipped as `cmake/jk_warnings.cmake`.
 
 v0.4.0: introduces the `architecture-standard` — the toolkit's first normative
 gated standard, defining the `ARCHITECTURE.md` invariant↔mechanism contract

@@ -1,6 +1,11 @@
 {
   "skills": [
     {
+      "description": "Structure CI for correctness and cost — layered cost-ordered gates, SHA-pinned actions on a weekly dependabot cadence, a single aggregation gate for branch protection, and artifact-retention conventions. Use when setting up, auditing, or reviewing a project's CI workflow structure and dependency-update hygiene (the generic layer, not the sanitizer/native layer — see sanitizer-ci-setup).",
+      "name": "ci-hygiene",
+      "path": "skills/ci-hygiene/SKILL.md"
+    },
+    {
       "description": "Write and maintain documentation under the jk-standards anti-drift discipline — doc lifecycle classes, drift maps, dated status claims, symbol-based references, test-cited behavioral claims. Use whenever creating or editing docs in a repo that has a jk-standards.yaml.",
       "name": "doc-anti-drift",
       "path": "skills/doc-anti-drift/SKILL.md"
@@ -11,7 +16,7 @@
       "path": "skills/escape-hatch-discipline/SKILL.md"
     },
     {
-      "description": "Wire ASan/UBSan/TSan, fuzzing, and layered quality gates into CI for C/C++ projects — nightly sanitizer matrices, issue-dedupe notification, sanitizer-aware tests, strictness gradients. Use when setting up or auditing CI for a native-code project.",
+      "description": "Wire ASan/UBSan/TSan and fuzzing into CI for C/C++ projects — nightly sanitizer matrices, issue-dedupe notification paths, sanitizer-aware stress tests, integration-surface instrumentation. Use when setting up or auditing the native-code sanitizer layer of a project's CI.",
       "name": "sanitizer-ci-setup",
       "path": "skills/sanitizer-ci-setup/SKILL.md"
     }

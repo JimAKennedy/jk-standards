@@ -10,8 +10,6 @@ and asserts on its exit code and stdout/stderr contract.
 import subprocess
 from pathlib import Path
 
-import pytest
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = REPO_ROOT / "skills" / "realtime-audio-safety" / "check-realtime-safety.sh"
 FIXTURES = REPO_ROOT / "tests" / "fixtures" / "realtime-audio-safety"
@@ -25,6 +23,7 @@ def run_check(*args: str) -> subprocess.CompletedProcess:
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        check=False,
     )
 
 
@@ -55,9 +54,7 @@ def test_waived_callback_passes_and_reports_suppression_count():
 
 def test_directory_target_recurses_and_flags(tmp_path):
     # Directory targets recurse into C/C++ sources; a bad file anywhere fails.
-    (tmp_path / "voice.cpp").write_text(
-        "void cb(int n) { float* p = new float[n]; }\n"
-    )
+    (tmp_path / "voice.cpp").write_text("void cb(int n) { float* p = new float[n]; }\n")
     result = run_check(str(tmp_path))
     assert result.returncode == 1
     assert "new/delete" in result.stderr

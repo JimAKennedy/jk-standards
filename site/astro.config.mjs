@@ -32,6 +32,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Checks', slug: 'reference/checks' },
 						{ label: 'Configuration', slug: 'reference/configuration' },
+						{ label: 'Conventions', slug: 'reference/conventions' },
 						{ label: 'Skills', slug: 'reference/skills' },
 					],
 				},

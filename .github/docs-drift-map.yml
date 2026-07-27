@@ -41,6 +41,11 @@ mappings:
     reason: "skills.md is the index of shipped skills and their intended use. Adding or renaming a skill changes what consumers vendor via skills-lock.json."
 
   - sources:
+      - "conventions/**"
+    doc: "site/src/content/docs/reference/conventions.mdx"
+    reason: "reference/conventions.mdx is the public site's index of the native-code conventions (cpp-language-standard, msvc-portability, warning-flags). Unlike the generated skills.mdx, it bakes per-item prose summarizing each standard's governing rule, so a conventions/** source change without a site update ships a deployed page whose summary diverges from the standard it describes."
+
+  - sources:
       - "src/jk_standards/checks/**"
       - "src/jk_standards/cli.py"
       - "src/jk_standards/emit.py"

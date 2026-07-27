@@ -1,0 +1,103 @@
+---
+class: gated
+title: Conventions
+description: The native-code conventions a consuming repository adopts — the C++ standards this toolkit governs.
+---
+
+Status: current (2026-07-27)
+
+The `conventions/` directory holds *standards*, not references. A reference
+page describes what this toolkit's own surface does; a standard is a normative
+specification a consuming repository follows. Each convention below is a
+`class: gated` document — held to the same dated-`Status` and progress-free
+discipline it asks of the documents it governs — and uses **MUST**,
+**MUST NOT**, **SHOULD**, and **MAY** as defined in RFC 2119.
+
+The native-code siblings form a layered contract: the language-standard
+policy fixes the *revision* a repository targets, the MSVC-portability policy
+governs the *toolchain*-specific hazards that survive an extensions-off build,
+and the warning-flags policy governs the *diagnostics* a conformant build
+emits and whether the build tolerates them. This page is the site's index of
+that set; the normative text lives in the linked source documents, each of
+which is the authoritative statement of its own rules.
+
+## C++ language standard
+
+Source:
+[`conventions/cpp-language-standard.md`](https://github.com/JimAKennedy/jk-standards/blob/main/conventions/cpp-language-standard.md)
+
+> Declare one language revision, select it per target, and forbid the
+> extensions that let a build outrun the declaration.
+
+A consuming repository **MUST** target **ISO C++20** (or a later revision
+selected uniformly across every target) as a property of the repository, not
+of a file. The revision **MUST** be selected per target through the build
+system's standard-selection mechanism — `target_compile_features` or the
+`CXX_STANDARD` property in CMake — never a raw `-std=` flag spliced into
+compile options. Two properties **MUST** accompany the selection:
+`CXX_STANDARD_REQUIRED` on, so a build fails rather than silently downgrading;
+and `CXX_EXTENSIONS` off, so targets compile the ISO dialect rather than a
+vendor extension dialect. Feature discipline caps the usable subset at what
+the repository's stated toolchain floor actually implements — a standardized
+but unimplemented feature is not available regardless of what the revision
+permits.
+
+## MSVC portability
+
+Source:
+[`conventions/msvc-portability.md`](https://github.com/JimAKennedy/jk-standards/blob/main/conventions/msvc-portability.md)
+
+> Compile on every toolchain you claim to support, in that toolchain's
+> conformance mode — never to one compiler's tolerance.
+
+A consuming repository that supports Windows **MUST** build under MSVC in CI
+as a required check on every change, covering the same targets, language
+revision, and warning posture as its other toolchains, and it **MUST** state
+and exercise a supported MSVC floor. The MSVC build **MUST** run in conformant
+mode — `/permissive-` on, `/utf-8` set, and the relevant `/Zc:` conformance
+switches selected wherever the toolset default is non-conforming. Portable
+source **MUST NOT** assume an LP64 integer model (on 64-bit Windows `long` is
+32 bits), let `<windows.h>` leak its `min`/`max` macros (define `NOMINMAX`),
+or depend on POSIX-only facilities. Irreducibly platform-specific code —
+system calls, export directives, intrinsics — **MUST** sit behind an explicit
+per-platform boundary rather than inline `#ifdef` conditionals in portable
+translation units.
+
+## Warning flags
+
+Source:
+[`conventions/warning-flags.md`](https://github.com/JimAKennedy/jk-standards/blob/main/conventions/warning-flags.md)
+
+> Enable a strict warning set, make it fatal, and apply the same set on every
+> toolchain — a warning that does not fail the build is a warning nobody
+> reads.
+
+A consuming repository **MUST** compile its own C++ with warnings treated as
+errors (`-Werror` on Clang and GCC, `/WX` on MSVC), so a new warning fails the
+build on the change that introduced it. The enabled diagnostics **MUST** be
+defined as one shared, named, strict set — at minimum `-Wall -Wextra` or
+`/W4`, extended with high-value diagnostics where the toolchain floor supports
+them — that every first-party target consumes, and that set **MUST** be
+equivalent in intent across every supported toolchain. Third-party code
+**MUST** be isolated from the first-party set rather than the set being
+weakened to accommodate it. A suppression **MAY** cover a genuine false
+positive but **MUST** be as narrow as the toolchain allows and carry a written
+justification at its site.
+
+This toolkit ships a reusable CMake module,
+[`cmake/jk_warnings.cmake`](https://github.com/JimAKennedy/jk-standards/blob/main/cmake/jk_warnings.cmake),
+that encodes the shared per-toolchain-translated set. `jk_target_warnings(<target>)`
+applies the strict, fatal first-party set; `jk_suppress_sdk_warnings(<target>)`
+isolates a dependency from it. A consuming repository pulls the module via
+`FetchContent` pinned to a released tag, or copies it in and records a SHA-256
+checksum that CI recomputes. A source change to the module without an update to
+its standard is flagged by the toolkit's own doc-drift check.
+
+## Why these are indexed here
+
+Unlike the [Skills](/reference/skills/) catalog — which is generated from a
+JSON fixture and reflects a skill add or rename automatically — this page bakes
+per-item prose for each convention. That makes it legitimately drift-mappable:
+a `conventions/**` source change without a matching edit here is flagged by the
+toolkit's own doc-drift check in the dogfood CI job, so the site's summary of a
+standard cannot silently diverge from the standard's own text.

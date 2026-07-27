@@ -10,8 +10,9 @@
 # it behaves the same whether you invoke it from root or a subdirectory.
 #
 # CI jobs intentionally NOT reproduced here (they need CI-only inputs):
-#   - secrets-scan            (gitleaks: needs full history + GITHUB_TOKEN)
-#   - reusable-workflow-smoke (smoke-tests the reusable workflow's shape in Actions)
+#   - secrets-scan             (gitleaks: needs full history + GITHUB_TOKEN)
+#   - reusable-workflow-smoke  (smoke-tests doc-discipline.yml's shape in Actions)
+#   - sanitizer-nightly-smoke  (smoke-tests sanitizer-nightly.yml's shape in Actions)
 #
 # Usage:
 #   scripts/verify.sh              # full gate (installs nothing; assumes deps present)
@@ -108,7 +109,8 @@ fi
 
 # --- CI-only jobs (cannot run locally) ---------------------------------------
 skip "secrets-scan (gitleaks — CI-only: needs full history + token)"
-skip "reusable-workflow-smoke (workflow-shape smoke — CI-only)"
+skip "reusable-workflow-smoke (doc-discipline shape smoke — CI-only)"
+skip "sanitizer-nightly-smoke (sanitizer-nightly shape smoke — CI-only)"
 
 # --- summary -----------------------------------------------------------------
 echo "${BOLD}── summary ──${RST}"

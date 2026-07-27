@@ -37,12 +37,16 @@
       "percent_covered": 100.0
     },
     "src/jk_standards/cli.py": {
-      "missing_lines": 15,
-      "percent_covered": 61.76
+      "missing_lines": 4,
+      "percent_covered": 93.68
     },
     "src/jk_standards/config.py": {
       "missing_lines": 0,
       "percent_covered": 100.0
+    },
+    "src/jk_standards/emit.py": {
+      "missing_lines": 41,
+      "percent_covered": 69.31
     },
     "src/jk_standards/frontmatter.py": {
       "missing_lines": 2,
@@ -63,9 +67,9 @@
   },
   "toolkit_version": "0.1.0",
   "totals": {
-    "covered_lines": 504,
-    "missing_lines": 65,
-    "num_statements": 569,
-    "percent_covered": 86.45
+    "covered_lines": 634,
+    "missing_lines": 95,
+    "num_statements": 729,
+    "percent_covered": 85.59
   }
 }

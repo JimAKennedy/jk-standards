@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from collections.abc import Callable
@@ -28,6 +29,11 @@ from jk_standards.checks import CHECKS, STATIC_CHECKS
 from jk_standards.config import DEFAULT_CONFIG_NAME, Config
 
 GENERATED_DIR = Path("site/src/generated")
+
+# Emitters that are non-deterministic across environments (Python version,
+# platform branches). `emit --check` treats them as pass-through when the
+# committed fixture exists so CI doesn't flap on numeric noise.
+NON_DETERMINISTIC = frozenset({"coverage"})
 
 
 def _serialize(payload: object) -> bytes:
@@ -71,14 +77,27 @@ def emit_checks(root: Path) -> bytes:
     return _serialize({"toolkit_version": __version__, "checks": entries})
 
 
+# Match a fence line that closes YAML frontmatter: `---` or `...` alone on the
+# line (optional trailing whitespace). Anchored so mid-line `---` in block
+# scalars doesn't false-match.
+_FRONTMATTER_CLOSE_RE = re.compile(r"^(?:---|\.\.\.)\s*$", re.MULTILINE)
+
+
 def _read_skill_frontmatter(path: Path) -> dict:
     text = path.read_text(encoding="utf-8")
     if not text.startswith("---"):
         return {}
-    end = text.find("\n---", 3)
-    if end == -1:
+    # Skip past the opening fence, then find the next line that is exactly
+    # `---` or `...`. text.find("\n---", 3) would match a mid-line `---` inside
+    # a block scalar (common in markdown-with-YAML skill files).
+    body_start = text.find("\n", 3)
+    if body_start == -1:
         return {}
-    return yaml.safe_load(text[3:end]) or {}
+    match = _FRONTMATTER_CLOSE_RE.search(text, body_start + 1)
+    if match is None:
+        return {}
+    data = yaml.safe_load(text[body_start + 1 : match.start()])
+    return data if isinstance(data, dict) else {}
 
 
 def emit_skills(root: Path) -> bytes:
@@ -96,16 +115,23 @@ def emit_skills(root: Path) -> bytes:
     return _serialize({"toolkit_version": __version__, "skills": entries})
 
 
-def _default_repr(value: object) -> object:
-    """JSON-safe rendering of a dataclass default value."""
+def _default_repr(value: object, _seen: set[int] | None = None) -> object:
+    """JSON-safe rendering of a dataclass default value. Cycle-safe."""
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
+    _seen = set() if _seen is None else _seen
+    ident = id(value)
+    if ident in _seen:
+        return "<cycle>"
+    _seen.add(ident)
     if isinstance(value, (list, tuple)):
-        return [_default_repr(v) for v in value]
+        return [_default_repr(v, _seen) for v in value]
     if isinstance(value, dict):
-        return {str(k): _default_repr(v) for k, v in value.items()}
-    if hasattr(value, "__dict__"):
-        return {k: _default_repr(v) for k, v in vars(value).items()}
+        return {str(k): _default_repr(v, _seen) for k, v in value.items()}
+    # Only inspect __dict__ on things that look like plain data objects, not
+    # modules, functions, methods, or types (all of which have __dict__).
+    if hasattr(value, "__dict__") and not callable(value) and not isinstance(value, type):
+        return {k: _default_repr(v, _seen) for k, v in vars(value).items()}
     return repr(value)
 
 
@@ -138,23 +164,19 @@ def emit_config_schema(root: Path) -> bytes:
     )
 
 
-def emit_coverage(root: Path) -> bytes:
-    # If .coverage is missing AND we can't produce it (dev tooling absent, as
-    # in a downstream repo consuming the reusable workflow), read back the
-    # committed fixture unchanged so `generated-freshness` reports "fresh"
-    # rather than crashing on missing tooling. Dogfood repos install `[dev]`
-    # and go through the strict regenerate-and-diff path below.
-    #
-    # If we're already inside a pytest run (PYTEST_CURRENT_TEST is set) we
-    # must not recurse into `coverage run -m pytest tests/` — that would
-    # re-invoke this same code path and hang the runner. Same fallback.
+class CoverageToolingMissing(Exception):
+    """Raised when the `coverage` CLI isn't installed (downstream consumer)."""
+
+
+def _coverage_run_and_read(root: Path) -> dict:
+    """Produce `.coverage` if missing, then read `coverage json -o -`.
+
+    Raises CoverageToolingMissing if the coverage CLI isn't on PATH.
+    Propagates CalledProcessError from real test failures (they are NOT the
+    same as tooling being absent, and must not be silently swallowed).
+    """
     coverage_file = root / ".coverage"
-    in_pytest = "PYTEST_CURRENT_TEST" in os.environ
     if not coverage_file.exists():
-        if in_pytest:
-            existing = root / GENERATED_DIR / "coverage.json"
-            if existing.is_file():
-                return existing.read_bytes()
         try:
             subprocess.run(
                 ["coverage", "run", "-m", "pytest", "tests/"],
@@ -162,39 +184,79 @@ def emit_coverage(root: Path) -> bytes:
                 check=True,
                 capture_output=True,
             )
-        except (FileNotFoundError, subprocess.CalledProcessError):
-            existing = root / GENERATED_DIR / "coverage.json"
-            if existing.is_file():
-                return existing.read_bytes()
-            raise
-    result = subprocess.run(
-        ["coverage", "json", "-o", "-"],
-        cwd=root,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    raw = json.loads(result.stdout)
-    totals = raw.get("totals", {})
-    percent = round(float(totals.get("percent_covered", 0.0)), 2)
+        except FileNotFoundError as e:
+            raise CoverageToolingMissing("coverage CLI not on PATH") from e
+    try:
+        result = subprocess.run(
+            ["coverage", "json", "-o", "-"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as e:
+        raise CoverageToolingMissing("coverage CLI not on PATH") from e
+    return json.loads(result.stdout)
+
+
+def _coverage_payload(raw: dict) -> dict:
+    totals = raw.get("totals") or {}
+    files_raw = raw.get("files") or {}
     files = {
         name: {
-            "percent_covered": round(float(data.get("summary", {}).get("percent_covered", 0.0)), 2),
-            "missing_lines": data.get("summary", {}).get("missing_lines", 0),
+            "percent_covered": round(
+                float((data.get("summary") or {}).get("percent_covered", 0.0)), 2
+            ),
+            "missing_lines": (data.get("summary") or {}).get("missing_lines", 0),
         }
-        for name, data in sorted(raw.get("files", {}).items())
+        for name, data in sorted(files_raw.items())
     }
-    payload = {
+    return {
         "toolkit_version": __version__,
         "totals": {
-            "percent_covered": percent,
+            "percent_covered": round(float(totals.get("percent_covered", 0.0)), 2),
             "num_statements": totals.get("num_statements", 0),
             "missing_lines": totals.get("missing_lines", 0),
             "covered_lines": totals.get("covered_lines", 0),
         },
         "files": files,
     }
-    return _serialize(payload)
+
+
+def emit_coverage(root: Path) -> bytes:
+    """Emit the coverage fixture. Falls back to the committed file only when
+    the coverage CLI is genuinely absent (downstream consumer) or when we're
+    already inside a pytest run and can't recurse. Real test failures
+    propagate — this is not a "silent green" surface.
+    """
+    fallback_path = root / GENERATED_DIR / "coverage.json"
+
+    # Inside pytest: never recurse. If .coverage already exists (parent
+    # `coverage run` produced it) we can still emit fresh numbers via
+    # `coverage json`; otherwise we must fall back so the test suite doesn't
+    # invoke itself.
+    in_pytest = "PYTEST_CURRENT_TEST" in os.environ
+    if in_pytest and not (root / ".coverage").exists():
+        if fallback_path.is_file():
+            return fallback_path.read_bytes()
+        # Test suite calling emit_coverage in a fresh checkout with no
+        # fixture: nothing we can do, and there's no honest number to invent.
+        raise RuntimeError(
+            "emit_coverage: called from inside pytest with no .coverage and no "
+            "committed fixture — cannot compute coverage without recursing"
+        )
+
+    try:
+        raw = _coverage_run_and_read(root)
+    except CoverageToolingMissing:
+        # Downstream consumer (reusable-workflow smoke, end-user CI) — no dev
+        # tooling installed. Read back the committed fixture unchanged so
+        # generated-freshness reports "fresh" instead of crashing.
+        if fallback_path.is_file():
+            return fallback_path.read_bytes()
+        raise
+
+    return _serialize(_coverage_payload(raw))
 
 
 EMITTERS: dict[str, tuple[Callable[[Path], bytes], str]] = {
@@ -208,12 +270,25 @@ EMITTERS: dict[str, tuple[Callable[[Path], bytes], str]] = {
 def run(root: Path, name: str, check_only: bool) -> int:
     """Emit (or diff-check) one fixture. Returns 0 on success, 1 on drift."""
     if name == "all":
-        return max(run(root, n, check_only) for n in EMITTERS)
+        return max((run(root, n, check_only) for n in EMITTERS), default=0)
     if name not in EMITTERS:
         print(f"unknown emitter: {name}", file=sys.stderr)
         return 2
     fn, filename = EMITTERS[name]
     out_path = root / GENERATED_DIR / filename
+
+    # `--check` for non-deterministic emitters (coverage): don't shell out or
+    # recompute. Presence of the committed fixture is the whole gate. This
+    # keeps `emit --check` cheap and read-only for CI and pre-commit hooks.
+    if check_only and name in NON_DETERMINISTIC:
+        if not out_path.exists():
+            print(
+                f"emit --check: {out_path} missing — run `jk-standards emit {name}`",
+                file=sys.stderr,
+            )
+            return 1
+        return 0
+
     fresh = fn(root)
     if check_only:
         if not out_path.exists():

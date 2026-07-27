@@ -6,10 +6,152 @@ description: Wire the pre-commit hooks and reusable workflow into a fresh reposi
 
 import CodeSnippet from '../../../components/CodeSnippet.astro';
 
-{/* TODO(S04): full walk-through with CodeSnippet-embedded configs. */}
+This walkthrough takes a fresh repository from zero to full jk-standards
+gating. If you already have `pre-commit`, `jk-standards.yaml`, and a
+drift map, jump straight to the [Quickstart](/guide/quickstart/) instead.
 
-Each shipped hook is defined once in `.pre-commit-hooks.yaml`. Consumers pin
-to a released tag; this snippet is the exact definition your `pre-commit`
-install will resolve:
+## Step 1 — Pick your doc roots
+
+Decide where your docs live. Common shapes:
+
+- `docs/` for a plain markdown repo
+- `site/src/content/docs/` for an Astro/Starlight site
+- Both, if you have some raw markdown and a rendered site
+
+Every file under a doc root will need `class:` frontmatter. If you have
+long-frozen historical docs you don't want to classify, list their
+containing directory under `exempt_dirs`.
+
+## Step 2 — Write the config
+
+Create `jk-standards.yaml` at the repo root. The toolkit dogfoods
+itself, so its own config is the reference example:
+
+<CodeSnippet file="jk-standards.yaml" region="full-config" caption="jk-standards' own config — the toolkit gates itself with itself." />
+
+Field-by-field detail is in the [Configuration reference](/reference/configuration/).
+
+## Step 3 — Classify your docs
+
+Frontmatter for every file under the doc roots:
+
+```md
+---
+class: gated
+title: My doc
+---
+
+# ...
+```
+
+The three canonical classes:
+
+- **gated** — living, current-state doc. Linted by `status-prose`,
+  `file-line-refs`, `count-drift`, and `behavioral-claims`.
+- **archived** — frozen dated record. Exempt from all linting; the
+  content is a historical artifact.
+- **generated** — machine-produced. Freshness-checked against its
+  generator command, but not prose-linted.
+
+Run `jk-standards doc-taxonomy` — it lists every doc missing a class or
+carrying an unknown one.
+
+## Step 4 — Wire pre-commit
+
+Add jk-standards to your `.pre-commit-config.yaml`, pinned to a release
+tag. Every shipped hook is defined once in `.pre-commit-hooks.yaml` —
+this is the exact definition your `pre-commit install` will resolve
+when you enable `doc-taxonomy`:
 
 <CodeSnippet file=".pre-commit-hooks.yaml" region="hook-doc-taxonomy" caption="One shipped hook — consume from a pinned tag." />
+
+Enable the ones that fit your repo:
+
+```yaml
+- repo: https://github.com/JimAKennedy/jk-standards
+  rev: v0.1.0
+  hooks:
+    - id: doc-taxonomy
+    - id: status-prose
+    - id: file-line-refs
+    # opt in when you have inventory nouns to gate:
+    # - id: count-drift
+    # opt in when you have a test suite to cite:
+    # - id: behavioral-claims
+```
+
+Then `pre-commit install` and `pre-commit run --all-files` to catch
+existing violations.
+
+## Step 5 — Wire the reusable CI workflow
+
+`doc-drift` needs a git base ref (the PR merge base) and full commit
+history, so it lives in CI rather than pre-commit. Consume the shipped
+reusable workflow:
+
+```yaml
+# .github/workflows/docs.yml
+name: docs
+on: [pull_request, push]
+
+jobs:
+  discipline:
+    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.1.0
+    with:
+      toolkit-ref: v0.1.0        # pin the same version you used above
+      config: jk-standards.yaml  # path in your repo
+```
+
+The workflow checks out the PR with `fetch-depth: 0`, installs jk-standards
+at the pinned ref, and runs `jk-standards all`. First-run failures name
+the exact drift; fix by either updating the doc or adding a
+`Docs-Not-Affected: <reason>` trailer to a commit in the range.
+
+## Step 6 (optional) — Enable inventory gating
+
+If your prose says things like "N presets ship" or "N chapters in the
+guide", configure `count_drift.triggers` and interpolate the number from
+a generated JSON:
+
+```yaml
+count_drift:
+  triggers:
+    - 'factory\s+presets?'
+    - 'chapters?\s+in\s+total'
+
+generated:
+  - doc: docs/counts.json
+    command: node scripts/emit-counts.mjs
+```
+
+Then reference it in prose as `{counts.presets}` rather than a numeral —
+the count-drift check refuses numerals adjacent to trigger phrases,
+but leaves the template literal alone.
+
+## Step 7 (optional) — Enable behavioral claims
+
+If you want prose to cite tests, configure a test-index source:
+
+```yaml
+behavioral_claims:
+  sources:
+    - type: pytest      # gtest | js | pytest
+      path: tests
+```
+
+Then in prose, add a `verified:` marker after each claim. The marker
+wraps a key from the scraped test index in square brackets — pytest keys
+look like `test_module::test_name`, gtest keys look like `Suite.TestName`.
+Unresolved citations fail; the `⚠ unverified` marker is allowed but
+counted as an honest-state metric.
+
+The [Checks reference](/reference/checks/) uses citations like these
+throughout — every claim about the toolkit's behavior points at a real
+test.
+
+## Next
+
+- [How to add a check](/how-to/add-a-check/) — write a new check and
+  wire it through the CLI, hooks, and emitters.
+- [Checks reference](/reference/checks/) — every check with its rule
+  and escape hatches.

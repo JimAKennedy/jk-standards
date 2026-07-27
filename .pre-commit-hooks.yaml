@@ -22,28 +22,36 @@
   pass_filenames: false
 # endregion:hook-doc-taxonomy
 
+# region:hook-status-prose
 - id: status-prose
   name: no stale status prose in gated docs
   entry: jk-standards status-prose
   language: python
   types_or: [markdown, mdx]
   pass_filenames: false
+# endregion:hook-status-prose
 
+# region:hook-file-line-refs
 - id: file-line-refs
   name: no file:line references in enduring docs
   entry: jk-standards file-line-refs
   language: python
   pass_filenames: false
+# endregion:hook-file-line-refs
 
+# region:hook-count-drift
 - id: count-drift
   name: no hardcoded inventory counts
   entry: jk-standards count-drift
   language: python
   types_or: [markdown, mdx]
   pass_filenames: false
+# endregion:hook-count-drift
 
+# region:hook-behavioral-claims
 - id: behavioral-claims
   name: behavioral claims cite real tests
   entry: jk-standards behavioral-claims
   language: python
   pass_filenames: false
+# endregion:hook-behavioral-claims

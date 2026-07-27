@@ -4,6 +4,142 @@ title: Add a check
 description: Extend the toolkit with a new check that auto-documents itself.
 ---
 
-{/* TODO(S04): step-by-step on adding a check module, wiring it into CHECKS, and letting the emitter pick it up so its reference-page entry appears automatically. */}
+Every check in this repo follows the same shape: one module, one
+`run(root, cfg)` function, one entry in the `CHECKS` registry, one
+CLI subcommand (auto-registered), one pre-commit hook (opt-in), and
+one automatically-generated entry on the [checks reference page](/reference/checks/).
 
-Placeholder page — content lands in slice S04.
+You get all of that from about 60 lines of code and one registry edit.
+
+## The shape of a check
+
+Every check module lives at `src/jk_standards/checks/<name>.py` and
+exposes a `run(root, cfg, **kwargs) -> int` returning the number of
+violations found. The module docstring's first paragraph becomes the
+one-line summary on the [checks reference page](/reference/checks/) —
+so write it as prose, not scratch notes.
+
+```python
+"""my-check: one-line summary that shows up on the reference page.
+
+Longer prose explaining rule / mechanism / escape hatches goes here;
+this second paragraph doesn't appear on the reference page but does
+appear in the source file as documentation for future contributors.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from jk_standards import output
+from jk_standards.config import Config, iter_docs
+
+
+def run(root: Path, cfg: Config) -> int:
+    errors = 0
+    for path in iter_docs(root, cfg):
+        # ... your check logic ...
+        pass
+
+    if errors == 0:
+        output.summary("my-check: no violations")
+    return errors
+```
+
+## Wire it into the registry
+
+Edit `src/jk_standards/checks/__init__.py`:
+
+```python
+from jk_standards.checks import my_check  # ← add the import
+
+CHECKS = {
+    # ... existing entries ...
+    "my-check": my_check.run,  # ← add the registry entry
+}
+```
+
+Static checks (that need only the working tree) go into `STATIC_CHECKS`
+automatically via the `if name != "doc-drift"` filter. Diff-scoped
+checks that need a git base ref should be excluded like `doc-drift` is.
+
+## The CLI, hooks, and reference page
+
+You now get, for free:
+
+- **CLI subcommand**: `jk-standards my-check` works — the CLI's `check`
+  argument accepts anything in `CHECKS`.
+- **`all` runner**: `jk-standards all` runs your check too, since it
+  iterates `STATIC_CHECKS`.
+- **Reference page entry**: the [checks reference](/reference/checks/)
+  auto-generates from `checks.json`, which iterates `CHECKS`. Your entry
+  shows up the moment `jk-standards emit checks` runs.
+
+Add the hook shape to `.pre-commit-hooks.yaml` if the check makes sense
+as a pre-commit hook (fast, doesn't need CI history):
+
+```yaml
+- id: my-check
+  name: one-line description shown in pre-commit output
+  entry: jk-standards my-check
+  language: python
+  types_or: [markdown, mdx]
+  pass_filenames: false
+```
+
+## Test it
+
+Add a fixture-repo test in `tests/test_checks.py`:
+
+```python
+def test_my_check_flags_bad_pattern(tmp_path):
+    write(tmp_path, "docs/a.md", "---\nclass: gated\n---\nbad thing here\n")
+    assert my_check.run(tmp_path, Config()) == 1
+
+
+def test_my_check_passes_clean_content(tmp_path):
+    write(tmp_path, "docs/a.md", "---\nclass: gated\n---\nfine content\n")
+    assert my_check.run(tmp_path, Config()) == 0
+```
+
+Run `pytest tests/` — coverage should stay above the 80% floor.
+
+## Regenerate + commit the fixture
+
+The [checks reference page](/reference/checks/) reads from
+`site/src/generated/checks.json`, which is emitted by
+`jk-standards emit checks`. Run it before committing:
+
+```
+jk-standards emit checks
+```
+
+The `generated-freshness` check in the dogfood CI job will fail the PR
+if you added a check but forgot to regenerate — it re-runs the emitter,
+diffs against the tracked file, and fails on any drift.
+
+## Document the invariant
+
+Add a paragraph to `docs/checks.md` describing the rule, mechanism, and
+escape hatches. The `doc-drift` check will fail the PR otherwise —
+`src/jk_standards/checks/**` is mapped to `docs/checks.md` in the
+[drift map](https://github.com/JimAKennedy/jk-standards/blob/main/.github/docs-drift-map.yml),
+so a change to check source without a change to the doc trips the gate.
+
+If the change genuinely doesn't affect the doc (a rename, a formatting
+fix), add a `Docs-Not-Affected: <reason>` trailer to any commit in the
+PR range.
+
+## What you shipped
+
+For 60 lines of code plus one registry edit plus one docstring:
+
+- A CLI subcommand
+- An `all`-runner participant
+- An auto-generated entry on the reference page
+- An optional pre-commit hook
+- A test in the suite
+- A drift-mapped doc paragraph
+
+New capabilities show up on the site without you touching the site.
+That's the design.

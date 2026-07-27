@@ -4,11 +4,33 @@ title: Checks
 description: Every check the toolkit ships — rule, mechanism, and escape hatches.
 ---
 
-Status: current (2026-07-25)
+import checksData from '../../../generated/checks.json';
+
+Status: current (2026-07-26)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit
 GitHub-Actions `::error` annotations and exit non-zero on violations.
+
+This page is generated from `site/src/generated/checks.json`, which is
+itself emitted from the Python registry — the list below is what actually
+ships in v{checksData.toolkit_version}: **{checksData.checks.length}**
+entries, {checksData.checks.filter((c) => c.is_static).length} of which
+run without a git base ref and are wired as pre-commit hooks. The
+remaining {checksData.checks.filter((c) => !c.is_static).length} run only
+in CI where a base ref is available.
+
+<ul>
+  {checksData.checks.map((c) => (
+    <li>
+      <a href={`#${c.name}`}><code>{c.name}</code></a> — {c.summary.replace(/^[^:]+:\s*/, '')}
+      {' '}
+      <a href={`https://github.com/JimAKennedy/jk-standards/blob/main/${c.source_file}`}>
+        source
+      </a>
+    </li>
+  ))}
+</ul>
 
 ## doc-taxonomy
 
@@ -60,8 +82,8 @@ review's date anchor.
 A numeral (Arabic or spelled out) adjacent to a configured inventory
 trigger phrase is flagged
 [verified: test_checks::test_hardcoded_count_flagged] — the fact belongs in
-a generated source of truth, interpolated as `{counts.x}`, which is never
-flagged [verified: test_checks::test_counts_template_passes].
+a generated source of truth, interpolated as `{'{counts.x}'}`, which is
+never flagged [verified: test_checks::test_counts_template_passes].
 
 Triggers are project-supplied and should be inventory-scoped phrases, not
 bare nouns, so compositional prose never matches. With no triggers

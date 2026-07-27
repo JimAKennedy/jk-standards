@@ -4,6 +4,116 @@ title: Quickstart
 description: Adopt jk-standards in an existing repository in five minutes.
 ---
 
-{/* TODO(S04): fill with the pre-commit + workflow snippets from README, using CodeSnippet to pull the canonical examples. */}
+import CodeSnippet from '../../../components/CodeSnippet.astro';
 
-Placeholder page — content lands in slice S04.
+Five steps to wire jk-standards into an existing repository. Everything
+below assumes you already have git, Python 3.11+, and pre-commit installed.
+
+## 1. Add a config file
+
+Create `jk-standards.yaml` at the repo root. Every field is optional —
+this minimal shape gets you started:
+
+```yaml
+version: 1
+
+doc_roots:
+  - path: docs
+    extensions: [".md"]
+
+taxonomy:
+  classes: [generated, gated, archived]
+
+drift_map: .github/docs-drift-map.yml
+```
+
+For the full field surface see the [Configuration reference](/reference/configuration/).
+
+## 2. Add a drift map
+
+Create `.github/docs-drift-map.yml`. Each mapping declares that a change
+to matching sources must be accompanied by a change to the mapped doc
+(or a `Docs-Not-Affected:` trailer):
+
+```yaml
+version: 1
+
+mappings:
+  - sources:
+      - "src/**"
+    doc: "docs/reference.md"
+    reason: "reference.md documents the public API surface."
+```
+
+Reasons are shown in the failure message when the check trips — write
+them for a future engineer, not for you today.
+
+## 3. Classify existing docs
+
+Every doc under `doc_roots` needs a `class:` frontmatter block. Three
+values are recognized by default:
+
+- `class: gated` — living current-state doc, linted every commit
+- `class: archived` — frozen dated record, exempt from lint
+- `class: generated` — machine-produced output, freshness-checked
+
+```md
+---
+class: gated
+title: My doc
+---
+
+# ...
+```
+
+Run `jk-standards doc-taxonomy` — it will name every doc missing a class.
+
+## 4. Wire the pre-commit hooks
+
+Add jk-standards to your `.pre-commit-config.yaml`, pinned to a release
+tag:
+
+```yaml
+- repo: https://github.com/JimAKennedy/jk-standards
+  rev: v0.1.0
+  hooks:
+    - id: doc-taxonomy
+    - id: status-prose
+    - id: file-line-refs
+```
+
+Then `pre-commit install` — the hooks will run on every commit.
+
+## 5. Wire the reusable CI workflow
+
+Add a workflow that calls jk-standards' shipped one — it runs every
+check plus doc-drift (which needs the PR merge base):
+
+<CodeSnippet file=".github/workflows/doc-discipline.yml" region="reusable-workflow-jobs" />
+
+In your consuming repo:
+
+```yaml
+# .github/workflows/docs.yml
+name: docs
+on: [pull_request, push]
+jobs:
+  discipline:
+    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.1.0
+```
+
+That's it. The rest of the discipline lands progressively: enable
+`count-drift` when you have inventory nouns to gate, enable
+`behavioral-claims` when you want prose to cite tests, add entries to
+`generated:` when you have generated docs to freshness-check. Adoption
+is designed to be incremental — checks whose config section is empty
+report themselves as skipped rather than failing.
+
+## What's next
+
+- [How to adopt in a repo](/how-to/adopt-in-a-repo/) — same walkthrough
+  in more depth, with worked examples.
+- [How to add a check](/how-to/add-a-check/) — writing your own check
+  and exposing it via the CLI + hooks + emitters.
+- [Checks reference](/reference/checks/) — every check, its rule, and
+  its escape hatch.

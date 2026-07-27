@@ -4,6 +4,10 @@ title: jk-standards
 description: Reusable engineering-discipline toolkit — documentation anti-drift checks, pre-commit hooks, reusable CI workflows, and agent skills.
 ---
 
+import checksData from '../../generated/checks.json';
+import skillsData from '../../generated/skills.json';
+import coverageData from '../../generated/coverage.json';
+
 Well-run projects accumulate discipline mechanisms — doc-drift gates,
 sanitizer matrices, escape hatches that demand written reasons — but they
 stay trapped in the repo that invented them. jk-standards extracts those
@@ -14,6 +18,21 @@ The design principle throughout: **every check is simple (regex/diff-level),
 every escape hatch is in-band, greppable, and carries a written reason.**
 Sophistication lives in the system design, not the analysis techniques —
 which is what makes the whole thing portable.
+
+## Current shipment
+
+- **{checksData.checks.length}** [checks](/reference/checks/) covering the
+  documentation lifecycle
+- **{skillsData.skills.length}** agent [skills](/reference/skills/) that
+  teach the same conventions at authoring time
+- Pre-commit hooks and a reusable CI workflow, both pinned to a release
+  tag by consumers
+- **{coverageData.totals.percent_covered}%** test coverage on
+  toolkit version {coverageData.toolkit_version}
+
+Every number on this page is generated from source at build time. Adding a
+check or skill updates the counts and the reference pages automatically —
+the site has no hand-maintained inventory.
 
 ## Where to go next
 

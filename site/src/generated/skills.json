@@ -1,6 +1,11 @@
 {
   "skills": [
     {
+      "description": "Author and maintain an ARCHITECTURE.md that conforms to the jk-standards architecture standard — the four required sections (components, boundaries, data flow, invariants+enforcement) and the bidirectional rule that no invariant may be listed without a named mechanism and no mechanism should run without a stated invariant. Use when creating or editing an architecture document, adding an architectural invariant, or wiring a boundary into an enforceable check.",
+      "name": "architecture-definition",
+      "path": "skills/architecture-definition/SKILL.md"
+    },
+    {
       "description": "Keep milestone work on one branch at a time and land it cleanly — one branch per milestone, never stack the next milestone on an unmerged one, and re-run the full pre-commit suite after every rebase. Use when starting, rebasing, or merging a milestone branch, or when tempted to branch the next milestone off an open PR.",
       "name": "branch-discipline",
       "path": "skills/branch-discipline/SKILL.md"
@@ -26,5 +31,5 @@
       "path": "skills/sanitizer-ci-setup/SKILL.md"
     }
   ],
-  "toolkit_version": "0.3.0"
+  "toolkit_version": "0.4.0"
 }

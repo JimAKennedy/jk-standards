@@ -1,0 +1,22 @@
+{
+  "generatedBy": "gen-rules.mjs (Node-only prebuild)",
+  "ruleCount": 3,
+  "rules": [
+    {
+      "id": "no-console",
+      "severity": "warn",
+      "description": "Disallow console.* calls in shipped code"
+    },
+    {
+      "id": "require-alt-text",
+      "severity": "error",
+      "description": "Images must carry descriptive alt text"
+    },
+    {
+      "id": "max-bundle-kb",
+      "severity": "error",
+      "threshold": 250,
+      "description": "Client JavaScript bundle must stay under budget"
+    }
+  ]
+}

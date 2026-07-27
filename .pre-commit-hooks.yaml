@@ -12,6 +12,12 @@
 # doc-drift and generated-freshness are CI-oriented (they need a git base
 # ref / generator toolchains) and are exposed via the reusable workflow
 # rather than as hooks.
+#
+# secrets-scan is the one non-python hook: gitleaks is a Go binary, so this
+# entry mirrors gitleaks' own canonical upstream hook (language: golang,
+# `gitleaks git --pre-commit`) instead of a jk-standards subcommand, giving
+# consumers the exact behavior gitleaks itself ships. Its CI counterpart is
+# the reusable secrets-scan.yml workflow (full-history fetch-depth: 0 scan).
 
 # region:hook-doc-taxonomy
 - id: doc-taxonomy
@@ -64,3 +70,11 @@
   types_or: [markdown, mdx]
   pass_filenames: false
 # endregion:hook-snippet-regions
+
+# region:hook-secrets-scan
+- id: secrets-scan
+  name: no hardcoded secrets in staged changes
+  entry: gitleaks git --pre-commit --redact --staged --verbose
+  language: golang
+  pass_filenames: false
+# endregion:hook-secrets-scan

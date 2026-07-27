@@ -4,6 +4,78 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-27
+
+### Added
+
+- **`architecture-standard.md` standard**
+  (`docs/architecture-standard.md`): the toolkit's first normative gated
+  standard — it defines the ARCHITECTURE.md contract (every stated invariant
+  must link to a check or CI job that enforces it, and vice versa) that the
+  `boundaries` check and drift map hold projects to.
+- **`architecture-definition` skill**
+  (`skills/architecture-definition/SKILL.md`): teaches the standard's
+  bidirectional invariant↔mechanism rule for authoring or reviewing an
+  ARCHITECTURE.md; indexed in `docs/skills.md` and projected into
+  `site/src/generated/skills.json`.
+- **`boundaries` check** (`src/jk_standards/checks/boundaries.py`): a grep-level
+  check that flags forbidden cross-directory references with `file:line`
+  reporting and a `# boundary-ok: <reason>` escape hatch whose live suppression
+  count is surfaced. Wired into the `CHECKS` registry, `config.py`, the check
+  docs (`docs/checks.md`, `docs/configuration.md`), and the site fixtures
+  (`site/src/content/docs/reference/checks.mdx`).
+- **Root `ARCHITECTURE.md` dogfood exemplar** (`ARCHITECTURE.md`): the toolkit's
+  own architecture doc, with every invariant linked to an enforcing check or CI
+  job. Wired through `jk-standards.yaml` (`taxonomy.extra_files`, two
+  grep-enforced boundary rules) and a `.github/docs-drift-map.yml` entry so the
+  file drifts loudly under CI.
+- **`boundaries` poly-parity acceptance fixtures**
+  (`tests/test_checks.py`): seven poly-derived boundary fixtures proving the
+  `boundaries` check generalizes past this repo's own dogfood, plus explicit
+  auditable `jk-standards boundaries` invocations in `scripts/verify.sh` and
+  `.github/workflows/ci.yml`.
+- **`deploy-site.yml` reusable workflow**
+  (`.github/workflows/deploy-site.yml`): the repo's Astro/Starlight site
+  build-and-deploy, converted from a self-triggered repo-specific workflow into
+  a single parameterized `workflow_call` producer. It exposes a caller-supplied
+  `prebuild` command plus optional `working-directory`, `node-version`,
+  `python-version` (empty skips the Python leg), `python-install`, `verify`, and
+  version-source inputs, and a `deploy` boolean that gates the deploy +
+  verify-live jobs so a caller can run build-only. One parameterized workflow
+  covers both a Python prebuild (this repo's `jk-standards emit all`) and a
+  Node-only prebuild (`python-version: ""`) — the research fallback of splitting
+  into two named variants was **not** needed.
+- **`publish-site.yml` caller** (`.github/workflows/publish-site.yml`): this
+  repo's own site publish, re-expressed as a thin `push`/`workflow_dispatch`
+  caller of `deploy-site.yml` that holds the `pages`/`id-token` grants and the
+  Pages concurrency lock — the same producer/consumer split the repo already
+  uses for `doc-discipline` / `pre-commit` / `sanitizer-nightly`.
+- **`deploy-site` fixture and smoke callers**: a Node-only scratch
+  Astro/Starlight fixture (`tests/fixtures/deploy-site/`) whose `.mjs` prebuild
+  emits `rules.json` and builds with no Python leg, a `node --test` structural
+  contract over both workflow YAMLs and the fixture
+  (`tests/fixtures/deploy-site.contract.test.mjs`), and two build-only
+  (`deploy: false`) smoke callers wired into `.github/workflows/ci.yml`
+  (`deploy-site-smoke`, `deploy-site-fixture-smoke`) that dogfood the reusable
+  shape before a tag ships.
+- **`secrets-scan.yml` reusable workflow**
+  (`.github/workflows/secrets-scan.yml`): the inline gitleaks secrets-scan job
+  extracted into a callable `workflow_call` workflow (full-history
+  `fetch-depth: 0` scan); `.github/workflows/ci.yml` now consumes it via `uses:`
+  instead of carrying the steps inline.
+- **`secrets-scan` pre-commit hook** (`.pre-commit-hooks.yaml`): a region-wrapped
+  gitleaks `secrets-scan` hook entry mirroring gitleaks' canonical upstream
+  hook, so consumers block hardcoded secrets in staged changes locally; the
+  README "Reusable CI workflows" prose now documents `secrets-scan.yml`.
+
+### Changed
+
+- Package version bumped to `0.4.0` in the two source-of-truth files
+  (`pyproject.toml` and `src/jk_standards/__init__.py`); the four
+  `site/src/generated/*.json` fixtures were regenerated to embed the new
+  `toolkit_version`, and RELEASE.md pins plus the README Status block moved to
+  `v0.4.0`.
+
 ## [0.3.0] - 2026-07-27
 
 ### Added
@@ -85,6 +157,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `behavioral-claims`, `generated-freshness`, `doc-drift`), the `jk-standards`
   CLI, the self-hosting `jk-standards.yaml` config, and the dogfood CI job.
 
+[0.4.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.4.0
 [0.3.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.3.0
 [0.2.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.2.0
 [0.1.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.1.0

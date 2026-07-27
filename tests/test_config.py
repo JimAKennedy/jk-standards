@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from jk_standards.config import (
+    BoundaryRule,
     ClaimSource,
     Config,
     ConfigError,
@@ -281,6 +282,50 @@ def test_claim_sources_missing_path_raises(tmp_path):
         "behavioral_claims:\n  sources:\n    - type: pytest\n",
     )
     with pytest.raises(ConfigError, match="missing required key 'path'"):
+        load_config(tmp_path)
+
+
+# --- boundaries -------------------------------------------------------------
+
+
+def test_boundaries_rules_parsed(tmp_path):
+    write(
+        tmp_path,
+        "jk-standards.yaml",
+        (
+            "boundaries:\n"
+            "  rules:\n"
+            "    - name: checks-no-cli\n"
+            "      from: src/jk_standards/checks\n"
+            "      forbid: 'jk_standards\\.cli'\n"
+            "      extensions: ['.py']\n"
+            "      hint: a check must not import the CLI\n"
+            "    - from: src/a\n"
+            "      forbid: 'import b'\n"
+        ),
+    )
+    cfg = load_config(tmp_path)
+    assert cfg.boundaries == [
+        BoundaryRule(
+            from_dir="src/jk_standards/checks",
+            forbid=r"jk_standards\.cli",
+            name="checks-no-cli",
+            extensions=[".py"],
+            hint="a check must not import the CLI",
+        ),
+        BoundaryRule(from_dir="src/a", forbid="import b"),
+    ]
+
+
+def test_boundaries_missing_from_raises(tmp_path):
+    write(tmp_path, "jk-standards.yaml", "boundaries:\n  rules:\n    - forbid: 'x'\n")
+    with pytest.raises(ConfigError, match="missing required key 'from'"):
+        load_config(tmp_path)
+
+
+def test_boundaries_missing_forbid_raises(tmp_path):
+    write(tmp_path, "jk-standards.yaml", "boundaries:\n  rules:\n    - from: src\n")
+    with pytest.raises(ConfigError, match="missing required key 'forbid'"):
         load_config(tmp_path)
 
 

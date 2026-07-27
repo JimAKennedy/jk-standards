@@ -51,6 +51,23 @@ class ClaimSource:
 
 
 @dataclass
+class BoundaryRule:
+    """One forbidden-reference rule for the `boundaries` check.
+
+    Files under ``from_dir`` (optionally filtered to ``extensions``) MUST NOT
+    contain a line matching the ``forbid`` regex — a directed dependency
+    constraint between components (e.g. a check must not reference the CLI).
+    ``hint`` is the human-facing reason surfaced on each violation.
+    """
+
+    from_dir: str
+    forbid: str
+    name: str = ""
+    extensions: list[str] = field(default_factory=list)
+    hint: str = ""
+
+
+@dataclass
 class SnippetMarkerSyntax:
     """Per-file-type override of the region marker comment prefixes.
 
@@ -104,6 +121,8 @@ class Config:
     snippet_doc_roots: list[DocRoot] = field(default_factory=list)
     snippet_source_roots: list[SourceRoot] = field(default_factory=list)
     snippet_markers: list[SnippetMarkerSyntax] = field(default_factory=list)
+    # boundaries: directed forbidden-reference rules between component dirs.
+    boundaries: list[BoundaryRule] = field(default_factory=list)
 
 
 def _require(mapping: dict, key: str, context: str) -> object:
@@ -204,6 +223,17 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
             prefixes=[str(p) for p in _require(m, "prefixes", "snippet_regions.markers entry")],
         )
         for m in snippet.get("markers", [])
+    ]
+
+    cfg.boundaries = [
+        BoundaryRule(
+            from_dir=str(_require(r, "from", "boundaries.rules entry")),
+            forbid=str(_require(r, "forbid", "boundaries.rules entry")),
+            name=str(r.get("name", "")),
+            extensions=[str(e) for e in r.get("extensions", [])],
+            hint=str(r.get("hint", "")),
+        )
+        for r in data.get("boundaries", {}).get("rules", [])
     ]
     return cfg
 

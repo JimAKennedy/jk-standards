@@ -1,0 +1,22 @@
+---
+title: Deploy Site Fixture
+description: Node-only prebuild proof for the reusable deploy-site.yml workflow.
+---
+
+import rules from '../../generated/rules.json';
+
+This scratch Starlight site proves the reusable `deploy-site.yml` `prebuild`
+seam works with **no Python leg** (`python-version: ""`). The prebuild is a
+Node-only script (`scripts/gen-rules.mjs`) that emits
+`src/generated/rules.json`, which this page then renders at build time — so the
+build fails loudly if the prebuild step never ran.
+
+**Generated rule count:** {rules.ruleCount}
+
+<ul>
+	{rules.rules.map((rule) => (
+		<li>
+			<strong>{rule.id}</strong> ({rule.severity}) — {rule.description}
+		</li>
+	))}
+</ul>

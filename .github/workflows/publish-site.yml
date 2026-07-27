@@ -1,0 +1,61 @@
+# This repo's own site publish, re-expressed as a thin caller of the reusable
+# deploy-site.yml producer. deploy-site.yml is now `workflow_call`-only, so the
+# self-triggered `on: push` trigger, the least-privilege permission grant, and
+# the Pages concurrency lock live HERE in the caller (the producer/consumer split
+# the repo already uses for doc-discipline / pre-commit / sanitizer-nightly).
+#
+# PRs get the build-only `site-build` gate in ci.yml as a preview; deploy is
+# main-only so the published site is always in-lockstep with landed changes.
+#
+# Requires (one-time repo setup, not automatable):
+#   1. Settings -> Pages -> Source: GitHub Actions
+#   2. DNS: CNAME record jkstandards.jk.digital -> JimAKennedy.github.io
+#
+# Paths filter mirrors what actually affects the built site: MDX content,
+# generated fixtures' upstream (checks/skills/config source), the config file,
+# the reusable producer, and this caller. A pure src/ change that produces
+# different emitted fixtures re-deploys via the src/jk_standards/** entry.
+
+name: Publish Site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'src/jk_standards/**'
+      - 'skills/**'
+      - 'jk-standards.yaml'
+      - '.github/workflows/deploy-site.yml'
+      - '.github/workflows/publish-site.yml'
+  workflow_dispatch:
+
+# A reusable workflow can never exceed the caller's granted token scope, so the
+# real deploy's pages/id-token grants must be declared here. deploy-site.yml's
+# deploy + verify-live jobs consume them; build-only smoke callers grant less.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Sequential deploys share the `pages` lock; a stuck in-flight deploy queues
+# rather than getting clobbered by a follow-up push.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    uses: ./.github/workflows/deploy-site.yml
+    with:
+      # This repo's prebuild is Python-backed: `jk-standards emit all` regenerates
+      # the site's fixtures (the coverage emitter needs [dev] extras -> pytest).
+      prebuild: jk-standards emit all
+      python-version: "3.12"
+      python-install: pip install -e ".[dev]"
+      # Claim-tests cross-check rendered HTML against the generated fixtures; a
+      # divergence means the deployed site would lie, so fail before publishing.
+      verify: node --test tests/*.test.mjs
+      deploy: true
+      version-json: site/src/generated/checks.json
+      version-key: toolkit_version

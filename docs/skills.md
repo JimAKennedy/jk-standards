@@ -13,6 +13,7 @@ first place.
 
 | Skill | Teaches |
 |---|---|
+| architecture-definition | Authoring an ARCHITECTURE.md that conforms to the architecture standard: the four required sections (components, boundaries, data flow, invariants+enforcement) and the bidirectional rule that no invariant is listed without a named mechanism and no mechanism runs without a stated invariant, including turning a boundary into an enforceable `boundaries`-check rule |
 | branch-discipline | Keeping milestone work landable: one branch per milestone, never stacking the next milestone on an unmerged one (the squash-merge conflict-replay rationale), and re-running `pre-commit run --all-files` after every rebase |
 | ci-hygiene | Structuring CI for correctness and cost: layered cost-ordered gates, SHA-pinned actions on a weekly dependabot cadence, a single aggregation gate for branch protection, and artifact-retention conventions (the generic layer beneath sanitizer-ci-setup) |
 | doc-anti-drift | Writing and maintaining docs under the anti-drift discipline: lifecycle classes, drift-map upkeep, dated status claims, symbol-based references, test-cited behavioral claims |

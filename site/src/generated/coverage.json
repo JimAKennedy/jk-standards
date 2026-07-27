@@ -16,6 +16,10 @@
       "missing_lines": 2,
       "percent_covered": 92.86
     },
+    "src/jk_standards/checks/boundaries.py": {
+      "missing_lines": 0,
+      "percent_covered": 100.0
+    },
     "src/jk_standards/checks/count_drift.py": {
       "missing_lines": 7,
       "percent_covered": 85.71
@@ -50,7 +54,7 @@
     },
     "src/jk_standards/config.py": {
       "missing_lines": 1,
-      "percent_covered": 98.47
+      "percent_covered": 98.57
     },
     "src/jk_standards/emit.py": {
       "missing_lines": 41,
@@ -77,11 +81,11 @@
       "percent_covered": 71.05
     }
   },
-  "toolkit_version": "0.3.0",
+  "toolkit_version": "0.4.0",
   "totals": {
-    "covered_lines": 987,
+    "covered_lines": 1044,
     "missing_lines": 105,
-    "num_statements": 1092,
-    "percent_covered": 88.95
+    "num_statements": 1149,
+    "percent_covered": 89.47
   }
 }

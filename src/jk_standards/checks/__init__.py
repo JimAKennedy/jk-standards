@@ -9,6 +9,7 @@ from __future__ import annotations
 from jk_standards.checks import (
     action_pinning,
     behavioral_claims,
+    boundaries,
     count_drift,
     doc_drift,
     doc_taxonomy,
@@ -27,6 +28,7 @@ CHECKS = {
     "generated-freshness": generated_freshness.run,
     "action-pinning": action_pinning.run,
     "snippet-regions": snippet_regions.run,
+    "boundaries": boundaries.run,
     "doc-drift": doc_drift.run,
 }
 

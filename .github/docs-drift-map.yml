@@ -40,6 +40,13 @@ mappings:
     doc: "docs/skills.md"
     reason: "skills.md is the index of shipped skills and their intended use. Adding or renaming a skill changes what consumers vendor via skills-lock.json."
 
+  - sources:
+      - "src/jk_standards/checks/**"
+      - "src/jk_standards/cli.py"
+      - "src/jk_standards/emit.py"
+    doc: "ARCHITECTURE.md"
+    reason: "ARCHITECTURE.md is the repo's own architecture exemplar: its component map, boundaries, and invariant->mechanism table describe the check registry, CLI, and emitters. A structural change to any of these without an ARCHITECTURE.md update drifts the very document the architecture standard points readers to."
+
   # NOTE: site/src/content/docs/reference/skills.mdx is intentionally NOT
   # mapped here. Unlike checks.mdx/configuration.mdx (which bake in per-item
   # prose that a source change must be mirrored into), skills.mdx renders its

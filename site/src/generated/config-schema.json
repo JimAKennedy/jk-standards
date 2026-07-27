@@ -19,6 +19,12 @@
     {
       "default": [],
       "has_default_factory": true,
+      "name": "boundaries",
+      "type": "list[BoundaryRule]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
       "name": "claim_sources",
       "type": "list[ClaimSource]"
     },
@@ -135,5 +141,5 @@
       "type": "list[str]"
     }
   ],
-  "toolkit_version": "0.3.0"
+  "toolkit_version": "0.4.0"
 }

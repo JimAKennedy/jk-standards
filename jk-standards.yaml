@@ -10,6 +10,12 @@ doc_roots:
 
 taxonomy:
   classes: [generated, gated, archived]
+  # ARCHITECTURE.md lives at the repo root, outside the doc_roots, so it is not
+  # swept by iter_docs. List it here so the doc-taxonomy check still governs its
+  # lifecycle class — the repo's own architecture exemplar must carry class:gated
+  # like any other gated doc.
+  extra_files:
+    - ARCHITECTURE.md
 
 file_line_refs:
   source_roots:
@@ -69,4 +75,24 @@ snippet_regions:
       extensions: [".md"]
     - path: site/src/content/docs
       extensions: [".mdx"]
+
+# The two directed boundaries ARCHITECTURE.md lists as invariants. Dependencies
+# flow one way: the CLI and emitters import the check registry, so a check must
+# never import back into either — that would invert the dependency and create a
+# cycle. Each rule greps every .py under checks/ for the module-path reference;
+# a genuinely-necessary crossing is waived in place with `# boundary-ok: <why>`.
+# region:boundaries-config
+boundaries:
+  rules:
+    - name: checks-no-cli
+      from: src/jk_standards/checks
+      extensions: [".py"]
+      forbid: 'jk_standards\.cli\b|from jk_standards import [^\n]*\bcli\b'
+      hint: "a check must not import the CLI — the CLI depends on checks, not the reverse"
+    - name: checks-no-emit
+      from: src/jk_standards/checks
+      extensions: [".py"]
+      forbid: 'jk_standards\.emit\b|from jk_standards import [^\n]*\bemit\b'
+      hint: "a check must not import the emitter — emit depends on checks, not the reverse"
+# endregion:boundaries-config
 # endregion:full-config

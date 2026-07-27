@@ -45,7 +45,7 @@ via a standard `repo:` entry pinned to a release tag.
 
 ### 3. Reusable CI workflows (`.github/workflows/`)
 
-Three `workflow_call` workflows ship today. `doc-discipline.yml` wraps the doc
+Five `workflow_call` workflows ship today. `doc-discipline.yml` wraps the doc
 anti-drift checks for PR gating in a consuming repo; `pre-commit.yml` runs
 `pre-commit run --all-files` against the caller's checkout so a repo gates on its
 hooks with a two-line caller (an optional `local-config` input runs a second,
@@ -53,9 +53,18 @@ self-referential config a repo cannot load from pre-commit.ci); `sanitizer-night
 runs an ASan/UBSan/TSan matrix (with optional integration-surface legs) on a
 consumer's schedule and drives a single, label-deduped `sanitizer-failure` issue
 — open-or-update on any red leg, close on all-green — the executable form of the
-`sanitizer-ci-setup` skill's recipe. Baseline-ratcheted scanning is the remaining
-recipe not yet shipped; until then the skills document that recipe so it can be
-wired by hand.
+`sanitizer-ci-setup` skill's recipe; `deploy-site.yml` builds and deploys an
+Astro/Starlight site to GitHub Pages, exposing a caller-supplied `prebuild`
+command plus optional toolchain/verify inputs and a `deploy` boolean (build-only
+when `false`), so one parameterized workflow covers both a Python prebuild (this
+repo's `jk-standards emit all`) and a Node-only prebuild (`python-version: ""`);
+`secrets-scan.yml` runs a full-history gitleaks scan (`fetch-depth: 0`) as a
+dedicated job a caller gates on with a two-line `uses:`, the same job this repo's
+own `ci.yml` consumes and that `.pre-commit-hooks.yaml` also exposes as a local
+`secrets-scan` hook. Baseline-ratcheted scanning is the remaining recipe not yet shipped; until then
+the skills document that recipe so it can be wired by hand. This repo consumes
+`deploy-site.yml` from its own `publish-site.yml` caller, the same
+producer/consumer split it uses for the other reusable workflows.
 
 ### 4. Agent skills (`skills/`)
 
@@ -148,6 +157,14 @@ Actions). Assumes dev deps are installed (`pip install -e ".[dev]"`).
 for `--no-site`).
 
 ## Status
+
+v0.4.0: introduces the `architecture-standard` — the toolkit's first normative
+gated standard, defining the `ARCHITECTURE.md` invariant↔mechanism contract
+(every stated invariant links to a check or CI job that enforces it, and vice
+versa) — enforced by the new `boundaries` check and taught by the
+`architecture-definition` skill. It also lands the reusable `deploy-site.yml`
+and `secrets-scan.yml` workflows (the latter with a companion `secrets-scan`
+pre-commit hook) and a dogfooded root `ARCHITECTURE.md` exemplar.
 
 v0.3.0: adds the `sanitizer-nightly.yml` reusable workflow — an ASan/UBSan/TSan
 matrix driving a single deduped `sanitizer-failure` issue — and the `ci-hygiene` and

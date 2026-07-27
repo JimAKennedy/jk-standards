@@ -60,6 +60,13 @@ and `action_pin_extensions` — from an `action_pinning:` section
 optional. See the [checks reference](/reference/checks/#action-pinning) for
 the rule those fields tune.
 
+The `boundaries` field is a list of forbidden-reference rules read from a
+`boundaries:` section (a `rules:` list). Each rule names a `from` directory,
+a `forbid` regex a line under it must not match, and optional `name`,
+`extensions`, and `hint` keys; `from` and `forbid` are required. See the
+[checks reference](/reference/checks/#boundaries) for the rule these fields
+tune.
+
 ## Example — this repo's own config
 
 jk-standards dogfoods itself, so its own `jk-standards.yaml` is a live

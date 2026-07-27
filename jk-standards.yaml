@@ -7,6 +7,12 @@ doc_roots:
     extensions: [".md"]
   - path: site/src/content/docs
     extensions: [".mdx"]
+  # The governed conventions layer: normative C++ standards a consuming repo
+  # adopts (cpp-language-standard, msvc-portability, warning-flags). Registered
+  # as a doc_root so its `class: gated` docs are actually swept by doc-taxonomy,
+  # status-prose, and count-drift — without this entry the gating is cosmetic.
+  - path: conventions
+    extensions: [".md"]
 
 taxonomy:
   classes: [generated, gated, archived]

@@ -10,14 +10,24 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# The sanitizer-nightly-smoke job calls the reusable sanitizer-nightly.yml,
-# whose notify job requests `issues: write`. A reusable workflow cannot be
-# granted more than the caller's token scope, so the caller must declare
-# `issues: write` here or the whole run fails at startup. Individual jobs
-# still re-declare their own least-privilege scope.
+# This workflow dogfoods several reusable workflows via `uses: ./…`. A reusable
+# workflow cannot be granted more than the CALLER's top-level token scope, so
+# every permission any callee declares at its top level must be granted here or
+# the whole run fails at startup (no annotation, zero jobs). The callees and the
+# scopes they require:
+#   - sanitizer-nightly.yml  -> issues: write        (notify job)
+#   - deploy-site.yml        -> pages: write, id-token: write  (deploy jobs; gated
+#                               off by deploy: false in the smokes, but the scope
+#                               is still requested at compose time)
+#   - secrets-scan.yml       -> pull-requests: write (gitleaks PR annotation)
+#   - doc-discipline.yml, pre-commit.yml -> none beyond contents: read
+# Individual jobs still re-declare their own least-privilege scope.
 permissions:
   contents: read
   issues: write
+  pages: write
+  id-token: write
+  pull-requests: write
 
 jobs:
   test:

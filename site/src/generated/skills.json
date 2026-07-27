@@ -1,6 +1,11 @@
 {
   "skills": [
     {
+      "description": "Keep milestone work on one branch at a time and land it cleanly — one branch per milestone, never stack the next milestone on an unmerged one, and re-run the full pre-commit suite after every rebase. Use when starting, rebasing, or merging a milestone branch, or when tempted to branch the next milestone off an open PR.",
+      "name": "branch-discipline",
+      "path": "skills/branch-discipline/SKILL.md"
+    },
+    {
       "description": "Structure CI for correctness and cost — layered cost-ordered gates, SHA-pinned actions on a weekly dependabot cadence, a single aggregation gate for branch protection, and artifact-retention conventions. Use when setting up, auditing, or reviewing a project's CI workflow structure and dependency-update hygiene (the generic layer, not the sanitizer/native layer — see sanitizer-ci-setup).",
       "name": "ci-hygiene",
       "path": "skills/ci-hygiene/SKILL.md"

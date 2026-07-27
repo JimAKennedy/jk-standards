@@ -119,6 +119,28 @@ jobs:
 One config file (`jk-standards.yaml`) supplies the project-specific surface: doc
 roots, class vocabulary, drift-map path, count trigger nouns, test-index sources.
 
+## Development
+
+`jk-standards all` runs only the doc-conformance checks (the CI `dogfood` job).
+To reproduce the full CI conformance gate locally, run the verify script from
+anywhere in the tree:
+
+```bash
+scripts/verify.sh              # full local gate: ruff, pytest, 80% coverage floor,
+                               # dogfood checks, doc-drift, emit --check, build+twine, site
+scripts/verify.sh --no-site    # skip the Node/site-build step
+scripts/verify.sh --base REF   # diff doc-drift against REF (default: main)
+```
+
+It runs every CI job that can run on a laptop, in CI order, and prints one
+pass/fail summary (exit 1 if any step fails). Two CI jobs are CI-only and are
+reported as skipped: `secrets-scan` (gitleaks needs full history + a token) and
+`reusable-workflow-smoke` (it smoke-tests the reusable workflow's shape in
+Actions). Assumes dev deps are installed (`pip install -e ".[dev]"`).
+
+`make check` is the shorthand for `scripts/verify.sh` (and `make check-fast`
+for `--no-site`).
+
 ## Status
 
 v0.2.0: the doc anti-drift and CI-hygiene checks are implemented (extracted from

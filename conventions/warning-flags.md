@@ -201,8 +201,11 @@ they set `/W4` or `-Wall -Wextra` without `-Werror` / `/WX` and without the
 extended diagnostics, so a repository on such a copy is not conformant. This
 module supersedes them. Retiring poly's copy in favor of a FetchContent or
 copy-with-checksum adoption of this module is carried by a follow-up pull
-request against the `poly` repository, recorded here per this relocation's
-contract; the remaining sibling copies are consolidation candidates behind it.
+request against the `poly` repository —
+[JimAKennedy/poly#146](https://github.com/JimAKennedy/poly/pull/146), which
+vendors this module by copy-with-checksum and adopts its diagnostic roster
+(warnings made fatal in a tracked second phase). The remaining sibling copies
+are consolidation candidates behind it.
 
 ## Conformance
 

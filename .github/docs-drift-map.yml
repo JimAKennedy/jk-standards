@@ -40,7 +40,13 @@ mappings:
     doc: "docs/skills.md"
     reason: "skills.md is the index of shipped skills and their intended use. Adding or renaming a skill changes what consumers vendor via skills-lock.json."
 
-  - sources:
-      - "skills/**"
-    doc: "site/src/content/docs/reference/skills.mdx"
-    reason: "reference/skills.mdx is the public site's skill catalog. A skill addition/rename without a site update ships a deployed site that lies to users."
+  # NOTE: site/src/content/docs/reference/skills.mdx is intentionally NOT
+  # mapped here. Unlike checks.mdx/configuration.mdx (which bake in per-item
+  # prose that a source change must be mirrored into), skills.mdx renders its
+  # catalog by importing site/src/generated/skills.json and mapping over it at
+  # build time — "Nothing on this page is hand-maintained." A skill add/rename
+  # updates skills.json (gated by generated-freshness / emit-check), and the
+  # page reflects it automatically with no source edit to make. Mapping a
+  # touch-correlation rule at a build-time-generated page only manufactures a
+  # false positive on every skill change (the map's own header: "Do NOT map
+  # generated docs"). M006 will make this "cannot-drift" status explicit.

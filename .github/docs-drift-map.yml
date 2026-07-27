@@ -47,6 +47,11 @@ mappings:
     doc: "ARCHITECTURE.md"
     reason: "ARCHITECTURE.md is the repo's own architecture exemplar: its component map, boundaries, and invariant->mechanism table describe the check registry, CLI, and emitters. A structural change to any of these without an ARCHITECTURE.md update drifts the very document the architecture standard points readers to."
 
+  - sources:
+      - "cmake/jk_warnings.cmake"
+    doc: "conventions/warning-flags.md"
+    reason: "cmake/jk_warnings.cmake is the reference implementation of the gated warning-flags standard: jk_target_warnings/jk_suppress_sdk_warnings encode the exact warnings-as-errors + extended diagnostic set the doc mandates. Changing the module's flags or scope handling without updating conventions/warning-flags.md would make the standard describe a module that no longer exists."
+
   # NOTE: site/src/content/docs/reference/skills.mdx is intentionally NOT
   # mapped here. Unlike checks.mdx/configuration.mdx (which bake in per-item
   # prose that a source change must be mirrored into), skills.mdx renders its

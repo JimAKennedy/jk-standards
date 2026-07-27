@@ -4,18 +4,27 @@ title: Skills
 description: Agent skills shipped by the toolkit — teach conventions at authoring time.
 ---
 
-Status: current (2026-07-25)
+import skillsData from '../../../generated/skills.json';
 
 Agent skills shipped by this repo, under `skills/<name>/SKILL.md`. They are
 the authoring-time half of the discipline: the checks enforce the
 conventions; the skills teach coding agents to write within them in the
 first place.
 
-| Skill | Teaches |
-|---|---|
-| doc-anti-drift | Writing and maintaining docs under the anti-drift discipline: lifecycle classes, drift-map upkeep, dated status claims, symbol-based references, test-cited behavioral claims |
-| escape-hatch-discipline | Designing and using suppressions: in-band, greppable, reasoned; narrowest-scope-first; ratchet baselines |
-| sanitizer-ci-setup | Layered quality gates for native projects: ASan/UBSan/TSan matrices, sanitizer-aware tests, fuzzer wiring, notification paths that can't be ignored |
+Every entry below is generated from `skills/*/SKILL.md` frontmatter — a new
+skill appears here the moment its `SKILL.md` is committed and
+`jk-standards emit skills` runs. Nothing on this page is hand-maintained.
+
+## Catalog
+
+{skillsData.skills.map((skill) => (
+  <section key={skill.name}>
+    <h3 id={skill.name}>
+      <a href={`https://github.com/JimAKennedy/jk-standards/blob/main/${skill.path}`}>{skill.name}</a>
+    </h3>
+    <p>{skill.description}</p>
+  </section>
+))}
 
 ## Consuming
 

@@ -5,70 +5,60 @@ description: Every field of jk-standards.yaml plus the CLI surface.
 ---
 
 import CodeSnippet from '../../../components/CodeSnippet.astro';
+import schema from '../../../generated/config-schema.json';
 
-Status: current (2026-07-25)
+Status: current (2026-07-26)
 
-All project-specific surface lives in one file, `jk-standards.yaml`, at the
-consuming repo's root (override with `--config`). Every key is optional; an
-absent file yields defaults (doc root `docs/`, standard class vocabulary,
-count-drift and behavioral-claims skipped because they need project input).
+All project-specific surface lives in one file, `{schema.config_file_name}`,
+at the consuming repo's root (override with `--config`). Every key is
+optional; an absent file yields defaults (doc root `docs/`, standard class
+vocabulary, count-drift and behavioral-claims skipped because they need
+project input).
 
 The toolkit pins its own ruff version in `pyproject.toml` — this snippet is
 sliced live from the source file, so a drift in either place fails the build:
 
 <CodeSnippet file="pyproject.toml" region="ruff-config" caption="Ruff pin and line-length live in pyproject.toml." />
 
-```yaml
-version: 1
+## Fields
 
-doc_roots:                    # where docs live; default: docs/ (*.md)
-  - path: docs
-    extensions: [".md"]
-  - path: site/src/content/docs
-    extensions: [".mdx"]
+The **{schema.fields.length}** fields of `{schema.config_file_name}` are
+projected directly from the `Config` dataclass in
+[`src/jk_standards/config.py`](https://github.com/JimAKennedy/jk-standards/blob/main/src/jk_standards/config.py):
 
-exempt_dirs:                  # prefix-matched; frozen dated records
-  - docs/reviews/
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    {schema.fields.map((f) => (
+      <tr>
+        <td><code>{f.name}</code></td>
+        <td><code>{f.type}</code></td>
+        <td>
+          <code>
+            {f.default === null
+              ? 'None'
+              : typeof f.default === 'string'
+                ? JSON.stringify(f.default)
+                : JSON.stringify(f.default)}
+          </code>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
 
-taxonomy:
-  classes: [generated, gated, archived]
-  extra_files:                # root-level docs outside doc_roots
-    - IMPLEMENTATION_PLAN.md
+## Example — this repo's own config
 
-status_prose:
-  forbidden_extra:            # project-specific banned phrases
-    - pattern: 'Designed\s+For,\s+Not\s+Implemented'
-      hint: forbidden section heading — describe current state or remove
+jk-standards dogfoods itself, so its own `jk-standards.yaml` is a live
+example of every wired feature. Sliced from the source:
 
-file_line_refs:
-  extensions: [cpp, h, hpp, py, mjs, ts, md]   # ref extensions to match
-  source_roots:               # source trees whose comments are scanned
-    - path: engine/src
-      extensions: [".cpp", ".h"]
-
-count_drift:
-  triggers:                   # inventory-scoped regex phrases
-    - 'factory\s+presets?'
-    - 'chapters?\s+in\s+total'
-
-drift_map: .github/docs-drift-map.yml
-
-doc_drift:
-  deps_only_manifests:        # package.json files whose deps-only version
-    - site/package.json       # bumps (Dependabot) don't trigger mappings
-
-
-generated:                    # regenerate-and-diff pairs
-  - doc: docs/engine-spec.md
-    command: node scripts/generate-param-docs.mjs
-
-behavioral_claims:
-  sources:                    # test-index scrapers
-    - type: gtest             # gtest | js | pytest
-      path: tests
-    - type: pytest
-      path: tests
-```
+<CodeSnippet file="jk-standards.yaml" region="full-config" caption="jk-standards.yaml — the toolkit gates itself with itself." />
 
 ## CLI
 
@@ -104,8 +94,4 @@ Pre-commit (pin to a release tag):
 
 CI (the reusable workflow supplies checkout depth and base-ref wiring):
 
-```yaml
-jobs:
-  doc-discipline:
-    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.1.0
-```
+<CodeSnippet file=".github/workflows/doc-discipline.yml" region="reusable-workflow-jobs" caption="The reusable doc-discipline workflow." />

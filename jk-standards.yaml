@@ -1,4 +1,5 @@
 # jk-standards' own configuration — the toolkit gates itself with itself.
+# region:full-config
 version: 1
 
 doc_roots:
@@ -17,11 +18,13 @@ file_line_refs:
 
 # Inventory facts about the toolkit itself (how many checks, hooks, skills)
 # must not be restated as numerals in the docs — they change as checks land.
+# region:count-triggers
 count_drift:
   triggers:
     - 'checks?\s+(?:in\s+total|total)'
     - 'hooks?\s+(?:in\s+total|total)'
     - 'skills?\s+(?:in\s+total|total)'
+# endregion:count-triggers
 
 drift_map: .github/docs-drift-map.yml
 
@@ -39,6 +42,7 @@ behavioral_claims:
 # between local dev and CI even with no source change. The emitter still
 # runs at site-build time (site/package.json prebuild) so the site always
 # shows current coverage; it just isn't diff-gated.
+# region:generated-fixtures
 generated:
   - doc: site/src/generated/checks.json
     command: jk-standards emit checks
@@ -46,3 +50,5 @@ generated:
     command: jk-standards emit config-schema
   - doc: site/src/generated/skills.json
     command: jk-standards emit skills
+# endregion:generated-fixtures
+# endregion:full-config

@@ -4,7 +4,82 @@ title: Introduction
 description: What jk-standards is, what it isn't, and when to reach for it.
 ---
 
-{/* TODO(S04): fill from README's Why + What lives here sections, interpolating counts. */}
+import checksData from '../../../generated/checks.json';
+import skillsData from '../../../generated/skills.json';
 
-Placeholder page — content lands in slice S04 once the generated
-metadata (checks, config schema, skills) is available for interpolation.
+Reusable engineering-discipline toolkit: documentation anti-drift checks,
+pre-commit hooks, reusable CI workflows, and agent skills. Extracted from
+[poly](https://github.com/JimAKennedy/poly) and designed to be adopted by
+arbitrary projects with a few lines of configuration.
+
+The current shipment: **{checksData.checks.length}** static and diff-scoped
+[checks](/reference/checks/), **{skillsData.skills.length}** agent
+[skills](/reference/skills/), one reusable CI workflow, and a set of
+pre-commit hooks that wrap each doc-facing check.
+
+## Why
+
+Well-run projects accumulate discipline mechanisms — doc-drift gates,
+sanitizer matrices, escape hatches that demand written reasons — but they
+stay trapped in the repo that invented them. This repo extracts those
+mechanisms into a versioned, consumable standard so every project (mine
+or yours) can exhibit the same discipline without re-deriving it.
+
+The design principle throughout: **every check is simple (regex/diff-level),
+every escape hatch is in-band, greppable, and carries a written reason.**
+Sophistication lives in the system design, not the analysis techniques —
+which is what makes the whole thing portable.
+
+## What lives here
+
+**Doc anti-drift checks** ({checksData.checks.length} in the registry).
+Each check enforces one invariant of the documentation lifecycle —
+lifecycle classes, drift-map coupling, generated-doc freshness, dated
+status claims, symbol-based references, cited behavioral claims,
+interpolated inventory counts. See [Checks reference](/reference/checks/)
+for the full list.
+
+**Pre-commit hooks** wrap the doc-facing checks so they run on every
+commit in a consuming repo. See [Adopt in a repo](/how-to/adopt-in-a-repo/).
+
+**Reusable CI workflow** (`doc-discipline.yml`) gates PRs with the full
+check suite plus doc-drift (which needs a merge base). One `uses:` line
+in a consuming workflow file, pinned to a release tag.
+
+**Agent skills** ({skillsData.skills.length} shipped). Authoring-time
+discipline for AI coding agents — the conventions the checks enforce,
+taught at write time. See [Skills](/reference/skills/).
+
+## What it isn't
+
+- **Not a linter framework.** The checks are single-purpose scripts, each
+  one regex/diff/AST-simple. There's no plugin system; there's a registry.
+- **Not a doc generator.** The `generated-freshness` check enforces that
+  YOUR generator's output is committed and current, but jk-standards does
+  not ship one.
+- **Not a competitor to nfr-review.** nfr-review *detects* whether a repo
+  has this discipline wired up; jk-standards *enforces* it. Producer/
+  consumer split, versioned independently.
+
+## When to reach for it
+
+- Docs in your repo describe behavior that changes faster than the docs
+  themselves — you need `doc-drift` and `generated-freshness`.
+- Prose in your repo cites test outcomes or inventory counts that quietly
+  fall out of sync — you need `behavioral-claims` and `count-drift`.
+- Comments and enduring docs reference `foo.cpp:429` and rot every time {/* [file-line-ok] worked example illustrating what the check catches */}
+  someone reformats — you need `file-line-refs`.
+- You want AI coding agents in your repo to write within these
+  conventions rather than fight them — you want the [skills](/reference/skills/).
+
+If none of that resonates, this probably isn't the toolkit you're
+looking for. It's opinionated by design.
+
+## Next
+
+- [Quickstart](/guide/quickstart/) — wire it into a fresh repo in ten
+  minutes.
+- [Checks reference](/reference/checks/) — every check, its rule, and its
+  escape hatch.
+- [Configuration reference](/reference/configuration/) — every
+  `jk-standards.yaml` field with its default.

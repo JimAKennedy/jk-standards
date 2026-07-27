@@ -115,6 +115,10 @@ jobs:
       # call makes the docs' CodeSnippet coverage auditable — every
       # <CodeSnippet region=…> in the .mdx docs resolves to a real marker.
       - run: jk-standards snippet-regions
+      # Likewise boundaries runs under `jk-standards all`; the explicit call
+      # makes the dogfood's cross-directory isolation coverage auditable —
+      # every forbidden import boundary is enforced (or `boundary-ok`-suppressed).
+      - run: jk-standards boundaries
 
   # Verify the distributable artifacts build cleanly and pass twine's metadata
   # linter. Catches broken pyproject metadata / missing README before the tag
@@ -160,6 +164,36 @@ jobs:
       test-filter: "concurrency|memory"
       integration-legs: true
 
+  # Dogfood the reusable deploy-site.yml producer BUILD-ONLY (deploy: false) by
+  # consuming it here with this repo's real Python prebuild. A real deploy needs
+  # Pages grants + a live URL, so the smoke stops at `npm run build`: the deploy
+  # and verify-live jobs are gated on `inputs.deploy` and skip cleanly, proving
+  # the parameterized shape without a live publish. If the reusable producer's
+  # inputs/jobs break, publish-site.yml (the real caller) breaks — this catches
+  # it before a tag ships (mirrors reusable-workflow-smoke for doc-discipline).
+  deploy-site-smoke:
+    uses: ./.github/workflows/deploy-site.yml
+    with:
+      prebuild: jk-standards emit all
+      python-version: "3.12"
+      python-install: pip install -e ".[dev]"
+      verify: node --test tests/*.test.mjs
+      deploy: false
+
+  # Prove the SAME reusable producer covers the Node-only (python-less) prebuild
+  # path via the scratch Astro/Starlight fixture: `python-version: ""` skips the
+  # Python leg entirely and the `.mjs` prebuild emits rules.json before the
+  # build. Build-only (deploy: false) like the sibling smoke. This is the
+  # executable half of the single-workflow proof — one parameterized workflow
+  # covers both this repo's Python prebuild and an nfr-review-style Node prebuild.
+  deploy-site-fixture-smoke:
+    uses: ./.github/workflows/deploy-site.yml
+    with:
+      working-directory: tests/fixtures/deploy-site
+      prebuild: node scripts/gen-rules.mjs
+      python-version: ""
+      deploy: false
+
   # Build the Starlight site. Fails the PR if any MDX doc is broken, a
   # CodeSnippet region marker is missing, or an internal link is invalid.
   # The site's prebuild hook runs `jk-standards emit all`, so the Python
@@ -197,26 +231,18 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-  # Secret scanning. Gitleaks needs full history for effective coverage;
-  # pull_request events already default to the merge commit — fetch-depth: 0
-  # ensures the branch history is present.
+  # Dogfood the reusable secrets-scan workflow by consuming it here, pointed at
+  # this same commit. Gitleaks needs full history for effective coverage, which
+  # the reusable workflow's fetch-depth: 0 checkout supplies. If the reusable
+  # workflow's shape breaks, downstream consumers break — this catches it before
+  # a tag ships (mirrors reusable-workflow-smoke for doc-discipline).
   secrets-scan:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    uses: ./.github/workflows/secrets-scan.yml
 
   # Single check for branch protection to require. If any dependency job
   # fails, skips, or is cancelled, this fails — no advisory-pass loophole.
   ci-complete:
-    needs: [test, coverage, pre-commit, emit-check, dogfood, package, reusable-workflow-smoke, sanitizer-nightly-smoke, secrets-scan, site-build]
+    needs: [test, coverage, pre-commit, emit-check, dogfood, package, reusable-workflow-smoke, sanitizer-nightly-smoke, deploy-site-smoke, deploy-site-fixture-smoke, secrets-scan, site-build]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -230,6 +256,8 @@ jobs:
              [[ "${{ needs.package.result }}" != "success" ]] || \
              [[ "${{ needs.reusable-workflow-smoke.result }}" != "success" ]] || \
              [[ "${{ needs.sanitizer-nightly-smoke.result }}" != "success" ]] || \
+             [[ "${{ needs.deploy-site-smoke.result }}" != "success" ]] || \
+             [[ "${{ needs.deploy-site-fixture-smoke.result }}" != "success" ]] || \
              [[ "${{ needs.secrets-scan.result }}" != "success" ]] || \
              [[ "${{ needs.site-build.result }}" != "success" ]]; then
             echo "One or more CI jobs failed"

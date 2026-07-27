@@ -13,11 +13,15 @@ first place.
 
 | Skill | Teaches |
 |---|---|
+| architecture-definition | Authoring an ARCHITECTURE.md that conforms to the architecture standard: the four required sections (components, boundaries, data flow, invariants+enforcement) and the bidirectional rule that no invariant is listed without a named mechanism and no mechanism runs without a stated invariant, including turning a boundary into an enforceable `boundaries`-check rule |
 | branch-discipline | Keeping milestone work landable: one branch per milestone, never stacking the next milestone on an unmerged one (the squash-merge conflict-replay rationale), and re-running `pre-commit run --all-files` after every rebase |
 | ci-hygiene | Structuring CI for correctness and cost: layered cost-ordered gates, SHA-pinned actions on a weekly dependabot cadence, a single aggregation gate for branch protection, and artifact-retention conventions (the generic layer beneath sanitizer-ci-setup) |
+| determinism-testing | Making DSP output reproducible so golden tests catch regressions: the identical `(patch, seed, transport)` → byte-identical output contract, deriving oscillator/LFO phase from absolute transport time rather than per-block accumulation, and wiring a checked-in golden/snapshot suite into CI as a required gate |
 | doc-anti-drift | Writing and maintaining docs under the anti-drift discipline: lifecycle classes, drift-map upkeep, dated status claims, symbol-based references, test-cited behavioral claims |
 | escape-hatch-discipline | Designing and using suppressions: in-band, greppable, reasoned; narrowest-scope-first; ratchet baselines |
+| realtime-audio-safety | Keeping the audio callback thread real-time-safe — no heap allocation, locks, blocking syscalls, exceptions, or unbounded container growth — and gating it with the greppable `check-realtime-safety.sh` scanner honoring an in-band `RT-SAFE-OK: <reason>` waiver with a live suppression count, with RealtimeSanitizer as the dynamic backstop |
 | sanitizer-ci-setup | Layered quality gates for native projects: ASan/UBSan/TSan matrices, sanitizer-aware tests, fuzzer wiring, notification paths that can't be ignored |
+| versioned-state-serialization | Serializing persistent state so old data still loads after the format changes: write a version tag first, branch on it when reading, and never reinterpret unversioned bytes, illustrated with JUCE/VST3 plugin preset/patch state and the "preset compatibility time bomb" anti-pattern |
 
 ## Consuming
 

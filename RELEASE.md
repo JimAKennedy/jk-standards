@@ -13,13 +13,13 @@ jk-standards emit all --check    # generated site fixtures are fresh (no drift)
 ruff check .                     # lint
 ruff format --check .            # format
 pytest -q                        # full test suite
-python -c "import jk_standards; assert jk_standards.__version__ == '0.3.0'"
+python -c "import jk_standards; assert jk_standards.__version__ == '0.5.0'"
 ```
 
 Version lives in exactly two source-of-truth sites and must agree:
 
-- `pyproject.toml` → `version = "0.3.0"`
-- `src/jk_standards/__init__.py` → `__version__ = "0.3.0"`
+- `pyproject.toml` → `version = "0.5.0"`
+- `src/jk_standards/__init__.py` → `__version__ = "0.5.0"`
 
 `CHANGELOG.md` must carry a section for the version being tagged, with each
 present-tense entry mapping 1:1 to a shipped file (MEM001 invariant).
@@ -29,12 +29,12 @@ present-tense entry mapping 1:1 to a shipped file (MEM001 invariant).
 Once `main` is green and the checklist above passes:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.5.0
+git push origin v0.5.0
 ```
 
 The tag is immutable release provenance. Consumers pin to it via the adoption
-`rev:` in their `.pre-commit-config.yaml` and the `@v0.3.0` references in the
+`rev:` in their `.pre-commit-config.yaml` and the `@v0.5.0` references in the
 quickstart and adopt-in-a-repo guides.
 
 ## Notes on generated fixtures

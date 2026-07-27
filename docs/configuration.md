@@ -76,6 +76,14 @@ snippet_regions:              # doc→region references resolve to real markers
   markers:                    # per-file-type marker comment prefixes
     - extensions: [".sql"]
       prefixes: ["--"]
+
+boundaries:                   # forbidden cross-directory references
+  rules:
+    - name: checks-must-not-import-cli
+      from: src/jk_standards/checks   # directory scanned recursively
+      forbid: 'jk_standards\.cli'     # regex a line MUST NOT match
+      extensions: [".py"]             # files to scan; empty = all
+      hint: a check must not reach back into the CLI
 ```
 
 The `action_pinning` section tunes the `action-pinning` check: `workflow_dir`
@@ -93,6 +101,14 @@ may follow, overriding the built-in `//`, `#`, and `<!-- -->` forms.
 `doc_roots` narrows which docs are scanned, defaulting to the top-level
 `doc_roots`. Every field defaults, so the section is optional. See the
 [checks reference](checks.md#snippet-regions) for the rule these fields tune.
+
+The `boundaries` section supplies the `boundaries` check with `rules`. Each
+rule names a `from` directory (scanned recursively), a `forbid` regex a line
+under it must not match, an optional `extensions` filter (empty scans every
+file), an optional `name` shown on each finding, and an optional `hint`
+explaining the boundary. `from` and `forbid` are required; a rule with neither
+is meaningless. With no rules the check is skipped. See the
+[checks reference](checks.md#boundaries) for the rule these fields tune.
 
 ## CLI
 

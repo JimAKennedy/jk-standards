@@ -1,6 +1,11 @@
 {
   "skills": [
     {
+      "description": "Author and maintain an ARCHITECTURE.md that conforms to the jk-standards architecture standard — the four required sections (components, boundaries, data flow, invariants+enforcement) and the bidirectional rule that no invariant may be listed without a named mechanism and no mechanism should run without a stated invariant. Use when creating or editing an architecture document, adding an architectural invariant, or wiring a boundary into an enforceable check.",
+      "name": "architecture-definition",
+      "path": "skills/architecture-definition/SKILL.md"
+    },
+    {
       "description": "Keep milestone work on one branch at a time and land it cleanly — one branch per milestone, never stack the next milestone on an unmerged one, and re-run the full pre-commit suite after every rebase. Use when starting, rebasing, or merging a milestone branch, or when tempted to branch the next milestone off an open PR.",
       "name": "branch-discipline",
       "path": "skills/branch-discipline/SKILL.md"
@@ -9,6 +14,11 @@
       "description": "Structure CI for correctness and cost — layered cost-ordered gates, SHA-pinned actions on a weekly dependabot cadence, a single aggregation gate for branch protection, and artifact-retention conventions. Use when setting up, auditing, or reviewing a project's CI workflow structure and dependency-update hygiene (the generic layer, not the sanitizer/native layer — see sanitizer-ci-setup).",
       "name": "ci-hygiene",
       "path": "skills/ci-hygiene/SKILL.md"
+    },
+    {
+      "description": "Make DSP output reproducible so golden tests can catch regressions — identical (patch, seed, transport) must render byte-identical output, oscillator/LFO phase must derive from absolute transport time rather than per-block accumulation, and a checked-in golden/snapshot suite gates every DSP change in CI. Use when writing or auditing determinism/golden tests for audio DSP, synths, or any render pipeline whose output must be reproducible run-to-run.",
+      "name": "determinism-testing",
+      "path": "skills/determinism-testing/SKILL.md"
     },
     {
       "description": "Write and maintain documentation under the jk-standards anti-drift discipline — doc lifecycle classes, drift maps, dated status claims, symbol-based references, test-cited behavioral claims. Use whenever creating or editing docs in a repo that has a jk-standards.yaml.",
@@ -21,10 +31,20 @@
       "path": "skills/escape-hatch-discipline/SKILL.md"
     },
     {
+      "description": "Keep the audio callback thread real-time-safe — no heap allocation, locks, blocking syscalls, exceptions, or unbounded container growth — and gate it with a greppable check honoring an RT-SAFE-OK waiver. Use when writing or reviewing audio-callback / DSP render code, or wiring an RT-safety check into CI for a C/C++ audio project.",
+      "name": "realtime-audio-safety",
+      "path": "skills/realtime-audio-safety/SKILL.md"
+    },
+    {
       "description": "Wire ASan/UBSan/TSan and fuzzing into CI for C/C++ projects — nightly sanitizer matrices, issue-dedupe notification paths, sanitizer-aware stress tests, integration-surface instrumentation. Use when setting up or auditing the native-code sanitizer layer of a project's CI.",
       "name": "sanitizer-ci-setup",
       "path": "skills/sanitizer-ci-setup/SKILL.md"
+    },
+    {
+      "description": "Serialize persistent state so old data still loads after the format changes — write a version tag first, branch on it when reading, and never reinterpret unversioned bytes. Use when designing or changing any serialized-state format that outlives its writer — plugin preset/patch state, save files, on-disk caches, or wire formats a future build must still read.",
+      "name": "versioned-state-serialization",
+      "path": "skills/versioned-state-serialization/SKILL.md"
     }
   ],
-  "toolkit_version": "0.3.0"
+  "toolkit_version": "0.5.0"
 }

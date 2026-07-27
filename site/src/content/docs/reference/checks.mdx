@@ -218,3 +218,43 @@ line immediately above it
 [verified: test_checks::test_snippet_regions_escape_hatch_line_above]
 suppresses the finding — the same two-line window used by action-pinning,
 count-drift, and file-line-refs.
+
+## boundaries
+
+A *boundary* is a directed constraint between components — one directory
+**MUST NOT** reference another (the CLI may call the check registry, but a
+check must not reach back into the CLI). It is the most common architectural
+invariant and the easiest to break by accident, so this check turns a stated
+boundary into a grep-level gate: each configured rule names a `from` directory,
+an optional file-`extensions` filter, and a `forbid` regex, and any line under
+that directory matching the regex is flagged with `file:line`
+[verified: test_checks::test_boundaries_forbidden_reference_flagged_with_file_line].
+A clean tree passes
+[verified: test_checks::test_boundaries_clean_tree_passes], and every matching
+line adds to the returned violation count
+[verified: test_checks::test_boundaries_multiple_violations_counted]. This is a
+line-level textual gate, not an import graph — it catches the reference forms
+you name and nothing subtler.
+
+The `extensions` filter narrows the scan to the relevant source files, so a
+prose mention of the forbidden path in a neighbouring `.md` note is not a
+violation
+[verified: test_checks::test_boundaries_extensions_filter_ignores_other_files].
+A rule whose `from` directory is absent skips cleanly rather than crashing
+[verified: test_checks::test_boundaries_missing_from_dir_skips_rule], and a
+malformed `forbid` regex is surfaced as a violation so a broken rule fails
+loudly instead of silently passing
+[verified: test_checks::test_boundaries_invalid_forbid_regex_is_a_violation].
+With no `boundaries` rules configured the check is a clean no-op
+[verified: test_checks::test_boundaries_no_rules_configured_skips].
+
+Escape hatch: a `# boundary-ok: <reason>` marker on the offending line
+[verified: test_checks::test_boundaries_ok_marker_same_line_suppresses] or the
+line immediately above it
+[verified: test_checks::test_boundaries_ok_marker_line_above_suppresses]
+suppresses the finding, honoring any language-appropriate comment opener
+(`#`, `//`, `/*`, `<!--`, `--`, `;`). Unlike the other escape hatches, live
+suppressions are counted and reported in the check's summary line
+[verified: test_checks::test_boundaries_suppression_count_reported_in_summary],
+so rising escape-hatch usage is visible in CI logs rather than silent. Rules
+are declared in the `boundaries` config section.

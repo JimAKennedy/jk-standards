@@ -41,6 +41,29 @@ mappings:
     reason: "skills.md is the index of shipped skills and their intended use. Adding or renaming a skill changes what consumers vendor via skills-lock.json."
 
   - sources:
-      - "skills/**"
-    doc: "site/src/content/docs/reference/skills.mdx"
-    reason: "reference/skills.mdx is the public site's skill catalog. A skill addition/rename without a site update ships a deployed site that lies to users."
+      - "conventions/**"
+    doc: "site/src/content/docs/reference/conventions.mdx"
+    reason: "reference/conventions.mdx is the public site's index of the native-code conventions (cpp-language-standard, msvc-portability, warning-flags). Unlike the generated skills.mdx, it bakes per-item prose summarizing each standard's governing rule, so a conventions/** source change without a site update ships a deployed page whose summary diverges from the standard it describes."
+
+  - sources:
+      - "src/jk_standards/checks/**"
+      - "src/jk_standards/cli.py"
+      - "src/jk_standards/emit.py"
+    doc: "ARCHITECTURE.md"
+    reason: "ARCHITECTURE.md is the repo's own architecture exemplar: its component map, boundaries, and invariant->mechanism table describe the check registry, CLI, and emitters. A structural change to any of these without an ARCHITECTURE.md update drifts the very document the architecture standard points readers to."
+
+  - sources:
+      - "cmake/jk_warnings.cmake"
+    doc: "conventions/warning-flags.md"
+    reason: "cmake/jk_warnings.cmake is the reference implementation of the gated warning-flags standard: jk_target_warnings/jk_suppress_sdk_warnings encode the exact warnings-as-errors + extended diagnostic set the doc mandates. Changing the module's flags or scope handling without updating conventions/warning-flags.md would make the standard describe a module that no longer exists."
+
+  # NOTE: site/src/content/docs/reference/skills.mdx is intentionally NOT
+  # mapped here. Unlike checks.mdx/configuration.mdx (which bake in per-item
+  # prose that a source change must be mirrored into), skills.mdx renders its
+  # catalog by importing site/src/generated/skills.json and mapping over it at
+  # build time — "Nothing on this page is hand-maintained." A skill add/rename
+  # updates skills.json (gated by generated-freshness / emit-check), and the
+  # page reflects it automatically with no source edit to make. Mapping a
+  # touch-correlation rule at a build-time-generated page only manufactures a
+  # false positive on every skill change (the map's own header: "Do NOT map
+  # generated docs"). M006 will make this "cannot-drift" status explicit.

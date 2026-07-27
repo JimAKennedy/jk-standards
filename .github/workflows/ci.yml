@@ -145,6 +145,13 @@ jobs:
         working-directory: site
       - run: npm run build
         working-directory: site
+      # Site claim-tests cross-check rendered HTML against S03 fixtures — a
+      # divergence between reference-page content and the generated JSON
+      # fails here rather than in a reader's browser. Skip the pretest hook
+      # since npm run build already ran above.
+      - name: Site claim tests
+        run: node --test tests/*.test.mjs
+        working-directory: site
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: site-dist

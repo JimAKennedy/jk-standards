@@ -24,6 +24,12 @@ count_drift:
     - 'checks?\s+(?:in\s+total|total)'
     - 'hooks?\s+(?:in\s+total|total)'
     - 'skills?\s+(?:in\s+total|total)'
+    - 'checks?\s+ship(?:s|ped)?'
+    - 'hooks?\s+ship(?:s|ped)?'
+    - 'skills?\s+ship(?:s|ped)?'
+    - 'fields?\s+(?:in|of)\s+(?:the\s+)?config'
+    - '(?:checks?|skills?|hooks?|fields?)\s+are\s+available'
+    - '(?:checks?|skills?|hooks?|fields?)\s+are\s+registered'
 # endregion:count-triggers
 
 drift_map: .github/docs-drift-map.yml

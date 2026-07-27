@@ -28,6 +28,59 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `tests/fixtures/realtime-audio-safety/waived_callback.cpp`): proves the
   scanner flags a violating audio callback (exit 1) and passes an
   `RT-SAFE-OK`-waived one (exit 0).
+- **`versioned-state-serialization` skill**
+  (`skills/versioned-state-serialization/SKILL.md`): a prose-only native-code
+  authoring discipline for serialized state that outlives its writer — write a
+  format-version tag first, branch on it when reading so new builds still load
+  old data, and never reinterpret unversioned bytes — illustrated with JUCE/VST3
+  plugin preset/patch state and the "preset compatibility time bomb"
+  anti-pattern. Indexed in `docs/skills.md`.
+- **`determinism-testing` skill**
+  (`skills/determinism-testing/SKILL.md`): a native-code discipline for making
+  DSP output reproducible so golden tests catch regressions — the identical
+  `(patch, seed, transport)` → byte-identical output contract, deriving
+  oscillator/LFO phase from absolute transport time rather than per-block
+  accumulation, and wiring a checked-in golden/snapshot suite into CI as a
+  required gate. Indexed in `docs/skills.md` and projected into
+  `site/src/generated/skills.json`.
+- **`cpp-language-standard` convention**
+  (`conventions/cpp-language-standard.md`): the toolkit's first gated C++
+  *standard* — a normative, RFC-2119 specification that fixes the single ISO C++
+  language revision a consuming repository targets, the per-target selection
+  mechanism, and the extensions-off discipline that keeps a build from silently
+  outrunning its declared revision.
+- **`msvc-portability` convention**
+  (`conventions/msvc-portability.md`): the gated MSVC sibling standard — the
+  RFC-2119 discipline that keeps C++ which compiles cleanly under Clang and GCC
+  from silently failing or miscompiling under the Microsoft Visual C++
+  toolchain, so a repository that claims Windows support actually builds there.
+- **`warning-flags` convention**
+  (`conventions/warning-flags.md`): the third gated native-code standard — the
+  RFC-2119 compiler-warning discipline a repository holds its C++ to: which
+  diagnostics are enabled, that they are fatal, that the set is identical across
+  toolchains, and how a warning is suppressed on the rare occasion it is
+  warranted.
+- **`jk_warnings.cmake` reference implementation**
+  (`cmake/jk_warnings.cmake`): the shared, named warning set the
+  `warning-flags` standard describes, encoded as CMake — `jk_target_warnings`
+  applies the strict warnings-as-errors set (`-Wall -Wextra` + high-value extras
+  on Clang/GCC, `/W4` on MSVC, `-Werror`/`/WX` on both) to a first-party target
+  and `jk_suppress_sdk_warnings` isolates a third-party target from it. Gated
+  code: a `.github/docs-drift-map.yml` entry pairs it to
+  `conventions/warning-flags.md` so the module and its standard must evolve
+  together.
+- **Governed `conventions/` doc root** (`jk-standards.yaml`): the new
+  `conventions/` directory registered as a `doc_root` so its `class: gated`
+  standards are actually swept by `doc-taxonomy`, `status-prose`, and
+  `count-drift` rather than gated only cosmetically.
+
+### Changed
+
+- Package version bumped to `0.5.0` in the two source-of-truth files
+  (`pyproject.toml` and `src/jk_standards/__init__.py`); the
+  `site/src/generated/*.json` fixtures were regenerated to embed the new
+  `toolkit_version`, and RELEASE.md pins plus the README Status block moved to
+  `v0.5.0`.
 
 ## [0.4.0] - 2026-07-27
 
@@ -182,6 +235,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `behavioral-claims`, `generated-freshness`, `doc-drift`), the `jk-standards`
   CLI, the self-hosting `jk-standards.yaml` config, and the dogfood CI job.
 
+[0.5.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.5.0
 [0.4.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.4.0
 [0.3.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.3.0
 [0.2.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.2.0

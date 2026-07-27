@@ -16,6 +16,11 @@
       "path": "skills/ci-hygiene/SKILL.md"
     },
     {
+      "description": "Make DSP output reproducible so golden tests can catch regressions — identical (patch, seed, transport) must render byte-identical output, oscillator/LFO phase must derive from absolute transport time rather than per-block accumulation, and a checked-in golden/snapshot suite gates every DSP change in CI. Use when writing or auditing determinism/golden tests for audio DSP, synths, or any render pipeline whose output must be reproducible run-to-run.",
+      "name": "determinism-testing",
+      "path": "skills/determinism-testing/SKILL.md"
+    },
+    {
       "description": "Write and maintain documentation under the jk-standards anti-drift discipline — doc lifecycle classes, drift maps, dated status claims, symbol-based references, test-cited behavioral claims. Use whenever creating or editing docs in a repo that has a jk-standards.yaml.",
       "name": "doc-anti-drift",
       "path": "skills/doc-anti-drift/SKILL.md"

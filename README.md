@@ -82,6 +82,9 @@ taught at write time:
   allocation, locks, blocking syscalls, exceptions, or unbounded growth), gated by the
   greppable `check-realtime-safety.sh` scanner with an `RT-SAFE-OK` waiver, RealtimeSanitizer as the dynamic backstop
 - **sanitizer-ci-setup** — the nightly ASan/UBSan/TSan matrix + fuzzer wiring recipe
+- **versioned-state-serialization** — serialize persistent state so old data still loads
+  after a format change: write a version tag first, branch on it when reading, never
+  reinterpret unversioned bytes (the "preset compatibility time bomb" anti-pattern)
 
 A consuming repo vendors these skills through a `skills-lock.json` and the
 `install-skills` CLI subcommand rather than copying files by hand:

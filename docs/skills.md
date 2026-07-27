@@ -20,6 +20,7 @@ first place.
 | escape-hatch-discipline | Designing and using suppressions: in-band, greppable, reasoned; narrowest-scope-first; ratchet baselines |
 | realtime-audio-safety | Keeping the audio callback thread real-time-safe — no heap allocation, locks, blocking syscalls, exceptions, or unbounded container growth — and gating it with the greppable `check-realtime-safety.sh` scanner honoring an in-band `RT-SAFE-OK: <reason>` waiver with a live suppression count, with RealtimeSanitizer as the dynamic backstop |
 | sanitizer-ci-setup | Layered quality gates for native projects: ASan/UBSan/TSan matrices, sanitizer-aware tests, fuzzer wiring, notification paths that can't be ignored |
+| versioned-state-serialization | Serializing persistent state so old data still loads after the format changes: write a version tag first, branch on it when reading, and never reinterpret unversioned bytes, illustrated with JUCE/VST3 plugin preset/patch state and the "preset compatibility time bomb" anti-pattern |
 
 ## Consuming
 

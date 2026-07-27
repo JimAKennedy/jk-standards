@@ -1,0 +1,128 @@
+# Reusable nightly sanitizer matrix. Consume from a pinned tag on a schedule:
+#
+#   on:
+#     schedule:
+#       - cron: "0 5 * * *"   # nightly, after the day's merges settle
+#   jobs:
+#     sanitizers:
+#       uses: JimAKennedy/jk-standards/.github/workflows/sanitizer-nightly.yml@v0.3.0
+#       with:
+#         test-filter: "concurrency|memory"   # ctest -R regex for the hot suites
+#         integration-legs: true               # also instrument the host/plugin boundary
+#
+# ASan/UBSan/TSan run as separate mutually-exclusive jobs (see
+# skills/sanitizer-ci-setup/SKILL.md). Jobs fail honestly — no
+# continue-on-error masking — and the `notify` job (if: always()) aggregates
+# every leg's result and drives a single, label-deduped `sanitizer-failure`
+# issue: open-or-update on any red leg, close on all-green.
+
+name: sanitizer-nightly
+
+on:
+  workflow_call:
+    inputs:
+      test-filter:
+        description: ctest -R regex selecting the concurrency/memory hot suites (empty = full suite)
+        type: string
+        default: ""
+      integration-legs:
+        description: also run non-core-only legs that instrument the host/plugin boundary
+        type: boolean
+        default: false
+
+# Least-privilege at the top level; the notify job re-grants issues: write
+# only for itself.
+permissions:
+  contents: read
+
+# region:sanitizer-nightly-jobs
+jobs:
+  asan:
+    runs-on: ubuntu-latest
+    env:
+      # -fno-omit-frame-pointer keeps the frames ASan needs for a readable
+      # report; the suppression file exists from day one even when empty.
+      ASAN_OPTIONS: detect_leaks=1
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Build and test under AddressSanitizer
+        env:
+          TEST_FILTER: ${{ inputs.test-filter }}
+          INTEGRATION_LEGS: ${{ inputs.integration-legs }}
+        run: |
+          # Placeholder for a project-specific ASan debug build + ctest run.
+          # jk-standards is pure Python and has nothing to instrument, so this
+          # leg is shape-only; a native consumer replaces this step with its
+          # own `cmake --preset asan && ctest -R "$TEST_FILTER"` invocation.
+          echo "ASan leg: test-filter='${TEST_FILTER}' integration-legs='${INTEGRATION_LEGS}'"
+
+  notify:
+    needs: [asan]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Open, update, or close the sanitizer-failure issue
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          # toJSON(needs) carries every leg's `result`; iterating it keeps the
+          # aggregate honest as T02 adds ubsan/tsan/integration legs without
+          # touching this script.
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        with:
+          script: |
+            const LABEL = 'sanitizer-failure';
+            const needs = JSON.parse(process.env.NEEDS_JSON);
+            const { owner, repo } = context.repo;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            // A leg is failed if its result is anything other than 'success'
+            // ('failure', 'cancelled', 'skipped'). No continue-on-error can
+            // launder a red leg into a green aggregate here.
+            const failedLegs = Object.entries(needs)
+              .filter(([, v]) => v.result !== 'success')
+              .map(([name]) => name);
+
+            // Label-based dedupe: one living issue, never per-run spam.
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: LABEL, per_page: 100,
+            });
+
+            if (failedLegs.length > 0) {
+              const body = [
+                'Nightly sanitizer run failed.',
+                '',
+                `Failing legs: ${failedLegs.join(', ')}`,
+                '',
+                `Run: ${runUrl}`,
+              ].join('\n');
+              if (open.length > 0) {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: open[0].number, body,
+                });
+                core.notice(`Updated existing #${open[0].number} (${failedLegs.length} failing leg(s))`);
+              } else {
+                const created = await github.rest.issues.create({
+                  owner, repo, title: 'Nightly sanitizer failure', labels: [LABEL], body,
+                });
+                core.notice(`Opened #${created.data.number} (${failedLegs.length} failing leg(s))`);
+              }
+            } else if (open.length > 0) {
+              // All green: comment the run URL and close every open issue so a
+              // stray duplicate can never linger.
+              for (const issue of open) {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: issue.number,
+                  body: `All sanitizer legs green. Closing.\n\nRun: ${runUrl}`,
+                });
+                await github.rest.issues.update({
+                  owner, repo, issue_number: issue.number, state: 'closed',
+                });
+                core.notice(`Closed #${issue.number}`);
+              }
+            } else {
+              core.info('All sanitizer legs green; no open sanitizer-failure issue. Nothing to do.');
+            }
+# endregion:sanitizer-nightly-jobs

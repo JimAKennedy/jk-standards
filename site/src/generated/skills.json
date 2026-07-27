@@ -1,0 +1,20 @@
+{
+  "skills": [
+    {
+      "description": "Write and maintain documentation under the jk-standards anti-drift discipline — doc lifecycle classes, drift maps, dated status claims, symbol-based references, test-cited behavioral claims. Use whenever creating or editing docs in a repo that has a jk-standards.yaml.",
+      "name": "doc-anti-drift",
+      "path": "skills/doc-anti-drift/SKILL.md"
+    },
+    {
+      "description": "Design and use lint/check suppressions correctly — every escape hatch in-band, greppable, and carrying a written reason. Use when suppressing any finding (linter, sanitizer, review scanner, doc check) or when adding a new check that needs an exemption mechanism.",
+      "name": "escape-hatch-discipline",
+      "path": "skills/escape-hatch-discipline/SKILL.md"
+    },
+    {
+      "description": "Wire ASan/UBSan/TSan, fuzzing, and layered quality gates into CI for C/C++ projects — nightly sanitizer matrices, issue-dedupe notification, sanitizer-aware tests, strictness gradients. Use when setting up or auditing CI for a native-code project.",
+      "name": "sanitizer-ci-setup",
+      "path": "skills/sanitizer-ci-setup/SKILL.md"
+    }
+  ],
+  "toolkit_version": "0.1.0"
+}

@@ -15,13 +15,54 @@ import os
 import sys
 from pathlib import Path
 
-from jk_standards import __version__
+from jk_standards import __version__, emit
 from jk_standards.checks import CHECKS, STATIC_CHECKS
 from jk_standards.config import ConfigError, load_config
 from jk_standards.gitutil import GitError
 
 
+def _emit_main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="jk-standards emit")
+    parser.add_argument("name", choices=[*emit.EMITTERS, "all"])
+    parser.add_argument("--root", type=Path, default=Path.cwd())
+    parser.add_argument("--check", action="store_true", help="fail on drift instead of writing")
+    args = parser.parse_args(argv)
+    return emit.run(args.root.resolve(), args.name, args.check)
+
+
+# argparse can't express `emit` as either a top-level verb OR a check name
+# without subparsers (a bigger refactor). Split argv before argparse sees it:
+# skip past `--flag value` pairs to locate `emit`, then hand the remainder to
+# the emit subparser.
+_PRE_EMIT_FLAGS_WITH_VALUE = {"--root", "--config", "--base"}
+
+
+def _extract_emit_argv(raw: list[str]) -> list[str] | None:
+    """Return the argv to pass to `_emit_main` if `emit` is present, else None."""
+    i = 0
+    pre: list[str] = []
+    while i < len(raw):
+        tok = raw[i]
+        if tok == "emit":
+            return pre + raw[i + 1 :]
+        if tok in _PRE_EMIT_FLAGS_WITH_VALUE and i + 1 < len(raw):
+            pre.extend(raw[i : i + 2])
+            i += 2
+            continue
+        if tok.startswith("--") and "=" in tok:
+            pre.append(tok)
+            i += 1
+            continue
+        return None
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
+    raw = sys.argv[1:] if argv is None else argv
+    emit_argv = _extract_emit_argv(raw)
+    if emit_argv is not None:
+        return _emit_main(emit_argv)
+
     parser = argparse.ArgumentParser(prog="jk-standards", description=__doc__)
     parser.add_argument("check", choices=[*CHECKS, "all", "list"])
     parser.add_argument("--root", type=Path, default=Path.cwd())

@@ -1,0 +1,106 @@
+{
+  "config_file_name": "jk-standards.yaml",
+  "fields": [
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "claim_sources",
+      "type": "list[ClaimSource]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "count_triggers",
+      "type": "list[str]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "deps_only_manifests",
+      "type": "list[str]"
+    },
+    {
+      "default": [
+        {
+          "extensions": [
+            ".md"
+          ],
+          "path": "docs"
+        }
+      ],
+      "has_default_factory": true,
+      "name": "doc_roots",
+      "type": "list[DocRoot]"
+    },
+    {
+      "default": ".github/docs-drift-map.yml",
+      "has_default_factory": false,
+      "name": "drift_map",
+      "type": "str"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "exempt_dirs",
+      "type": "list[str]"
+    },
+    {
+      "default": [
+        "c",
+        "cc",
+        "cpp",
+        "h",
+        "hpp",
+        "py",
+        "js",
+        "mjs",
+        "ts",
+        "tsx",
+        "astro",
+        "md",
+        "mdx",
+        "sh",
+        "yml",
+        "yaml"
+      ],
+      "has_default_factory": true,
+      "name": "file_line_extensions",
+      "type": "list[str]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "file_line_source_roots",
+      "type": "list[SourceRoot]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "generated",
+      "type": "list[GeneratedDoc]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "status_forbidden_extra",
+      "type": "list[ForbiddenPhrase]"
+    },
+    {
+      "default": [
+        "generated",
+        "gated",
+        "archived"
+      ],
+      "has_default_factory": true,
+      "name": "taxonomy_classes",
+      "type": "list[str]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "taxonomy_extra_files",
+      "type": "list[str]"
+    }
+  ],
+  "toolkit_version": "0.1.0"
+}

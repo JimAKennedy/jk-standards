@@ -101,3 +101,27 @@ def test_all_runs_doc_drift_with_env_var(tmp_path, monkeypatch, spy_checks):
     assert len(doc_drift_calls) == 1
     # env-var branch passes args.base which is None
     assert doc_drift_calls[0][2] == {"base": None}
+
+
+# --- emit dispatch ---------------------------------------------------------
+
+
+def test_emit_verb_after_root_flag(tmp_path, capsys):
+    """`jk-standards --root DIR emit checks` must find `emit` past the flag."""
+    from jk_standards import emit as emit_mod
+
+    fixture_dir = tmp_path / "site" / "src" / "generated"
+    fixture_dir.mkdir(parents=True)
+    (fixture_dir / "checks.json").write_bytes(emit_mod.emit_checks(tmp_path))
+    # Would previously fail with argparse error: `--root: expected one argument`.
+    assert main(["--root", str(tmp_path), "emit", "checks", "--check"]) == 0
+
+
+def test_emit_verb_with_root_after_verb(tmp_path):
+    """`jk-standards emit checks --root DIR` still works (existing shape)."""
+    from jk_standards import emit as emit_mod
+
+    fixture_dir = tmp_path / "site" / "src" / "generated"
+    fixture_dir.mkdir(parents=True)
+    (fixture_dir / "checks.json").write_bytes(emit_mod.emit_checks(tmp_path))
+    assert main(["emit", "checks", "--root", str(tmp_path), "--check"]) == 0

@@ -1,0 +1,47 @@
+{
+  "checks": [
+    {
+      "is_static": true,
+      "name": "behavioral-claims",
+      "source_file": "src/jk_standards/checks/behavioral_claims.py",
+      "summary": "behavioral-claims: prose claims cite tests that actually exist."
+    },
+    {
+      "is_static": true,
+      "name": "count-drift",
+      "source_file": "src/jk_standards/checks/count_drift.py",
+      "summary": "count-drift: inventory facts live in one place, not restated as numerals."
+    },
+    {
+      "is_static": false,
+      "name": "doc-drift",
+      "source_file": "src/jk_standards/checks/doc_drift.py",
+      "summary": "doc-drift: code that a doc describes cannot move without the doc."
+    },
+    {
+      "is_static": true,
+      "name": "doc-taxonomy",
+      "source_file": "src/jk_standards/checks/doc_taxonomy.py",
+      "summary": "doc-taxonomy: every doc must declare a lifecycle class."
+    },
+    {
+      "is_static": true,
+      "name": "file-line-refs",
+      "source_file": "src/jk_standards/checks/file_line_refs.py",
+      "summary": "file-line-refs: enduring docs and source comments cite symbols, not lines."
+    },
+    {
+      "is_static": true,
+      "name": "generated-freshness",
+      "source_file": "src/jk_standards/checks/generated_freshness.py",
+      "summary": "generated-freshness: generated docs must diff clean against their generator."
+    },
+    {
+      "is_static": true,
+      "name": "status-prose",
+      "source_file": "src/jk_standards/checks/status_prose.py",
+      "summary": "status-prose: ban stale progress-tracking prose in gated docs."
+    }
+  ],
+  "toolkit_version": "0.1.0"
+}

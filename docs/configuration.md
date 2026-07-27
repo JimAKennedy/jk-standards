@@ -70,6 +70,12 @@ jk-standards <check-name> [--root DIR] [--config FILE] [--base REF]
 jk-standards all            # every configured static check (+ doc-drift
                             # when --base or GITHUB_BASE_REF is available)
 jk-standards list           # list check names
+jk-standards emit <name>    # regenerate one drift-proof fixture under
+                            # site/src/generated/; <name> is one of
+                            # checks | config-schema | skills | coverage | all
+jk-standards emit <name> --check
+                            # exit 1 if the on-disk fixture differs from
+                            # what would be emitted now (CI drift gate)
 ```
 
 Exit codes: 0 clean, 1 violations, 2 usage/config error. Checks whose

@@ -34,6 +34,11 @@
       "description": "Wire ASan/UBSan/TSan and fuzzing into CI for C/C++ projects — nightly sanitizer matrices, issue-dedupe notification paths, sanitizer-aware stress tests, integration-surface instrumentation. Use when setting up or auditing the native-code sanitizer layer of a project's CI.",
       "name": "sanitizer-ci-setup",
       "path": "skills/sanitizer-ci-setup/SKILL.md"
+    },
+    {
+      "description": "Serialize persistent state so old data still loads after the format changes — write a version tag first, branch on it when reading, and never reinterpret unversioned bytes. Use when designing or changing any serialized-state format that outlives its writer — plugin preset/patch state, save files, on-disk caches, or wire formats a future build must still read.",
+      "name": "versioned-state-serialization",
+      "path": "skills/versioned-state-serialization/SKILL.md"
     }
   ],
   "toolkit_version": "0.4.0"

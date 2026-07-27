@@ -1,0 +1,56 @@
+# Reusable pre-commit gate. Consume from a pinned tag:
+#
+#   jobs:
+#     pre-commit:
+#       uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.2.0
+#
+# Runs `pre-commit run --all-files` against the caller's checkout. Set
+# local-config to also run a second config (e.g. self-referential hooks a
+# repo cannot load from pre-commit.ci) — leave it empty to skip that step.
+
+name: pre-commit
+
+on:
+  workflow_call:
+    inputs:
+      config:
+        description: path to the pre-commit config in the consuming repo
+        type: string
+        default: .pre-commit-config.yaml
+      local-config:
+        description: optional second pre-commit config to run (empty = skip)
+        type: string
+        default: ""
+      python-version:
+        type: string
+        default: "3.12"
+
+# region:reusable-precommit-jobs
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - run: pip install pre-commit
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles(inputs.config, inputs.local-config) }}
+
+      - name: Run pre-commit
+        run: pre-commit run --config "${{ inputs.config }}" --all-files --show-diff-on-failure
+
+      # A repo whose self-referential hooks (repo: .) cannot load from
+      # pre-commit.ci runs them here via a second config. Skipped when the
+      # caller leaves local-config empty.
+      - name: Run local pre-commit config
+        if: inputs.local-config != ''
+        run: pre-commit run --config "${{ inputs.local-config }}" --all-files --show-diff-on-failure
+# endregion:reusable-precommit-jobs

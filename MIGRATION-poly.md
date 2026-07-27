@@ -195,14 +195,16 @@ skills tracked; portfolio skills vendored via lock file and gitignored.
 ```
 
 Compute hashes with `sha256sum skills/*/SKILL.md` at the pinned tag, or run
-the installer once and `--update-lock`.
+`jk-standards install-skills --dest .claude/skills --update-lock` once.
 
-2. **Vendor the installer**: copy jk-standards `scripts/install_skills.py`
-   into poly's `scripts/`. Install with
-   `python scripts/install_skills.py --dest .claude/skills` so Claude Code
+2. **Install skills via the toolkit CLI** (no script to vendor): `pip
+   install jk-standards` — the same dependency PR 1 adds — then run
+   `jk-standards install-skills --dest .claude/skills` so Claude Code
    discovers the skills (nfr-review uses the `.agents/skills` default; poly
    keeps `.claude/skills` because that's its existing discovery path —
-   pick one convention portfolio-wide later).
+   pick one convention portfolio-wide later). The installer now ships inside
+   the toolkit as the `install-skills` subcommand, so there is no longer a
+   `scripts/install_skills.py` copy to maintain.
 
 3. **Gitignore vendored skills, keep project-authored ones tracked**:
 
@@ -223,7 +225,7 @@ content, not vendored.
    the install command, and the tracked-vs-vendored split.
 
 6. Optional CI guard: a step running
-   `python scripts/install_skills.py --check --dest .claude/skills` (fails
+   `jk-standards install-skills --check --dest .claude/skills` (fails
    on hash drift) — mirrors how nfr-review keeps vendored skills honest.
 
 ## Follow-ups recorded during extraction (not required for migration)

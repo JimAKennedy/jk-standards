@@ -3,14 +3,23 @@
 from pathlib import Path
 
 from jk_standards.checks import (
+    action_pinning,
     behavioral_claims,
     count_drift,
     doc_taxonomy,
     file_line_refs,
     generated_freshness,
+    snippet_regions,
     status_prose,
 )
-from jk_standards.config import ClaimSource, Config, GeneratedDoc, SourceRoot
+from jk_standards.config import (
+    ClaimSource,
+    Config,
+    DocRoot,
+    GeneratedDoc,
+    SnippetMarkerSyntax,
+    SourceRoot,
+)
 
 
 def write(root: Path, rel: str, text: str) -> Path:
@@ -158,6 +167,64 @@ def test_unverified_marker_is_warning_not_error(tmp_path):
     assert behavioral_claims.run(tmp_path, claims_config()) == 0
 
 
+# --- action-pinning ---------------------------------------------------------
+
+_WF = ".github/workflows/ci.yml"
+
+
+def test_action_pinning_floating_ref_flagged(tmp_path):
+    write(tmp_path, _WF, "jobs:\n  build:\n    steps:\n      - uses: actions/checkout@v6\n")
+    assert action_pinning.run(tmp_path, Config()) == 1
+
+
+def test_action_pinning_sha_pinned_passes(tmp_path):
+    sha = "a" * 40
+    write(tmp_path, _WF, f"jobs:\n  build:\n    steps:\n      - uses: actions/checkout@{sha}\n")
+    assert action_pinning.run(tmp_path, Config()) == 0
+
+
+def test_action_pinning_marker_same_line_exempts(tmp_path):
+    write(
+        tmp_path,
+        _WF,
+        "jobs:\n  build:\n    steps:\n      - uses: actions/checkout@v6  # action-pin-ok: pending SHA\n",
+    )
+    assert action_pinning.run(tmp_path, Config()) == 0
+
+
+def test_action_pinning_marker_line_above_exempts(tmp_path):
+    write(
+        tmp_path,
+        _WF,
+        "jobs:\n  build:\n    steps:\n      # action-pin-ok: pending SHA\n      - uses: actions/checkout@v6\n",
+    )
+    assert action_pinning.run(tmp_path, Config()) == 0
+
+
+def test_action_pinning_local_ref_accepted(tmp_path):
+    write(tmp_path, _WF, "jobs:\n  build:\n    steps:\n      - uses: ./.github/actions/foo\n")
+    assert action_pinning.run(tmp_path, Config()) == 0
+
+
+def test_action_pinning_docker_image_flagged(tmp_path):
+    # A `uses:` with no `@rev` at all (docker image / malformed) is not pinned.
+    write(tmp_path, _WF, "jobs:\n  build:\n    steps:\n      - uses: docker://alpine\n")
+    assert action_pinning.run(tmp_path, Config()) == 1
+
+
+def test_action_pinning_missing_workflows_dir_skipped(tmp_path):
+    assert action_pinning.run(tmp_path, Config()) == 0
+
+
+def test_action_pinning_multiple_unpinned_counted(tmp_path):
+    write(
+        tmp_path,
+        _WF,
+        "jobs:\n  build:\n    steps:\n      - uses: actions/checkout@v6\n      - uses: actions/setup-node@main\n",
+    )
+    assert action_pinning.run(tmp_path, Config()) == 2
+
+
 # --- generated-freshness ----------------------------------------------------
 
 
@@ -178,3 +245,214 @@ def test_fresh_generated_doc_passes(tmp_path):
     write(tmp_path, "docs/gen.md", "fresh\n")
     cfg = Config(generated=[GeneratedDoc("docs/gen.md", "printf 'fresh\\n' > docs/gen.md")])
     assert generated_freshness.run(tmp_path, cfg) == 0
+
+
+# --- snippet-regions --------------------------------------------------------
+
+
+def snippet_config() -> Config:
+    """Docs scan .md + .mdx; source roots cover poly-style shell/C++ markers."""
+    return Config(
+        snippet_doc_roots=[DocRoot("docs", [".md", ".mdx"])],
+        snippet_source_roots=[SourceRoot("src", [".sh", ".cpp"])],
+    )
+
+
+def test_snippet_regions_codesnippet_mdx_resolves(tmp_path):
+    # nfr-review-style <CodeSnippet region=...> resolves against its own file=.
+    write(tmp_path, "src/host.cpp", "// region:determinism\nint x;\n// endregion\n")
+    write(
+        tmp_path,
+        "docs/guide.mdx",
+        'See below.\n<CodeSnippet file="src/host.cpp" region="determinism" />\n',
+    )
+    assert snippet_regions.run(tmp_path, snippet_config()) == 0
+
+
+def test_snippet_regions_prose_resolves_shell_and_cpp(tmp_path):
+    # poly-style `# region:` in shell and `// region:` in C++ both feed the
+    # union that prose mentions resolve against.
+    write(tmp_path, "src/build.sh", "# region:setup\necho hi\n")
+    write(tmp_path, "src/host.cpp", "// region:render\nint y;\n")
+    write(
+        tmp_path,
+        "docs/guide.md",
+        "The setup lives at region:setup and rendering at region:render\n",
+    )
+    assert snippet_regions.run(tmp_path, snippet_config()) == 0
+
+
+def test_snippet_regions_dangling_codesnippet_flagged_with_path_line(tmp_path, capsys):
+    write(tmp_path, "src/host.cpp", "// region:real\nint z;\n")
+    write(
+        tmp_path,
+        "docs/guide.mdx",
+        'Intro line.\n<CodeSnippet file="src/host.cpp" region="ghost" />\n',
+    )
+    assert snippet_regions.run(tmp_path, snippet_config()) == 1
+    err = capsys.readouterr().err
+    assert "::error file=docs/guide.mdx,line=2::" in err
+    assert "ghost" in err
+
+
+def test_snippet_regions_dangling_prose_flagged_with_path_line(tmp_path, capsys):
+    write(tmp_path, "src/build.sh", "# region:setup\necho hi\n")
+    write(tmp_path, "docs/guide.md", "First line.\nRefers to region:missing here\n")
+    assert snippet_regions.run(tmp_path, snippet_config()) == 1
+    err = capsys.readouterr().err
+    assert "::error file=docs/guide.md,line=2::" in err
+    assert "missing" in err
+
+
+def test_snippet_regions_codesnippet_missing_file_flagged(tmp_path, capsys):
+    write(tmp_path, "docs/guide.mdx", '<CodeSnippet file="src/gone.cpp" region="x" />\n')
+    assert snippet_regions.run(tmp_path, snippet_config()) == 1
+    err = capsys.readouterr().err
+    assert "src/gone.cpp" in err
+
+
+def test_snippet_regions_escape_hatch_same_line(tmp_path):
+    write(
+        tmp_path,
+        "docs/guide.md",
+        "Refers to region:missing  <!-- snippet-region-ok: worked example -->\n",
+    )
+    assert snippet_regions.run(tmp_path, snippet_config()) == 0
+
+
+def test_snippet_regions_escape_hatch_line_above(tmp_path):
+    write(
+        tmp_path,
+        "docs/guide.mdx",
+        "{/* snippet-region-ok: template placeholder */}\n"
+        '<CodeSnippet file="src/gone.cpp" region="x" />\n',
+    )
+    assert snippet_regions.run(tmp_path, snippet_config()) == 0
+
+
+def test_snippet_regions_no_source_roots_skips_prose(tmp_path):
+    # With no source roots configured there is nothing to resolve prose against,
+    # so bare `region:` mentions are not flagged.
+    write(tmp_path, "docs/guide.md", "Mentions region:anything freely\n")
+    cfg = Config(snippet_doc_roots=[DocRoot("docs", [".md"])])
+    assert snippet_regions.run(tmp_path, cfg) == 0
+
+
+def test_snippet_regions_per_file_type_marker_syntax(tmp_path):
+    # A SQL file's `-- region:` marker is only recognized when the file type is
+    # mapped to the `--` prefix via snippet_regions.markers.
+    write(tmp_path, "src/schema.sql", "-- region:tables\nSELECT 1;\n")
+    write(tmp_path, "docs/guide.md", "Schema at region:tables\n")
+    cfg = Config(
+        snippet_doc_roots=[DocRoot("docs", [".md"])],
+        snippet_source_roots=[SourceRoot("src", [".sql"])],
+        snippet_markers=[SnippetMarkerSyntax(extensions=[".sql"], prefixes=["--"])],
+    )
+    assert snippet_regions.run(tmp_path, cfg) == 0
+    # Without the marker mapping, the default prefixes miss `--` and the mention
+    # dangles.
+    cfg_default = Config(
+        snippet_doc_roots=[DocRoot("docs", [".md"])],
+        snippet_source_roots=[SourceRoot("src", [".sql"])],
+    )
+    assert snippet_regions.run(tmp_path, cfg_default) == 1
+
+
+# --- nfr-review parity ------------------------------------------------------
+#
+# These fixtures re-express nfr-review's portable scripts/lint_docs.py doc
+# checks as jk-standards toolkit config, proving the toolkit produces the same
+# pass/fail behavior lint_docs.py produces — without depending on the external
+# nfr-review checkout (D003). Everything below is a tmp_path fixture:
+#   * lint_docs.py check #3 (compliance.mdx "**N rules**" numeral vs the
+#     compliance mapping) -> count-drift with a `rules\b` trigger over .mdx docs.
+#   * lint_docs.py check #2 (CodeSnippet region markers resolve to real regions)
+#     -> snippet-regions resolving <CodeSnippet region=...> against the source
+#     tree.
+# (lint_docs.py check #1 — rules.json length == rule_registry length — is a
+# non-portable residual nfr-review keeps; it is documented, not tested here.)
+
+
+def _nfr_count_config() -> Config:
+    """nfr-review's compliance.mdx count check: a `rules\\b` trigger over the
+    .mdx doc root that holds compliance.mdx."""
+    return Config(
+        doc_roots=[DocRoot("docs", [".mdx"])],
+        count_triggers=[r"rules\b"],
+    )
+
+
+def test_nfr_count_drift_flags_hardcoded_rules_numeral(tmp_path):
+    # Mirrors lint_docs.py #3 failing: a bare "**85 rules**" numeral drifts from
+    # the compliance mapping the moment a rule is added or removed.
+    write(
+        tmp_path,
+        "docs/compliance.mdx",
+        "---\nclass: gated\n---\nThe registry enforces **85 rules** in total.\n",
+    )
+    assert count_drift.run(tmp_path, _nfr_count_config()) == 1
+
+
+def test_nfr_count_drift_interpolated_rules_passes(tmp_path):
+    # Mirrors lint_docs.py #3 passing once the numeral is interpolated from the
+    # generated source of truth.
+    write(
+        tmp_path,
+        "docs/compliance.mdx",
+        "---\nclass: gated\n---\nThe registry enforces **{counts.rules} rules** in total.\n",
+    )
+    assert count_drift.run(tmp_path, _nfr_count_config()) == 0
+
+
+def test_nfr_count_drift_counts_ok_marker_passes(tmp_path):
+    # The `counts-ok` escape hatch matches lint_docs.py's worked-example allowance.
+    write(
+        tmp_path,
+        "docs/compliance.mdx",
+        "---\nclass: gated\n---\n<!-- counts-ok: worked example -->\n"
+        "The registry enforces **85 rules** in total.\n",
+    )
+    assert count_drift.run(tmp_path, _nfr_count_config()) == 0
+
+
+def _nfr_snippet_config() -> Config:
+    """nfr-review's CodeSnippet region check: .mdx docs resolving
+    <CodeSnippet region=...> against the rule-registry source tree."""
+    return Config(
+        snippet_doc_roots=[DocRoot("docs", [".mdx"])],
+        snippet_source_roots=[SourceRoot("rules", [".ts"])],
+    )
+
+
+def test_nfr_snippet_regions_codesnippet_resolves(tmp_path):
+    # Mirrors lint_docs.py #2 passing: the referenced region marker exists.
+    write(
+        tmp_path,
+        "rules/registry.ts",
+        "// region:enforcement\nexport const rules = [];\n// endregion\n",
+    )
+    write(
+        tmp_path,
+        "docs/compliance.mdx",
+        'Enforcement lives here:\n<CodeSnippet file="rules/registry.ts" region="enforcement" />\n',
+    )
+    assert snippet_regions.run(tmp_path, _nfr_snippet_config()) == 0
+
+
+def test_nfr_snippet_regions_dangling_codesnippet_flagged(tmp_path, capsys):
+    # Mirrors lint_docs.py #2 failing: the referenced region marker is missing,
+    # so the snippet silently rots. The finding carries the doc path and line.
+    write(
+        tmp_path,
+        "rules/registry.ts",
+        "// region:enforcement\nexport const rules = [];\n",
+    )
+    write(
+        tmp_path,
+        "docs/compliance.mdx",
+        'Enforcement lives here:\n<CodeSnippet file="rules/registry.ts" region="ghost" />\n',
+    )
+    assert snippet_regions.run(tmp_path, _nfr_snippet_config()) == 1
+    err = capsys.readouterr().err
+    assert "::error file=docs/compliance.mdx,line=2::" in err
+    assert "ghost" in err

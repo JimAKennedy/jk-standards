@@ -8,6 +8,10 @@
       "missing_lines": 0,
       "percent_covered": 100.0
     },
+    "src/jk_standards/checks/action_pinning.py": {
+      "missing_lines": 1,
+      "percent_covered": 96.67
+    },
     "src/jk_standards/checks/behavioral_claims.py": {
       "missing_lines": 2,
       "percent_covered": 92.86
@@ -32,17 +36,21 @@
       "missing_lines": 9,
       "percent_covered": 72.09
     },
+    "src/jk_standards/checks/snippet_regions.py": {
+      "missing_lines": 6,
+      "percent_covered": 91.41
+    },
     "src/jk_standards/checks/status_prose.py": {
       "missing_lines": 0,
       "percent_covered": 100.0
     },
     "src/jk_standards/cli.py": {
       "missing_lines": 4,
-      "percent_covered": 93.68
+      "percent_covered": 94.0
     },
     "src/jk_standards/config.py": {
-      "missing_lines": 0,
-      "percent_covered": 100.0
+      "missing_lines": 1,
+      "percent_covered": 98.47
     },
     "src/jk_standards/emit.py": {
       "missing_lines": 41,
@@ -60,16 +68,20 @@
       "missing_lines": 0,
       "percent_covered": 100.0
     },
+    "src/jk_standards/skills_install.py": {
+      "missing_lines": 2,
+      "percent_covered": 98.15
+    },
     "src/jk_standards/testindex.py": {
       "missing_lines": 12,
       "percent_covered": 71.05
     }
   },
-  "toolkit_version": "0.1.0",
+  "toolkit_version": "0.2.0",
   "totals": {
-    "covered_lines": 634,
-    "missing_lines": 95,
-    "num_statements": 729,
-    "percent_covered": 85.59
+    "covered_lines": 987,
+    "missing_lines": 105,
+    "num_statements": 1092,
+    "percent_covered": 88.95
   }
 }

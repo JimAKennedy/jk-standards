@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
 # Copyright 2026 Jim Kennedy
 # SPDX-License-Identifier: Apache-2.0
 # Adapted from nfr-review's scripts/install_skills.py (Apache-2.0); this copy
 # adds --dest so consuming repos can choose their skills directory
-# (.agents/skills for generic agents, .claude/skills for Claude Code).
+# (.agents/skills for generic agents, .claude/skills for Claude Code) and
+# folds the installer into the jk-standards CLI as `install-skills`.
 """Install vendored skills from skills-lock.json.
 
 Downloads skill directories from their source GitHub repositories and
@@ -11,12 +11,17 @@ places them under the skills directory (default .agents/skills/). Only
 installs skills listed in skills-lock.json that are not already present
 locally, unless --force is given.
 
-Usage:
-    python scripts/install_skills.py                        # install missing skills
-    python scripts/install_skills.py --dest .claude/skills   # Claude Code layout
-    python scripts/install_skills.py --force                 # reinstall all skills
-    python scripts/install_skills.py --check                 # verify installed hashes
-    python scripts/install_skills.py --update-lock           # update lock hashes to match installed
+This is the importable, in-process-testable backend for the
+`jk-standards install-skills` subcommand. Every command entrypoint returns
+an int exit code (0 clean, 1 violations/failures, 2 usage/config error)
+instead of calling sys.exit, so callers and tests can drive it directly.
+
+Usage (via the CLI):
+    jk-standards install-skills                          # install missing skills
+    jk-standards install-skills --dest .claude/skills    # Claude Code layout
+    jk-standards install-skills --force                  # reinstall all skills
+    jk-standards install-skills --check                  # verify installed hashes
+    jk-standards install-skills --update-lock            # pin hashes + toolkit version
 """
 
 from __future__ import annotations
@@ -34,16 +39,21 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
+from jk_standards import __version__
+
 LOCK_FILE = "skills-lock.json"
 SKILLS_DIR = Path(".agents/skills")
 GITHUB_ARCHIVE_URL = "https://github.com/{source}/archive/refs/heads/main.tar.gz"
 
 
+class LockError(Exception):
+    """Raised when skills-lock.json is missing or unreadable."""
+
+
 def load_lock(project_root: Path) -> dict:
     lock_path = project_root / LOCK_FILE
     if not lock_path.exists():
-        print(f"Error: {LOCK_FILE} not found in {project_root}", file=sys.stderr)
-        sys.exit(1)
+        raise LockError(f"{LOCK_FILE} not found in {project_root}")
     with open(lock_path) as f:
         return json.load(f)
 
@@ -211,13 +221,19 @@ def check_skills(project_root: Path, skills_dir: Path = SKILLS_DIR) -> int:
 
     print(f"\n{ok} ok, {mismatch} mismatch, {missing} missing")
     if missing or mismatch:
-        print("Run 'python scripts/install_skills.py' to fix.")
+        print("Run 'jk-standards install-skills' to fix.")
         return 1
     return 0
 
 
 def update_lock(project_root: Path, skills_dir: Path = SKILLS_DIR) -> int:
-    """Update lock file hashes to match currently installed skills."""
+    """Update lock hashes to match installed skills and pin the toolkit version.
+
+    Records the producing jk-standards version in the top-level
+    ``jkStandardsVersion`` field so consumers can tell which toolkit version
+    generated their skills-lock.json. The file is rewritten whenever a hash
+    changes or the version pin is missing/stale.
+    """
     lock = load_lock(project_root)
     skills = lock.get("skills", {})
     updated = 0
@@ -235,12 +251,17 @@ def update_lock(project_root: Path, skills_dir: Path = SKILLS_DIR) -> int:
         else:
             print(f"  {name}: unchanged")
 
-    if updated:
+    version_changed = lock.get("jkStandardsVersion") != __version__
+    if version_changed:
+        lock["jkStandardsVersion"] = __version__
+        print(f"  jkStandardsVersion pinned to {__version__}")
+
+    if updated or version_changed:
         lock_path = project_root / LOCK_FILE
         with open(lock_path, "w") as f:
             json.dump(lock, f, indent=2)
             f.write("\n")
-        print(f"\nUpdated {updated} hashes in {LOCK_FILE}")
+        print(f"\nUpdated {updated} hashes in {LOCK_FILE} (jkStandardsVersion={__version__})")
     else:
         print("\nAll hashes already current")
     return 0
@@ -252,14 +273,14 @@ def find_project_root() -> Path:
     for candidate in [cwd, *cwd.parents]:
         if (candidate / LOCK_FILE).exists():
             return candidate
-    script_root = Path(__file__).parent.parent
-    if (script_root / LOCK_FILE).exists():
-        return script_root
     return cwd
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Install third-party skills from skills-lock.json")
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="jk-standards install-skills",
+        description="Install third-party skills from skills-lock.json",
+    )
     parser.add_argument(
         "--force", action="store_true", help="Reinstall all skills even if up to date"
     )
@@ -269,7 +290,7 @@ def main() -> None:
     parser.add_argument(
         "--update-lock",
         action="store_true",
-        help="Update lock file hashes to match installed skills",
+        help="Update lock hashes to match installed skills and pin jkStandardsVersion",
     )
     parser.add_argument(
         "--root", type=Path, default=None, help="Project root (default: auto-detect)"
@@ -280,20 +301,29 @@ def main() -> None:
         default=SKILLS_DIR,
         help="Skills directory relative to project root (default: .agents/skills)",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Run the install-skills subcommand. Returns an exit code."""
+    args = _build_parser().parse_args(argv)
 
     project_root = args.root or find_project_root()
 
     print(f"Skills lock: {project_root / LOCK_FILE}")
     print(f"Skills dir:  {project_root / args.dest}\n")
 
-    if args.check:
-        sys.exit(check_skills(project_root, skills_dir=args.dest))
-    elif args.update_lock:
-        sys.exit(update_lock(project_root, skills_dir=args.dest))
-    else:
-        sys.exit(install_skills(project_root, force=args.force, skills_dir=args.dest))
+    try:
+        if args.check:
+            return check_skills(project_root, skills_dir=args.dest)
+        elif args.update_lock:
+            return update_lock(project_root, skills_dir=args.dest)
+        else:
+            return install_skills(project_root, force=args.force, skills_dir=args.dest)
+    except LockError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

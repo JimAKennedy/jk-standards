@@ -2,6 +2,12 @@
   "checks": [
     {
       "is_static": true,
+      "name": "action-pinning",
+      "source_file": "src/jk_standards/checks/action_pinning.py",
+      "summary": "action-pinning: every GitHub Actions `uses:` is pinned to a commit SHA."
+    },
+    {
+      "is_static": true,
       "name": "behavioral-claims",
       "source_file": "src/jk_standards/checks/behavioral_claims.py",
       "summary": "behavioral-claims: prose claims cite tests that actually exist."
@@ -38,10 +44,16 @@
     },
     {
       "is_static": true,
+      "name": "snippet-regions",
+      "source_file": "src/jk_standards/checks/snippet_regions.py",
+      "summary": "snippet-regions: doc references to code regions resolve to real markers."
+    },
+    {
+      "is_static": true,
       "name": "status-prose",
       "source_file": "src/jk_standards/checks/status_prose.py",
       "summary": "status-prose: ban stale progress-tracking prose in gated docs."
     }
   ],
-  "toolkit_version": "0.1.0"
+  "toolkit_version": "0.2.0"
 }

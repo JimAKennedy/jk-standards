@@ -15,7 +15,7 @@ import os
 import sys
 from pathlib import Path
 
-from jk_standards import __version__, emit
+from jk_standards import __version__, emit, skills_install
 from jk_standards.checks import CHECKS, STATIC_CHECKS
 from jk_standards.config import ConfigError, load_config
 from jk_standards.gitutil import GitError
@@ -30,20 +30,20 @@ def _emit_main(argv: list[str]) -> int:
     return emit.run(args.root.resolve(), args.name, args.check)
 
 
-# argparse can't express `emit` as either a top-level verb OR a check name
-# without subparsers (a bigger refactor). Split argv before argparse sees it:
-# skip past `--flag value` pairs to locate `emit`, then hand the remainder to
-# the emit subparser.
+# argparse can't express `emit`/`install-skills` as either a top-level verb OR
+# a check name without subparsers (a bigger refactor). Split argv before
+# argparse sees it: skip past `--flag value` pairs to locate the verb, then hand
+# the remainder to that verb's subparser.
 _PRE_EMIT_FLAGS_WITH_VALUE = {"--root", "--config", "--base"}
 
 
-def _extract_emit_argv(raw: list[str]) -> list[str] | None:
-    """Return the argv to pass to `_emit_main` if `emit` is present, else None."""
+def _extract_verb_argv(raw: list[str], verb: str) -> list[str] | None:
+    """Return the argv following `verb` if it appears as the verb token, else None."""
     i = 0
     pre: list[str] = []
     while i < len(raw):
         tok = raw[i]
-        if tok == "emit":
+        if tok == verb:
             return pre + raw[i + 1 :]
         if tok in _PRE_EMIT_FLAGS_WITH_VALUE and i + 1 < len(raw):
             pre.extend(raw[i : i + 2])
@@ -59,9 +59,14 @@ def _extract_emit_argv(raw: list[str]) -> list[str] | None:
 
 def main(argv: list[str] | None = None) -> int:
     raw = sys.argv[1:] if argv is None else argv
-    emit_argv = _extract_emit_argv(raw)
+
+    emit_argv = _extract_verb_argv(raw, "emit")
     if emit_argv is not None:
         return _emit_main(emit_argv)
+
+    install_argv = _extract_verb_argv(raw, "install-skills")
+    if install_argv is not None:
+        return skills_install.main(install_argv)
 
     parser = argparse.ArgumentParser(prog="jk-standards", description=__doc__)
     parser.add_argument("check", choices=[*CHECKS, "all", "list"])

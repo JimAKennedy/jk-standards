@@ -102,6 +102,19 @@ jobs:
     uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.1.0
 ```
 
+A second reusable workflow, `pre-commit.yml`, runs your pre-commit hooks in
+CI from the same two-line caller — handy when a repo also wants a CI gate on
+hooks it cannot run on pre-commit.ci:
+
+```yaml
+# .github/workflows/pre-commit.yml
+name: pre-commit
+on: [pull_request, push]
+jobs:
+  pre-commit:
+    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.2.0
+```
+
 That's it. The rest of the discipline lands progressively: enable
 `count-drift` when you have inventory nouns to gate, enable
 `behavioral-claims` when you want prose to cite tests, add entries to

@@ -51,6 +51,19 @@ class ClaimSource:
 
 
 @dataclass
+class SnippetMarkerSyntax:
+    """Per-file-type override of the region marker comment prefixes.
+
+    `extensions` are matched against a source file's suffix (e.g. ``.sh``);
+    `prefixes` are the comment tokens a `region:<name>` marker may follow —
+    ``#``, ``//``, or the block form ``<!--`` (paired with ``-->``).
+    """
+
+    extensions: list[str]
+    prefixes: list[str]
+
+
+@dataclass
 class Config:
     doc_roots: list[DocRoot] = field(default_factory=lambda: [DocRoot("docs")])
     exempt_dirs: list[str] = field(default_factory=list)
@@ -83,6 +96,14 @@ class Config:
     deps_only_manifests: list[str] = field(default_factory=list)
     generated: list[GeneratedDoc] = field(default_factory=list)
     claim_sources: list[ClaimSource] = field(default_factory=list)
+    action_pin_workflow_dir: str = ".github/workflows"
+    action_pin_extensions: list[str] = field(default_factory=lambda: [".yml", ".yaml"])
+    # snippet-regions: doc roots default to the top-level doc_roots (falls back
+    # at run time); source_roots supply the tree searched for prose mentions;
+    # markers override the default `//`/`#`/`<!--` prefixes per file type.
+    snippet_doc_roots: list[DocRoot] = field(default_factory=list)
+    snippet_source_roots: list[SourceRoot] = field(default_factory=list)
+    snippet_markers: list[SnippetMarkerSyntax] = field(default_factory=list)
 
 
 def _require(mapping: dict, key: str, context: str) -> object:
@@ -153,6 +174,36 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
             path=str(_require(s, "path", "behavioral_claims.sources entry")),
         )
         for s in data.get("behavioral_claims", {}).get("sources", [])
+    ]
+
+    action_pinning = data.get("action_pinning", {})
+    cfg.action_pin_workflow_dir = str(
+        action_pinning.get("workflow_dir", cfg.action_pin_workflow_dir)
+    )
+    if "extensions" in action_pinning:
+        cfg.action_pin_extensions = [str(e) for e in action_pinning["extensions"]]
+
+    snippet = data.get("snippet_regions", {})
+    cfg.snippet_doc_roots = [
+        DocRoot(
+            path=str(_require(d, "path", "snippet_regions.doc_roots entry")),
+            extensions=[str(e) for e in d.get("extensions", [".md", ".mdx"])],
+        )
+        for d in snippet.get("doc_roots", [])
+    ]
+    cfg.snippet_source_roots = [
+        SourceRoot(
+            path=str(_require(s, "path", "snippet_regions.source_roots entry")),
+            extensions=[str(e) for e in s.get("extensions", [])],
+        )
+        for s in snippet.get("source_roots", [])
+    ]
+    cfg.snippet_markers = [
+        SnippetMarkerSyntax(
+            extensions=[str(e) for e in _require(m, "extensions", "snippet_regions.markers entry")],
+            prefixes=[str(p) for p in _require(m, "prefixes", "snippet_regions.markers entry")],
+        )
+        for m in snippet.get("markers", [])
     ]
     return cfg
 

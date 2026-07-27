@@ -35,6 +35,8 @@ A typed lifecycle for documentation, machine-enforced:
 | status-prose | Gated docs may not contain progress-tracking prose; `Status:` lines require a `(YYYY-MM-DD)` anchor |
 | file-line-refs | Enduring docs and source comments cite symbols/regions, never `foo.cpp:429` — line numbers rot |
 | count-drift | Inventory facts ("N presets", "N chapters") live in one generated JSON and are interpolated, never restated |
+| action-pinning | Every GitHub Actions `uses:` is pinned to a 40-char commit SHA; a floating ref (`@v6`, `@main`) is flagged with `file:line`, with a `# action-pin-ok: <reason>` escape hatch and local `./` refs accepted |
+| snippet-regions | Docs referencing a code region — MDX `<CodeSnippet region=…>` or prose `region:<name>` — must point at a real `region:<name>` marker in the source tree; a dangling reference is flagged with `file:line`, with a `# snippet-region-ok: <reason>` escape hatch and per-file-type marker syntax |
 
 ### 2. Pre-commit hooks (`.pre-commit-hooks.yaml`)
 
@@ -43,9 +45,15 @@ via a standard `repo:` entry pinned to a release tag.
 
 ### 3. Reusable CI workflows (`.github/workflows/`)
 
-`workflow_call` workflows wrapping the same checks for PR gating, plus recipe
-workflows for the wider discipline stack (nightly sanitizer matrix with
-issue-dedupe notification, baseline-ratcheted scanning).
+Two `workflow_call` workflows ship today. `doc-discipline.yml` wraps the doc
+anti-drift checks for PR gating in a consuming repo; `pre-commit.yml` runs
+`pre-commit run --all-files` against the caller's checkout so a repo gates on its
+hooks with a two-line caller (an optional `local-config` input runs a second,
+self-referential config a repo cannot load from pre-commit.ci). Recipe workflows
+for the wider discipline stack — a nightly sanitizer matrix with issue-dedupe
+notification, and baseline-ratcheted scanning — are *planned for v0.3* and not
+yet shipped; until then the `sanitizer-ci-setup` skill documents the recipe so
+it can be wired by hand.
 
 ### 4. Agent skills (`skills/`)
 
@@ -56,6 +64,24 @@ taught at write time:
   line numbers, mark behavioral claims, maintain the drift map
 - **escape-hatch-discipline** — every suppression in-band, greppable, and reasoned
 - **sanitizer-ci-setup** — the nightly ASan/UBSan/TSan matrix + fuzzer wiring recipe
+
+A consuming repo vendors these skills through a `skills-lock.json` and the
+`install-skills` CLI subcommand rather than copying files by hand:
+
+```bash
+pip install jk-standards
+jk-standards install-skills --dest .agents/skills   # install missing skills
+jk-standards install-skills --check                 # verify hashes match the lock
+jk-standards install-skills --update-lock           # repin hashes + toolkit version
+```
+
+`install-skills` downloads each skill listed in `skills-lock.json` from its
+source repo, verifies the SKILL.md sha256 against the lock, and writes them
+under `--dest` (default `.agents/skills`; use `.claude/skills` for Claude
+Code). `--check` reports MISSING vs HASH MISMATCH per skill (exit 1 on drift);
+`--update-lock` refreshes the recorded hashes and pins the producing
+`jkStandardsVersion` into the lockfile so consumers know which toolkit version
+generated it.
 
 ### Companion: detection rules in nfr-review
 
@@ -69,7 +95,7 @@ independently.
 ```yaml
 # .pre-commit-config.yaml in a consuming repo
 - repo: https://github.com/JimAKennedy/jk-standards
-  rev: v0.1.0
+  rev: v0.2.0
   hooks:
     - id: doc-taxonomy
     - id: status-prose
@@ -80,21 +106,55 @@ independently.
 # .github/workflows/docs.yml in a consuming repo
 jobs:
   doc-discipline:
-    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.1.0
+    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.2.0
+```
+
+```yaml
+# .github/workflows/pre-commit.yml in a consuming repo
+jobs:
+  pre-commit:
+    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.2.0
 ```
 
 One config file (`jk-standards.yaml`) supplies the project-specific surface: doc
 roots, class vocabulary, drift-map path, count trigger nouns, test-index sources.
 
+## Development
+
+`jk-standards all` runs only the doc-conformance checks (the CI `dogfood` job).
+To reproduce the full CI conformance gate locally, run the verify script from
+anywhere in the tree:
+
+```bash
+scripts/verify.sh              # full local gate: ruff, pytest, 80% coverage floor,
+                               # dogfood checks, doc-drift, emit --check, build+twine, site
+scripts/verify.sh --no-site    # skip the Node/site-build step
+scripts/verify.sh --base REF   # diff doc-drift against REF (default: main)
+```
+
+It runs every CI job that can run on a laptop, in CI order, and prints one
+pass/fail summary (exit 1 if any step fails). Two CI jobs are CI-only and are
+reported as skipped: `secrets-scan` (gitleaks needs full history + a token) and
+`reusable-workflow-smoke` (it smoke-tests the reusable workflow's shape in
+Actions). Assumes dev deps are installed (`pip install -e ".[dev]"`).
+
+`make check` is the shorthand for `scripts/verify.sh` (and `make check-fast`
+for `--no-site`).
+
 ## Status
 
-v0.1.0: the doc anti-drift checks are implemented (extracted from poly, where the
-originals run in production CI), with pre-commit hooks, the reusable workflow, the
-first three skills, and a pytest suite. This repo dogfoods its own machinery: its
+v0.2.0: the doc anti-drift and CI-hygiene checks are implemented (extracted from
+poly, where the originals run in production CI), with pre-commit hooks, two reusable
+workflows, the first three skills plus the `install-skills` CLI, and a pytest suite.
+v0.2 adds the action-pinning and snippet-regions checks, the `install-skills`
+subcommand for vendoring skills via `skills-lock.json`, the reusable `pre-commit.yml`
+workflow, and the companion detection rules in nfr-review. This repo dogfoods its own machinery: its
 docs carry class front-matter, its drift map couples the check sources to
 `docs/checks.md`, and its behavioral claims cite its own tests — see the `dogfood`
 CI job. `MIGRATION-poly.md` records the changes poly needs to consume this repo
-and adopt the skills-lock mechanism.
+and adopt the skills-lock mechanism; `MIGRATION-nfr-review.md` records how
+nfr-review retires its vendored `scripts/lint_docs.py` by mapping its
+portable doc checks onto count-drift and snippet-regions.
 
 ## License
 

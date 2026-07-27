@@ -53,6 +53,13 @@ projected directly from the `Config` dataclass in
   </tbody>
 </table>
 
+Most fields nest under a named YAML section rather than sitting at the top
+level. The `action-pinning` check reads its two fields — `action_pin_workflow_dir`
+and `action_pin_extensions` — from an `action_pinning:` section
+(`workflow_dir` and `extensions` keys); both default so the section is
+optional. See the [checks reference](/reference/checks/#action-pinning) for
+the rule those fields tune.
+
 ## Example — this repo's own config
 
 jk-standards dogfoods itself, so its own `jk-standards.yaml` is a live

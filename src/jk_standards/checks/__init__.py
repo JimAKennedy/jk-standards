@@ -7,12 +7,14 @@ number of errors found. `CHECKS` maps CLI/hook names to those callables.
 from __future__ import annotations
 
 from jk_standards.checks import (
+    action_pinning,
     behavioral_claims,
     count_drift,
     doc_drift,
     doc_taxonomy,
     file_line_refs,
     generated_freshness,
+    snippet_regions,
     status_prose,
 )
 
@@ -23,6 +25,8 @@ CHECKS = {
     "count-drift": count_drift.run,
     "behavioral-claims": behavioral_claims.run,
     "generated-freshness": generated_freshness.run,
+    "action-pinning": action_pinning.run,
+    "snippet-regions": snippet_regions.run,
     "doc-drift": doc_drift.run,
 }
 

@@ -149,6 +149,11 @@ for `--no-site`).
 
 ## Status
 
+v0.3.0: adds the `sanitizer-nightly.yml` reusable workflow — an ASan/UBSan/TSan
+matrix driving a single deduped `sanitizer-failure` issue — and the `ci-hygiene` and
+`branch-discipline` authoring skills, bringing the toolkit to three reusable workflows
+and five skills.
+
 v0.2.0: the doc anti-drift and CI-hygiene checks are implemented (extracted from
 poly, where the originals run in production CI), with pre-commit hooks, two reusable
 workflows, the first three skills plus the `install-skills` CLI, and a pytest suite.

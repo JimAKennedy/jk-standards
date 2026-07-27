@@ -128,17 +128,81 @@ and this standard constrains it so the hatch does not become the door.
 ## Consuming the warning set
 
 This standard defines the discipline; a consuming repository needs a concrete
-warning set to adopt so it is not re-deriving the roster from scratch. This
-toolkit ships one — a reusable CMake module that encodes the shared,
-per-toolchain-translated set the rules above describe — and this section is
-where its adoption instructions live: how a consuming repository pulls the
-module in (via CMake `FetchContent`, or by vendoring a copy pinned to a
-recorded checksum) and applies it to its first-party targets.
+warning set to adopt rather than re-deriving the roster from scratch. This
+toolkit ships one: `cmake/jk_warnings.cmake`, a reusable CMake module that
+encodes the shared, per-toolchain-translated set the rules above describe. It
+exposes two functions:
 
-The shipped module and its adoption instructions are delivered as a distinct,
-additive unit of work; this section is the fixed home that unit fills, so a
-reader who lands here always finds the consumer guidance in one predictable
-place rather than scattered across the build files.
+- `jk_target_warnings(<target>)` applies the strict, fatal first-party set —
+  `-Wall -Wextra` plus the extended diagnostics on Clang/GCC, `/W4` plus the
+  intent-equivalent promotions on MSVC, with `-Werror` / `/WX`. It is a no-op
+  on an `INTERFACE` library, which has no first-party sources of its own to
+  compile, so the set is never forced onto that library's consumers.
+- `jk_suppress_sdk_warnings(<target>)` isolates a third-party or SDK target
+  from that set, satisfying "Scope: first-party code, not dependencies" above.
+
+A consuming repository pulls the module in one of two ways.
+
+### Via FetchContent
+
+Fetch this toolkit at a pinned release tag, put its `cmake` directory on the
+module path, and include the module:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+  jk_standards
+  GIT_REPOSITORY https://github.com/JimAKennedy/jk-standards.git
+  GIT_TAG        v0.5.0            # pin a released tag, never a moving branch
+)
+FetchContent_MakeAvailable(jk_standards)
+
+list(APPEND CMAKE_MODULE_PATH "${jk_standards_SOURCE_DIR}/cmake")
+include(jk_warnings)
+
+jk_target_warnings(my_app)         # first-party target: strict, fatal set
+jk_suppress_sdk_warnings(vst3sdk)  # dependency: isolated from the set
+```
+
+Pin `GIT_TAG` to a released tag, never a moving branch, so the warning set a
+build applies is the one that tag froze. An unpinned fetch lets the set shift
+under the repository without a change on its side — the cross-toolchain drift
+this standard exists to prevent.
+
+### Via copy-with-checksum
+
+A repository that cannot fetch at configure time — an air-gapped or
+vendored-only build — copies `cmake/jk_warnings.cmake` into its own tree and
+records that copy's SHA-256 checksum beside it. CI recomputes the checksum and
+fails when the vendored copy and the recorded digest diverge:
+
+```cmake
+set(JK_WARNINGS_SHA256 "<recorded-digest-of-the-vendored-module>")
+file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/cmake/jk_warnings.cmake" _jk_actual)
+if(NOT _jk_actual STREQUAL JK_WARNINGS_SHA256)
+  message(FATAL_ERROR
+    "vendored jk_warnings.cmake does not match its recorded checksum; "
+    "re-vendor from the upstream tag and update the digest")
+endif()
+include(jk_warnings)
+```
+
+The checksum is what keeps a vendored copy honest. Without it a local edit
+silently forks the warning set from the standard, and the fork stays invisible
+until a diagnostic that should have failed a build quietly does not.
+
+### Retiring the sibling-repo copies
+
+Before this module lived here, each consuming repository carried its own
+near-identical copy of `jk_warnings.cmake` — the canonical one at
+`cmake/jk_warnings.cmake` in the `poly` repository, mirrored across its sibling
+audio repositories. Those copies predate this standard and are thinner than it:
+they set `/W4` or `-Wall -Wextra` without `-Werror` / `/WX` and without the
+extended diagnostics, so a repository on such a copy is not conformant. This
+module supersedes them. Retiring poly's copy in favor of a FetchContent or
+copy-with-checksum adoption of this module is carried by a follow-up pull
+request against the `poly` repository, recorded here per this relocation's
+contract; the remaining sibling copies are consolidation candidates behind it.
 
 ## Conformance
 

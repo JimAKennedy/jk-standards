@@ -1,27 +1,16 @@
 ---
 name: sanitizer-ci-setup
-description: Wire ASan/UBSan/TSan, fuzzing, and layered quality gates into CI for C/C++ projects — nightly sanitizer matrices, issue-dedupe notification, sanitizer-aware tests, strictness gradients. Use when setting up or auditing CI for a native-code project.
+description: Wire ASan/UBSan/TSan and fuzzing into CI for C/C++ projects — nightly sanitizer matrices, issue-dedupe notification paths, sanitizer-aware stress tests, integration-surface instrumentation. Use when setting up or auditing the native-code sanitizer layer of a project's CI.
 ---
 
-# Sanitizer and quality-gate CI setup
+# Sanitizer and fuzzing CI setup
 
-## The layered gate model
-
-Order checks by cost and place them at the cheapest layer that catches the
-failure early enough:
-
-1. **pre-commit** — seconds: format, lexical lints, secret scan.
-2. **pre-push** — a minute or two: build + unit tests + a *reduced*
-   strictness level of the expensive validators. Accumulate failures and
-   report all broken gates in one run rather than exiting on the first.
-3. **PR CI** — the merge gate: multi-platform build, full-strictness
-   validators, coverage threshold, doc checks, ratcheted scanners.
-4. **nightly** — the expensive sweep: sanitizer matrix, full scans that
-   produce the next day's ratchet baseline.
-
-The pre-push/CI pair should run the *same* checks at different strictness,
-and the pre-push failure message should print the CI-parity invocation so
-the developer can reproduce exactly what CI will do.
+This skill covers the native-code instrumentation layer: sanitizer matrices,
+sanitizer-aware tests, fuzzing, and the notification path that keeps a nightly
+sweep honest. The generic CI-structure discipline underneath it — layered
+cost-ordered gates, SHA pinning + dependabot cadence, the single aggregation
+gate, artifact retention — lives in the `ci-hygiene` skill; set that up first,
+then layer these sanitizer jobs onto it.
 
 ## Sanitizer matrix
 
@@ -79,4 +68,4 @@ parser-only fuzzing misses the bugs that matter.
 - [ ] Fuzz targets wired to a schedule, corpus cached
 - [ ] Static analysis (clang-tidy) actually invoked in CI — a config file with no CI step is decoration
 - [ ] Coverage threshold enforced locally in the job (external coverage services advisory only)
-- [ ] All third-party actions SHA-pinned; validator versions pinned with a written bump procedure
+- [ ] Generic CI structure (layered gates, SHA pinning, aggregation gate, retention) handled per the `ci-hygiene` skill

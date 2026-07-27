@@ -18,12 +18,29 @@ mappings:
     reason: "checks.md documents each check's rule, mechanism, and escape hatches. A behavior change in any check without a doc update is exactly the drift this toolkit exists to prevent."
 
   - sources:
+      - "src/jk_standards/checks/**"
+      - "src/jk_standards/testindex.py"
+    doc: "site/src/content/docs/reference/checks.mdx"
+    reason: "reference/checks.mdx is the public site's per-check reference. A source change without a site update ships a deployed site that lies to users."
+
+  - sources:
       - "src/jk_standards/config.py"
       - "src/jk_standards/cli.py"
     doc: "docs/configuration.md"
     reason: "configuration.md documents the jk-standards.yaml schema and CLI. New config fields or CLI flags must land with their documentation."
 
   - sources:
+      - "src/jk_standards/config.py"
+      - "src/jk_standards/cli.py"
+    doc: "site/src/content/docs/reference/configuration.mdx"
+    reason: "reference/configuration.mdx is the public site's config + CLI reference. A source change without a site update ships a deployed site that lies to users."
+
+  - sources:
       - "skills/**"
     doc: "docs/skills.md"
     reason: "skills.md is the index of shipped skills and their intended use. Adding or renaming a skill changes what consumers vendor via skills-lock.json."
+
+  - sources:
+      - "skills/**"
+    doc: "site/src/content/docs/reference/skills.mdx"
+    reason: "reference/skills.mdx is the public site's skill catalog. A skill addition/rename without a site update ships a deployed site that lies to users."

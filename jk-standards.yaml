@@ -57,4 +57,16 @@ generated:
   - doc: site/src/generated/skills.json
     command: jk-standards emit skills
 # endregion:generated-fixtures
+
+# The .mdx reference pages slice source via <CodeSnippet file=… region=… />;
+# snippet-regions verifies every such reference resolves to a real
+# region:<name> marker in the named file. This repo references regions only
+# through CodeSnippet (which names its own file=), so no source_roots are
+# declared — prose scanning stays off and every CodeSnippet target is checked.
+snippet_regions:
+  doc_roots:
+    - path: docs
+      extensions: [".md"]
+    - path: site/src/content/docs
+      extensions: [".mdx"]
 # endregion:full-config

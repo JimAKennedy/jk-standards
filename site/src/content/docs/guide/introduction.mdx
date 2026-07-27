@@ -14,7 +14,7 @@ arbitrary projects with a few lines of configuration.
 
 The current shipment: **{checksData.checks.length}** static and diff-scoped
 [checks](/reference/checks/), **{skillsData.skills.length}** agent
-[skills](/reference/skills/), one reusable CI workflow, and a set of
+[skills](/reference/skills/), two reusable CI workflows, and a set of
 pre-commit hooks that wrap each doc-facing check.
 
 ## Why
@@ -42,9 +42,11 @@ for the full list.
 **Pre-commit hooks** wrap the doc-facing checks so they run on every
 commit in a consuming repo. See [Adopt in a repo](/how-to/adopt-in-a-repo/).
 
-**Reusable CI workflow** (`doc-discipline.yml`) gates PRs with the full
-check suite plus doc-drift (which needs a merge base). One `uses:` line
-in a consuming workflow file, pinned to a release tag.
+**Reusable CI workflows** (`doc-discipline.yml`, `pre-commit.yml`).
+`doc-discipline.yml` gates PRs with the full check suite plus doc-drift
+(which needs a merge base); `pre-commit.yml` runs a consuming repo's
+pre-commit hooks against its checkout. Each is one `uses:` line in a
+consuming workflow file, pinned to a release tag.
 
 **Agent skills** ({skillsData.skills.length} shipped). Authoring-time
 discipline for AI coding agents — the conventions the checks enforce,

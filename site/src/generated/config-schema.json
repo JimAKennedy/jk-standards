@@ -2,6 +2,21 @@
   "config_file_name": "jk-standards.yaml",
   "fields": [
     {
+      "default": [
+        ".yml",
+        ".yaml"
+      ],
+      "has_default_factory": true,
+      "name": "action_pin_extensions",
+      "type": "list[str]"
+    },
+    {
+      "default": ".github/workflows",
+      "has_default_factory": false,
+      "name": "action_pin_workflow_dir",
+      "type": "str"
+    },
+    {
       "default": [],
       "has_default_factory": true,
       "name": "claim_sources",
@@ -82,6 +97,24 @@
     {
       "default": [],
       "has_default_factory": true,
+      "name": "snippet_doc_roots",
+      "type": "list[DocRoot]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "snippet_markers",
+      "type": "list[SnippetMarkerSyntax]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "snippet_source_roots",
+      "type": "list[SourceRoot]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
       "name": "status_forbidden_extra",
       "type": "list[ForbiddenPhrase]"
     },
@@ -102,5 +135,5 @@
       "type": "list[str]"
     }
   ],
-  "toolkit_version": "0.1.0"
+  "toolkit_version": "0.2.0"
 }

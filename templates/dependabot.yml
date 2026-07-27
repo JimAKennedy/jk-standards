@@ -1,0 +1,51 @@
+# Portable .github/dependabot.yml template.
+#
+# Drop this into `.github/dependabot.yml` in a consumer repo to keep pinned
+# dependencies fresh — the natural companion to the `action-pinning` check.
+# Pinning action `uses:` refs to a commit SHA is only safe if something keeps
+# those SHAs current; Dependabot is that something.
+#
+# Covers the two ecosystems most repos share:
+#   1. github-actions -- the pinned action SHAs in .github/workflows/
+#   2. npm            -- package.json dependencies
+#
+# Adjust `directory`, add ecosystems (pip, cargo, gomod, ...), or tune the
+# grouping to fit your repo. Minor + patch bumps land grouped per ecosystem
+# per week so routine updates read as one review; majors open individual PRs
+# because they carry breaking-change risk.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: chore(actions)
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - npm
+    commit-message:
+      prefix: chore(npm)
+    groups:
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch

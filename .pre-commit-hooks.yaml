@@ -55,3 +55,12 @@
   language: python
   pass_filenames: false
 # endregion:hook-behavioral-claims
+
+# region:hook-snippet-regions
+- id: snippet-regions
+  name: doc region references resolve to real markers
+  entry: jk-standards snippet-regions
+  language: python
+  types_or: [markdown, mdx]
+  pass_filenames: false
+# endregion:hook-snippet-regions

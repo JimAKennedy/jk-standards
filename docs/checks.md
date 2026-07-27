@@ -122,3 +122,77 @@ same file still triggers
 [verified: test_doc_drift::test_scripts_block_change_still_triggers], and
 manifests not listed get no exemption
 [verified: test_doc_drift::test_unlisted_manifest_still_triggers_on_deps_bump].
+
+## action-pinning
+
+Every GitHub Actions `uses:` reference under `.github/workflows/**/*.yml`
+(and `*.yaml`) must be pinned to a full 40-char commit SHA. A floating ref
+(`actions/checkout@v6`, `@main`, a bare tag) lets the upstream owner — or
+anyone who compromises their account — change what runs in your CI without a
+diff on your side, so it is flagged with `file:line`
+[verified: test_checks::test_action_pinning_floating_ref_flagged]; a
+40-hex-SHA pin passes
+[verified: test_checks::test_action_pinning_sha_pinned_passes]. A `docker://`
+image with no digest is unpinned and flagged too
+[verified: test_checks::test_action_pinning_docker_image_flagged], and every
+unpinned ref adds to the returned error count
+[verified: test_checks::test_action_pinning_multiple_unpinned_counted].
+
+Local `uses: ./…` (or `../…`) action and reusable-workflow refs are accepted
+— they live in your own tree and move with it
+[verified: test_checks::test_action_pinning_local_ref_accepted].
+
+Escape hatch: a `# action-pin-ok: <reason>` marker on the offending line
+[verified: test_checks::test_action_pinning_marker_same_line_exempts] or the
+line immediately above it
+[verified: test_checks::test_action_pinning_marker_line_above_exempts]
+suppresses the finding, for the rare ref that genuinely cannot be SHA-pinned.
+With no `.github/workflows` directory the check skips cleanly
+[verified: test_checks::test_action_pinning_missing_workflows_dir_skipped].
+
+The workflow directory and scanned extensions are configurable via the
+`action_pinning` config section. The shipped `templates/dependabot.yml` is
+the companion that keeps pinned SHAs current by surfacing each upstream
+update as a reviewable Dependabot PR — pinning without update automation
+rots.
+
+## snippet-regions
+
+Docs point readers at slices of source two ways: an MDX
+`<CodeSnippet file=… region=… />` component that renders the named region,
+and prose `region:<name>` mentions. Each reference must resolve to a
+`region:<name>` marker that actually exists in the declared source tree —
+otherwise the snippet silently rots when the region is renamed or deleted,
+with no diff on the doc side to warn anyone.
+
+A `<CodeSnippet>` names its own `file=`; that file must exist
+[verified: test_checks::test_snippet_regions_codesnippet_missing_file_flagged]
+and must define the region
+[verified: test_checks::test_snippet_regions_codesnippet_mdx_resolves]. A
+region with no matching marker is flagged with `path:line`
+[verified: test_checks::test_snippet_regions_dangling_codesnippet_flagged_with_path_line].
+
+Prose mentions carry no file, so they resolve against the union of markers
+across the configured `snippet_regions.source_roots` — poly-style
+`# region:` in shell and `// region:` in C++ both feed that union
+[verified: test_checks::test_snippet_regions_prose_resolves_shell_and_cpp],
+and a mention matching no marker is flagged with `path:line`
+[verified: test_checks::test_snippet_regions_dangling_prose_flagged_with_path_line].
+With no source roots configured there is nothing to resolve against, so
+prose scanning is skipped
+[verified: test_checks::test_snippet_regions_no_source_roots_skips_prose];
+CodeSnippet references, which name their own file, are still validated.
+
+Marker syntax mirrors `site/src/components/CodeSnippet.astro`, the three
+forms the repo already renders — `// region:`, `# region:`, and
+`<!-- region: -->` — and is per-file-type overridable via
+`snippet_regions.markers`, so a repo can map its own comment style (a SQL
+`-- region:`, say) onto a file extension
+[verified: test_checks::test_snippet_regions_per_file_type_marker_syntax].
+
+Escape hatch: a `# snippet-region-ok: <reason>` marker on the reference line
+[verified: test_checks::test_snippet_regions_escape_hatch_same_line] or the
+line immediately above it
+[verified: test_checks::test_snippet_regions_escape_hatch_line_above]
+suppresses the finding — the same two-line window used by action-pinning,
+count-drift, and file-line-refs.

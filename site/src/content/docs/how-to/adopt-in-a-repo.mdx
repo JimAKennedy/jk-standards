@@ -1,7 +1,7 @@
 ---
 class: gated
 title: Adopt in a repo
-description: Wire the pre-commit hooks and reusable workflow into a fresh repository.
+description: Wire the pre-commit hooks and reusable workflows into a fresh repository.
 ---
 
 import CodeSnippet from '../../../components/CodeSnippet.astro';
@@ -106,6 +106,24 @@ The workflow checks out the PR with `fetch-depth: 0`, installs jk-standards
 at the pinned ref, and runs `jk-standards all`. First-run failures name
 the exact drift; fix by either updating the doc or adding a
 `Docs-Not-Affected: <reason>` trailer to a commit in the range.
+
+A companion reusable workflow, `pre-commit.yml`, runs your pre-commit hooks
+in CI from the same shape of caller. Reach for it when a repo wants a CI gate
+on hooks it cannot run on pre-commit.ci — pass the optional `local-config`
+input to also run a second, self-referential config:
+
+```yaml
+# .github/workflows/pre-commit.yml
+name: pre-commit
+on: [pull_request, push]
+
+jobs:
+  pre-commit:
+    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.2.0
+    with:
+      config: .pre-commit-config.yaml         # path in your repo
+      local-config: .pre-commit-config.local.yaml  # optional; empty = skip
+```
 
 ## Step 6 (optional) — Enable inventory gating
 

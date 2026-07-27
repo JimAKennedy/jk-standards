@@ -61,7 +61,38 @@ behavioral_claims:
       path: tests
     - type: pytest
       path: tests
+
+action_pinning:               # GitHub Actions uses: must be SHA-pinned
+  workflow_dir: .github/workflows   # default; scanned recursively
+  extensions: [".yml", ".yaml"]     # workflow file extensions to scan
+
+snippet_regions:              # doc→region references resolve to real markers
+  doc_roots:                  # docs scanned; default: top-level doc_roots
+    - path: docs
+      extensions: [".md", ".mdx"]
+  source_roots:               # trees searched for region:<name> markers
+    - path: engine/src
+      extensions: [".cpp", ".h", ".sh"]
+  markers:                    # per-file-type marker comment prefixes
+    - extensions: [".sql"]
+      prefixes: ["--"]
 ```
+
+The `action_pinning` section tunes the `action-pinning` check: `workflow_dir`
+is the tree scanned recursively for workflow files (default
+`.github/workflows`) and `extensions` are the filename suffixes treated as
+workflow files (default `.yml`, `.yaml`). Both have working defaults, so the
+section is optional.
+
+The `snippet_regions` section tunes the `snippet-regions` check.
+`source_roots` are the trees scanned for `region:<name>` markers that prose
+mentions resolve against — with none configured, prose scanning is skipped
+and only `<CodeSnippet>` references (which name their own `file=`) are
+validated. `markers` maps file extensions to the comment prefixes a marker
+may follow, overriding the built-in `//`, `#`, and `<!-- -->` forms.
+`doc_roots` narrows which docs are scanned, defaulting to the top-level
+`doc_roots`. Every field defaults, so the section is optional. See the
+[checks reference](checks.md#snippet-regions) for the rule these fields tune.
 
 ## CLI
 

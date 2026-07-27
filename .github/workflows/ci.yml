@@ -10,8 +10,14 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# The sanitizer-nightly-smoke job calls the reusable sanitizer-nightly.yml,
+# whose notify job requests `issues: write`. A reusable workflow cannot be
+# granted more than the caller's token scope, so the caller must declare
+# `issues: write` here or the whole run fails at startup. Individual jobs
+# still re-declare their own least-privilege scope.
 permissions:
   contents: read
+  issues: write
 
 jobs:
   test:
@@ -139,6 +145,21 @@ jobs:
       config: jk-standards.yaml
       python-version: "3.12"
 
+  # Dogfood the reusable sanitizer-nightly workflow by consuming it here,
+  # pointed at this same commit. jk-standards is pure Python with nothing to
+  # actually sanitize, so this is a SHAPE-ONLY smoke: the caller supplies a
+  # test-filter and flips integration-legs on so every leg (asan/ubsan/tsan +
+  # their integration variants) and the always()-run notify job wire and their
+  # `needs` graph resolves. If the reusable workflow's shape breaks, downstream
+  # nightly consumers break — this catches it before a tag ships (mirrors
+  # reusable-workflow-smoke for doc-discipline). The sanitizer legs are echo-only
+  # no-ops here; a native consumer replaces them with a real instrumented build.
+  sanitizer-nightly-smoke:
+    uses: ./.github/workflows/sanitizer-nightly.yml
+    with:
+      test-filter: "concurrency|memory"
+      integration-legs: true
+
   # Build the Starlight site. Fails the PR if any MDX doc is broken, a
   # CodeSnippet region marker is missing, or an internal link is invalid.
   # The site's prebuild hook runs `jk-standards emit all`, so the Python
@@ -195,7 +216,7 @@ jobs:
   # Single check for branch protection to require. If any dependency job
   # fails, skips, or is cancelled, this fails — no advisory-pass loophole.
   ci-complete:
-    needs: [test, coverage, pre-commit, emit-check, dogfood, package, reusable-workflow-smoke, secrets-scan, site-build]
+    needs: [test, coverage, pre-commit, emit-check, dogfood, package, reusable-workflow-smoke, sanitizer-nightly-smoke, secrets-scan, site-build]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -208,6 +229,7 @@ jobs:
              [[ "${{ needs.dogfood.result }}" != "success" ]] || \
              [[ "${{ needs.package.result }}" != "success" ]] || \
              [[ "${{ needs.reusable-workflow-smoke.result }}" != "success" ]] || \
+             [[ "${{ needs.sanitizer-nightly-smoke.result }}" != "success" ]] || \
              [[ "${{ needs.secrets-scan.result }}" != "success" ]] || \
              [[ "${{ needs.site-build.result }}" != "success" ]]; then
             echo "One or more CI jobs failed"

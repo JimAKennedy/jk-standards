@@ -45,21 +45,27 @@ via a standard `repo:` entry pinned to a release tag.
 
 ### 3. Reusable CI workflows (`.github/workflows/`)
 
-Two `workflow_call` workflows ship today. `doc-discipline.yml` wraps the doc
+Three `workflow_call` workflows ship today. `doc-discipline.yml` wraps the doc
 anti-drift checks for PR gating in a consuming repo; `pre-commit.yml` runs
 `pre-commit run --all-files` against the caller's checkout so a repo gates on its
 hooks with a two-line caller (an optional `local-config` input runs a second,
-self-referential config a repo cannot load from pre-commit.ci). Recipe workflows
-for the wider discipline stack — a nightly sanitizer matrix with issue-dedupe
-notification, and baseline-ratcheted scanning — are *planned for v0.3* and not
-yet shipped; until then the `sanitizer-ci-setup` skill documents the recipe so
-it can be wired by hand.
+self-referential config a repo cannot load from pre-commit.ci); `sanitizer-nightly.yml`
+runs an ASan/UBSan/TSan matrix (with optional integration-surface legs) on a
+consumer's schedule and drives a single, label-deduped `sanitizer-failure` issue
+— open-or-update on any red leg, close on all-green — the executable form of the
+`sanitizer-ci-setup` skill's recipe. Baseline-ratcheted scanning is the remaining
+recipe not yet shipped; until then the skills document that recipe so it can be
+wired by hand.
 
 ### 4. Agent skills (`skills/`)
 
 Authoring-time discipline for AI coding agents — the conventions the checks enforce,
 taught at write time:
 
+- **branch-discipline** — one branch per milestone, never stack milestones (the
+  squash-merge conflict-replay rationale), re-run `pre-commit run --all-files` after every rebase
+- **ci-hygiene** — layered cost-ordered gates, SHA-pinned actions on a dependabot
+  cadence, a single aggregation gate for branch protection, artifact-retention conventions
 - **doc-anti-drift** — classify every doc, date every status claim, cite symbols not
   line numbers, mark behavioral claims, maintain the drift map
 - **escape-hatch-discipline** — every suppression in-band, greppable, and reasoned
@@ -142,6 +148,11 @@ Actions). Assumes dev deps are installed (`pip install -e ".[dev]"`).
 for `--no-site`).
 
 ## Status
+
+v0.3.0: adds the `sanitizer-nightly.yml` reusable workflow — an ASan/UBSan/TSan
+matrix driving a single deduped `sanitizer-failure` issue — and the `ci-hygiene` and
+`branch-discipline` authoring skills, bringing the toolkit to three reusable workflows
+and five skills.
 
 v0.2.0: the doc anti-drift and CI-hygiene checks are implemented (extracted from
 poly, where the originals run in production CI), with pre-commit hooks, two reusable

@@ -4,6 +4,37 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-27
+
+### Added
+
+- **`sanitizer-nightly` reusable workflow**
+  (`.github/workflows/sanitizer-nightly.yml`): a callable GitHub Actions
+  workflow that runs an ASan smoke leg plus UBSan and TSan core jobs and three
+  toggle-gated integration-surface legs as separate mutually-exclusive jobs,
+  with an `if: always()` notify job that drives a single label-deduped
+  `sanitizer-failure` issue (open-or-update on any red leg, close on all-green).
+  Consumers schedule it from a pinned tag; the repo dogfoods it through a
+  shape-only smoke caller wired into `.github/workflows/ci.yml`.
+- **`ci-hygiene` skill** (`skills/ci-hygiene/SKILL.md`): captures the generic,
+  language-agnostic CI-structure discipline — layered cost-ordered gates,
+  SHA-pinned actions on a weekly dependabot cadence, a single aggregation gate
+  for branch protection, and artifact-retention conventions — so projects adopt
+  the structure without the native-sanitizer specifics.
+- **`branch-discipline` skill** (`skills/branch-discipline/SKILL.md`): documents
+  the one-branch-per-milestone workflow — never stacking the next milestone on
+  an unmerged one and re-running the full pre-commit suite after every rebase —
+  for use when starting, rebasing, or landing a milestone branch.
+
+### Changed
+
+- **`sanitizer-ci-setup` skill** (`skills/sanitizer-ci-setup/SKILL.md`):
+  narrowed to the native-code sanitizer and fuzzing layer (sanitizer matrices,
+  sanitizer-aware tests, fuzzing, notification path), delegating the generic
+  CI-structure discipline it previously carried to the new `ci-hygiene` skill.
+- Package version bumped to `0.3.0` in the two source-of-truth files
+  (`pyproject.toml` and `src/jk_standards/__init__.py`).
+
 ## [0.2.0] - 2026-07-27
 
 ### Added
@@ -54,5 +85,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `behavioral-claims`, `generated-freshness`, `doc-drift`), the `jk-standards`
   CLI, the self-hosting `jk-standards.yaml` config, and the dogfood CI job.
 
+[0.3.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.3.0
 [0.2.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.2.0
 [0.1.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.1.0

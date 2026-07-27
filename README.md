@@ -1,5 +1,7 @@
 # jk-standards
 
+[Docs · jkstandards.jk.digital](https://jkstandards.jk.digital)
+
 Reusable engineering-discipline toolkit: documentation anti-drift checks, pre-commit
 hooks, reusable CI workflows, and agent skills — extracted from
 [poly](https://github.com/JimAKennedy/poly) and designed to be adopted by arbitrary

@@ -45,15 +45,17 @@ via a standard `repo:` entry pinned to a release tag.
 
 ### 3. Reusable CI workflows (`.github/workflows/`)
 
-Two `workflow_call` workflows ship today. `doc-discipline.yml` wraps the doc
+Three `workflow_call` workflows ship today. `doc-discipline.yml` wraps the doc
 anti-drift checks for PR gating in a consuming repo; `pre-commit.yml` runs
 `pre-commit run --all-files` against the caller's checkout so a repo gates on its
 hooks with a two-line caller (an optional `local-config` input runs a second,
-self-referential config a repo cannot load from pre-commit.ci). Recipe workflows
-for the wider discipline stack — a nightly sanitizer matrix with issue-dedupe
-notification, and baseline-ratcheted scanning — are *planned for v0.3* and not
-yet shipped; until then the `sanitizer-ci-setup` skill documents the recipe so
-it can be wired by hand.
+self-referential config a repo cannot load from pre-commit.ci); `sanitizer-nightly.yml`
+runs an ASan/UBSan/TSan matrix (with optional integration-surface legs) on a
+consumer's schedule and drives a single, label-deduped `sanitizer-failure` issue
+— open-or-update on any red leg, close on all-green — the executable form of the
+`sanitizer-ci-setup` skill's recipe. Baseline-ratcheted scanning is the remaining
+recipe not yet shipped; until then the skills document that recipe so it can be
+wired by hand.
 
 ### 4. Agent skills (`skills/`)
 

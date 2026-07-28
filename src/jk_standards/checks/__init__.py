@@ -11,6 +11,7 @@ from jk_standards.checks import (
     behavioral_claims,
     boundaries,
     count_drift,
+    doc_completeness,
     doc_drift,
     doc_taxonomy,
     file_line_refs,
@@ -29,6 +30,7 @@ CHECKS = {
     "action-pinning": action_pinning.run,
     "snippet-regions": snippet_regions.run,
     "boundaries": boundaries.run,
+    "doc-completeness": doc_completeness.run,
     "doc-drift": doc_drift.run,
 }
 

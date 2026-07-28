@@ -6,7 +6,7 @@ description: Every check the toolkit ships — rule, mechanism, and escape hatch
 
 import checksData from '../../../generated/checks.json';
 
-Status: current (2026-07-26)
+Status: current (2026-07-28)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit
@@ -144,6 +144,62 @@ same file still triggers
 [verified: test_doc_drift::test_scripts_block_change_still_triggers], and
 manifests not listed get no exemption
 [verified: test_doc_drift::test_unlisted_manifest_still_triggers_on_deps_bump].
+
+The map also carries a `cannot_drift` registry: docs that legitimately have
+no touch-correlation source, each recording a required, non-empty `reason` so
+a deliberate exemption is distinguishable from an accidental omission (the
+distinction doc-completeness keys off). A valid entry parses
+[verified: test_doc_drift::test_cannot_drift_valid_entry_parses]; an entry
+missing its reason
+[verified: test_doc_drift::test_cannot_drift_missing_reason_rejected], with a
+blank reason
+[verified: test_doc_drift::test_cannot_drift_empty_reason_rejected], or missing
+its `doc` key
+[verified: test_doc_drift::test_cannot_drift_missing_doc_rejected] is a config
+error surfaced as exit 2
+[verified: test_doc_drift::test_cannot_drift_invalid_entry_cli_exit_2]. The
+worked example is `site/src/content/docs/reference/skills.mdx`: it renders its
+catalog by importing `site/src/generated/skills.json` at build time — nothing
+on the page is hand-maintained — so a skill add or rename updates the
+generated JSON (freshness-gated by generated-freshness and the emit `--check`)
+and the page reflects it with no source edit to mirror. Mapping a
+touch-correlation rule at a build-time-generated page would only manufacture a
+false positive on every skill change, so it is declared cannot_drift instead.
+
+## doc-completeness
+
+Every doc `iter_docs` enumerates under a configured `doc_root` must be
+accounted for in the drift map — either as a mapping's `doc:` target or as a
+`cannot_drift` entry. A page that is neither is an accidental omission, and
+this check names it: it emits `::error file=<doc>,line=1::` for each
+unregistered doc and fails
+[verified: test_doc_completeness::test_unregistered_doc_fails_naming_it], while
+a doc that is mapped
+[verified: test_doc_completeness::test_mapped_only_passes] or declared
+un-driftable
+[verified: test_doc_completeness::test_cannot_drift_only_passes] passes. The
+remediation names both escape routes — add a mappings entry or a cannot_drift
+entry — and deliberately does not name the docs already accounted for. On
+success it prints `doc-completeness: all N doc(s) mapped or declared`
+[verified: test_doc_completeness::test_success_emits_summary].
+
+Unlike doc-drift it needs no git base ref: the working tree and the map are
+its only inputs, so it runs unconditionally as a static check under
+`jk-standards all` and as a pre-commit hook. It honors the same `doc_roots`,
+extensions, and `exempt_dirs` as every other doc check — a file outside the
+configured extensions is never enumerated
+[verified: test_doc_completeness::test_multiple_doc_roots_and_extensions] and
+an `exempt_dirs` path is skipped
+[verified: test_doc_completeness::test_exempt_dirs_excluded].
+
+It reuses doc-drift's `cannot_drift` parser, so a malformed registry — an entry
+missing its required `reason` — surfaces as the same `config error:` (exit 2)
+rather than a traceback
+[verified: test_doc_completeness::test_malformed_cannot_drift_cli_exit_2], and a
+mappings entry missing its `doc` key fails the same way
+[verified: test_doc_completeness::test_mapping_missing_doc_key_cli_exit_2]. A
+missing drift map is itself a failure
+[verified: test_doc_completeness::test_missing_drift_map_fails].
 
 ## action-pinning
 

@@ -25,6 +25,12 @@
       "summary": "count-drift: inventory facts live in one place, not restated as numerals."
     },
     {
+      "is_static": true,
+      "name": "doc-completeness",
+      "source_file": "src/jk_standards/checks/doc_completeness.py",
+      "summary": "doc-completeness: every doc under a doc_root is mapped or declared."
+    },
+    {
       "is_static": false,
       "name": "doc-drift",
       "source_file": "src/jk_standards/checks/doc_drift.py",

@@ -102,6 +102,9 @@ def main(argv: list[str] | None = None) -> int:
             errors = CHECKS["doc-drift"](root, cfg, base=args.base)
         else:
             errors = CHECKS[args.check](root, cfg)
+    except ConfigError as e:
+        print(f"config error: {e}", file=sys.stderr)
+        return 2
     except GitError as e:
         print(f"git error: {e}", file=sys.stderr)
         return 2

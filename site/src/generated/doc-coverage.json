@@ -149,7 +149,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage.py",
       "kind": "class",
-      "lineno": 53,
+      "lineno": 55,
       "name": "DocUnit",
       "signals": {
         "docstring": true,
@@ -173,7 +173,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage.py",
       "kind": "method",
-      "lineno": 70,
+      "lineno": 72,
       "name": "documented",
       "signals": {
         "docstring": false,
@@ -185,7 +185,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage.py",
       "kind": "function",
-      "lineno": 168,
+      "lineno": 191,
       "name": "enumerate_units",
       "signals": {
         "docstring": true,
@@ -197,12 +197,36 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage.py",
       "kind": "function",
-      "lineno": 203,
+      "lineno": 259,
       "name": "run",
       "signals": {
         "docstring": false,
         "drift": true,
         "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_coverage_cpp.py",
+      "kind": "function",
+      "lineno": 288,
+      "name": "cpp_units_for_file",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_coverage_cpp.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "doc_coverage_cpp",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
       }
     },
     {

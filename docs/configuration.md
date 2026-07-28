@@ -86,9 +86,11 @@ boundaries:                   # forbidden cross-directory references
       hint: a check must not reach back into the CLI
 
 doc_coverage:                 # code no doc or docstring describes at all
-  source_roots:               # Python trees the ast enumerator walks
+  source_roots:               # trees the enumerator walks (Python or C++)
     - path: src/jk_standards
-      extensions: [".py"]     # default when omitted
+      extensions: [".py"]     # .py roots use the ast enumerator (default)
+    - path: engine/src        # a C++ root needs the jk-standards[cpp] extra
+      extensions: [".cpp", ".h"]   # C++ suffixes → tree-sitter-cpp enumerator
   doc_scopes:                 # dirs scanned for the whole-word "mention" signal
     - docs
     - site/src/content/docs
@@ -118,14 +120,26 @@ explaining the boundary. `from` and `forbid` are required; a rule with neither
 is meaningless. With no rules the check is skipped. See the
 [checks reference](checks.md#boundaries) for the rule these fields tune.
 
-The `doc_coverage` section tunes the `doc-coverage` check, which catches Python
-code that no doc and no docstring describes at all. `source_roots` are the trees
-whose modules the AST enumerator walks (each entry defaults to `.py` files);
-with none configured the check has nothing to enumerate and trivially passes.
-`doc_scopes` are the doc directories scanned for the whole-word symbol
-"mention" OR-signal. Both fields default to empty, so the section is optional.
-See the [checks reference](checks.md#doc-coverage) for the rule these fields
-tune.
+The `doc_coverage` section tunes the `doc-coverage` check, which catches code
+that no doc and no docstring describes at all. `source_roots` are the trees the
+enumerator walks (each entry defaults to `.py` files); with none configured the
+check has nothing to enumerate and trivially passes. A root whose entries carry
+Python suffixes is walked with the `ast` enumerator, while a root with C++
+suffixes (`.cpp`, `.cc`, `.cxx`, `.c++`, `.hpp`, `.hh`, `.hxx`, `.h++`, `.h`,
+`.c`) is parsed with tree-sitter-cpp and enumerated by the public-declaration
+heuristic — so the `engine/src` entry above adds C++ coverage alongside the
+Python root. `doc_scopes` are the doc directories scanned for the whole-word
+symbol "mention" OR-signal. Both fields default to empty, so the section is
+optional.
+
+The C++ grammar is not a base dependency: install it with the optional extra,
+`pip install jk-standards[cpp]`, which pulls in `tree-sitter` and
+`tree-sitter-cpp`. When a C++ source root is configured but that extra is not
+installed, the check degrades gracefully rather than failing — the C++ files
+contribute zero units and a single summary line reports how many were skipped
+and points at `jk-standards[cpp]`, so a grammar-less repo keeps working on the
+zero-dependency default. See the [checks reference](checks.md#doc-coverage) for
+the rule these fields tune.
 
 ## CLI
 

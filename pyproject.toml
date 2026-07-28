@@ -21,6 +21,14 @@ dev = [
   "twine>=5.0",
   "pre-commit>=3.7",
 ]
+# Optional native grammar for the C++ doc-coverage enumerator. This is the ONLY
+# place tree-sitter is declared — the base `dependencies` list stays PyYAML-only
+# so `pip install jk-standards` never pulls a native wheel and a C++-free repo
+# degrades gracefully (parser import fails → C++ path is a no-op).
+cpp = [
+  "tree-sitter>=0.23",
+  "tree-sitter-cpp>=0.23",
+]
 
 [project.scripts]
 jk-standards = "jk_standards.cli:main"

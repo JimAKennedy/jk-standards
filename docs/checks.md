@@ -227,8 +227,35 @@ marker buried in code or a docstring does not waive
 waivers are counted in the summary line so rising escape-hatch usage stays visible
 in CI logs.
 
-Scope: Python-only. The enumerator is an `ast` walk over the configured source
-roots; C++ documentable-unit coverage is deferred to M010. With no source roots
+Scope: Python and C++. The default enumerator is an `ast` walk over the
+configured source roots; sources with a C++ suffix (`.cpp`, `.cc`, `.cxx`,
+`.c++`, `.hpp`, `.hh`, `.hxx`, `.h++`, `.h`, `.c`) are instead parsed with
+tree-sitter-cpp and enumerated by a public-declaration heuristic:
+
+- **function** — a named function declaration or definition at namespace scope
+  (recursing into `namespace`/`extern "C"` bodies so the true name is used).
+- **class** / **struct** — a named `class` or `struct` specifier; anonymous ones
+  are skipped since no doc could name them.
+- **method** — a *public* member function, resolved with C++ default-access
+  rules: a `class` starts private and a `struct` starts public, and each
+  `public:`/`private:`/`protected:` label flips visibility for the members that
+  follow, so only currently-public methods are enumerated.
+
+The `has_docstring` signal fires when a Doxygen doc comment — one opening with
+`///`, `//!`, `/**`, or `/*!` — sits on the line immediately above the
+declaration; a plain `//` or `/* */` comment does not count, mirroring how a
+Python docstring (not any comment) is the signal. The drift and mention
+OR-signals, the disjunction rule, and the module-granular gate all carry over
+unchanged — a C++ unit is documented iff it has a doc comment, its file matches a
+drift-map `sources:` glob, or its bare name is mentioned in a doc scope.
+
+Known limits: the native grammar ships only in the optional `jk-standards[cpp]`
+extra. When a C++ source root is configured but tree-sitter-cpp is not installed,
+the check degrades gracefully rather than failing — the C++ files contribute zero
+units and a single summary line reports how many were skipped and points at
+`jk-standards[cpp]`, so a grammar-less repo keeps working on the PyYAML-only
+zero-dependency default. A C++ file that fails to parse into a translation unit
+likewise contributes zero units instead of raising. With no source roots
 configured the check skips cleanly.
 
 ## action-pinning

@@ -41,8 +41,10 @@ from jk_standards import output
 from jk_standards.checks import doc_drift
 from jk_standards.config import Config
 
-# `doc-coverage-ok` after a `#` comment opener (Python's only comment form).
-_MARKER_RE = re.compile(r"#\s*doc-coverage-ok\b")
+# `doc-coverage-ok` after a comment opener. A Python `#` comment or a C++ `//`
+# line comment both open a valid waiver, so the same escape hatch works whether
+# the module is on the ast path or the tree-sitter path.
+_MARKER_RE = re.compile(r"(?:#|//)\s*doc-coverage-ok\b")
 # Identifier-ish word tokens for the "mention" corpus. `\w` includes the
 # underscore, so a symbol like `load_config` is a single token and set
 # membership is exactly a word-boundary match for any Python identifier.
@@ -125,6 +127,27 @@ def _is_public(name: str) -> bool:
     return not name.startswith("_")
 
 
+# C++ source suffixes routed to the tree-sitter enumerator. Everything else
+# (notably ``.py``, and any other configured extension) stays on the unchanged
+# Python ast path, so dispatch never alters existing Python behaviour.
+_CPP_EXTENSIONS = (
+    ".cpp",
+    ".cc",
+    ".cxx",
+    ".c++",
+    ".hpp",
+    ".hh",
+    ".hxx",
+    ".h++",
+    ".h",
+    ".c",
+)
+
+
+def _is_cpp(rel: str) -> bool:
+    return rel.endswith(_CPP_EXTENSIONS)
+
+
 _FUNC_NODES = (ast.FunctionDef, ast.AsyncFunctionDef)
 
 
@@ -170,30 +193,63 @@ def enumerate_units(root: Path, cfg: Config) -> list[DocUnit]:
 
     This is the reusable seam: a downstream emitter consumes these records
     directly rather than re-parsing the source tree.
+
+    Files are dispatched by extension. C++ sources (``.cpp``/``.hpp``/...) go
+    through the tree-sitter enumerator in :mod:`doc_coverage_cpp`; everything
+    else stays on the Python ast path. Both return identical :class:`DocUnit`
+    records, so the drift/mention OR-signals and the downstream emitter are
+    unchanged regardless of language.
+
+    Graceful degradation: when a C++ source is configured but tree-sitter-cpp is
+    not installed, the C++ files contribute zero units and a single summary line
+    names how many files were skipped — so a misconfigured repo is diagnosable
+    from CI logs rather than silently dropping files.
     """
+    # Imported lazily to avoid a circular import (doc_coverage_cpp imports
+    # ``DocUnit`` from this module) and to keep the native grammar off the
+    # zero-dependency import path until a C++ file is actually enumerated.
+    from jk_standards.checks import doc_coverage_cpp
+
     patterns = _drift_patterns(root, cfg)
     tokens = _mention_tokens(root, cfg)
+    cpp_parser_absent = doc_coverage_cpp._get_cpp_parser() is None
+    cpp_skipped = 0
     units: list[DocUnit] = []
     for path in _iter_py_files(root, cfg):
         rel = path.relative_to(root).as_posix()
         drift = any(doc_drift._matches(p, [rel], set()) for p in patterns)
-        source = path.read_text(encoding="utf-8", errors="replace")
-        units.extend(_units_for_file(rel, source, drift, tokens))
+        if _is_cpp(rel):
+            if cpp_parser_absent:
+                cpp_skipped += 1
+                continue
+            units.extend(
+                doc_coverage_cpp.cpp_units_for_file(rel, path.read_bytes(), drift, tokens)
+            )
+        else:
+            source = path.read_text(encoding="utf-8", errors="replace")
+            units.extend(_units_for_file(rel, source, drift, tokens))
+    if cpp_skipped:
+        output.summary(
+            "doc-coverage: C++ source root configured but tree-sitter-cpp not "
+            f"installed — install jk-standards[cpp]; skipping {cpp_skipped} C++ file(s)"
+        )
     return units
 
 
 def _has_waiver(path: Path) -> bool:
-    """True if a `# doc-coverage-ok:` marker sits in the leading comment block.
+    """True if a `doc-coverage-ok:` marker sits in the leading comment block.
 
     "Top of file" means before the first non-comment, non-blank line — a
-    shebang or `# doc-coverage-ok:` header counts; a mention buried in code or
-    a docstring does not.
+    shebang, `#pragma`, or a `# doc-coverage-ok:` / `// doc-coverage-ok:`
+    header counts; a mention buried in code or a docstring does not. Both the
+    Python `#` and the C++ `//` comment openers are accepted so a bare C++
+    header (e.g. a generated one) is waivable exactly like a Python module.
     """
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         stripped = line.strip()
         if not stripped:
             continue
-        if not stripped.startswith("#"):
+        if not stripped.startswith(("#", "//")):
             break
         if _MARKER_RE.search(stripped):
             return True

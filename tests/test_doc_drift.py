@@ -170,7 +170,7 @@ def test_cannot_drift_valid_entry_parses(repo):
 
 
 def test_cannot_drift_missing_reason_rejected(repo):
-    set_map(repo, "cannot_drift:\n" '  - doc: "docs/skills.mdx"\n')
+    set_map(repo, 'cannot_drift:\n  - doc: "docs/skills.mdx"\n')
     with pytest.raises(ConfigError, match="missing a non-empty 'reason'"):
         doc_drift.run(repo, Config(), base="main")
 
@@ -178,14 +178,14 @@ def test_cannot_drift_missing_reason_rejected(repo):
 def test_cannot_drift_empty_reason_rejected(repo):
     set_map(
         repo,
-        "cannot_drift:\n" '  - doc: "docs/skills.mdx"\n' '    reason: "   "\n',
+        'cannot_drift:\n  - doc: "docs/skills.mdx"\n    reason: "   "\n',
     )
     with pytest.raises(ConfigError, match="missing a non-empty 'reason'"):
         doc_drift.run(repo, Config(), base="main")
 
 
 def test_cannot_drift_missing_doc_rejected(repo):
-    set_map(repo, "cannot_drift:\n" '  - reason: "prose overview"\n')
+    set_map(repo, 'cannot_drift:\n  - reason: "prose overview"\n')
     with pytest.raises(ConfigError, match="missing a non-empty string 'doc'"):
         doc_drift.run(repo, Config(), base="main")
 
@@ -193,7 +193,7 @@ def test_cannot_drift_missing_doc_rejected(repo):
 def test_cannot_drift_invalid_entry_cli_exit_2(repo, capsys):
     # Slice criterion: a malformed entry surfaces as `config error: ...` on
     # stderr with exit 2, not a KeyError traceback.
-    set_map(repo, "cannot_drift:\n" '  - doc: "docs/skills.mdx"\n')
+    set_map(repo, 'cannot_drift:\n  - doc: "docs/skills.mdx"\n')
     rc = cli.main(["doc-drift", "--root", str(repo), "--base", "main"])
     assert rc == 2
     err = capsys.readouterr().err

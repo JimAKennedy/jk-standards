@@ -31,6 +31,12 @@
       "summary": "doc-completeness: every doc under a doc_root is mapped or declared."
     },
     {
+      "is_static": true,
+      "name": "doc-coverage",
+      "source_file": "src/jk_standards/checks/doc_coverage.py",
+      "summary": "doc-coverage: every code module must be documented *somewhere*."
+    },
+    {
       "is_static": false,
       "name": "doc-drift",
       "source_file": "src/jk_standards/checks/doc_drift.py",

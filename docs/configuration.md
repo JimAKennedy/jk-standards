@@ -4,7 +4,7 @@ class: gated
 
 # Configuration reference
 
-Status: current (2026-07-25)
+Status: current (2026-07-28)
 
 All project-specific surface lives in one file, `jk-standards.yaml`, at the
 consuming repo's root (override with `--config`). Every key is optional; an
@@ -84,6 +84,14 @@ boundaries:                   # forbidden cross-directory references
       forbid: 'jk_standards\.cli'     # regex a line MUST NOT match
       extensions: [".py"]             # files to scan; empty = all
       hint: a check must not reach back into the CLI
+
+doc_coverage:                 # code no doc or docstring describes at all
+  source_roots:               # Python trees the ast enumerator walks
+    - path: src/jk_standards
+      extensions: [".py"]     # default when omitted
+  doc_scopes:                 # dirs scanned for the whole-word "mention" signal
+    - docs
+    - site/src/content/docs
 ```
 
 The `action_pinning` section tunes the `action-pinning` check: `workflow_dir`
@@ -110,6 +118,15 @@ explaining the boundary. `from` and `forbid` are required; a rule with neither
 is meaningless. With no rules the check is skipped. See the
 [checks reference](checks.md#boundaries) for the rule these fields tune.
 
+The `doc_coverage` section tunes the `doc-coverage` check, which catches Python
+code that no doc and no docstring describes at all. `source_roots` are the trees
+whose modules the AST enumerator walks (each entry defaults to `.py` files);
+with none configured the check has nothing to enumerate and trivially passes.
+`doc_scopes` are the doc directories scanned for the whole-word symbol
+"mention" OR-signal. Both fields default to empty, so the section is optional.
+See the [checks reference](checks.md#doc-coverage) for the rule these fields
+tune.
+
 ## CLI
 
 ```
@@ -119,7 +136,8 @@ jk-standards all            # every configured static check (+ doc-drift
 jk-standards list           # list check names
 jk-standards emit <name>    # regenerate one drift-proof fixture under
                             # site/src/generated/; <name> is one of
-                            # checks | config-schema | skills | coverage | all
+                            # checks | config-schema | skills | coverage |
+                            # doc-coverage | all
 jk-standards emit <name> --check
                             # exit 1 if the on-disk fixture differs from
                             # what would be emitted now (CI drift gate)

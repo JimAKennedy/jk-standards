@@ -62,10 +62,7 @@ def test_success_emits_summary(tmp_path, capsys):
     write(tmp_path, "docs/spec.md", DOC)
     write_map(
         tmp_path,
-        "version: 1\n"
-        "cannot_drift:\n"
-        '  - doc: "docs/spec.md"\n'
-        '    reason: "declared un-driftable"\n',
+        'version: 1\ncannot_drift:\n  - doc: "docs/spec.md"\n    reason: "declared un-driftable"\n',
     )
     assert doc_completeness.run(tmp_path, Config()) == 0
     out = capsys.readouterr().out
@@ -144,10 +141,7 @@ def test_exempt_dirs_excluded(tmp_path):
     write(tmp_path, "docs/vendor/skip.md", DOC)
     write_map(
         tmp_path,
-        "version: 1\n"
-        "cannot_drift:\n"
-        '  - doc: "docs/keep.md"\n'
-        '    reason: "prose"\n',
+        'version: 1\ncannot_drift:\n  - doc: "docs/keep.md"\n    reason: "prose"\n',
     )
     cfg = Config(exempt_dirs=["docs/vendor"])
     # docs/vendor/skip.md is exempt, so its absence from the map is not a
@@ -169,7 +163,7 @@ def test_malformed_cannot_drift_raises_config_error(tmp_path):
     write(tmp_path, "docs/spec.md", DOC)
     write_map(
         tmp_path,
-        "version: 1\n" "cannot_drift:\n" '  - doc: "docs/spec.md"\n',
+        'version: 1\ncannot_drift:\n  - doc: "docs/spec.md"\n',
     )
     with pytest.raises(ConfigError, match="missing a non-empty 'reason'"):
         doc_completeness.run(tmp_path, Config())
@@ -179,7 +173,7 @@ def test_malformed_cannot_drift_cli_exit_2(tmp_path, capsys):
     write(tmp_path, "docs/spec.md", DOC)
     write_map(
         tmp_path,
-        "version: 1\n" "cannot_drift:\n" '  - doc: "docs/spec.md"\n',
+        'version: 1\ncannot_drift:\n  - doc: "docs/spec.md"\n',
     )
     rc = cli.main(["doc-completeness", "--root", str(tmp_path)])
     assert rc == 2
@@ -192,11 +186,7 @@ def test_mapping_missing_doc_key_cli_exit_2(tmp_path, capsys):
     write(tmp_path, "docs/spec.md", DOC)
     write_map(
         tmp_path,
-        "version: 1\n"
-        "mappings:\n"
-        "  - sources:\n"
-        '      - "src/**"\n'
-        '    reason: "no doc key"\n',
+        'version: 1\nmappings:\n  - sources:\n      - "src/**"\n    reason: "no doc key"\n',
     )
     rc = cli.main(["doc-completeness", "--root", str(tmp_path)])
     assert rc == 2

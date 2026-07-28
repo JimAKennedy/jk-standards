@@ -123,6 +123,11 @@ class Config:
     snippet_markers: list[SnippetMarkerSyntax] = field(default_factory=list)
     # boundaries: directed forbidden-reference rules between component dirs.
     boundaries: list[BoundaryRule] = field(default_factory=list)
+    # doc-coverage: Python source roots the ast enumerator walks, and the doc
+    # scopes scanned for the "mention" OR-signal. An absent section yields empty
+    # source_roots, so the check trivially passes (nothing to enumerate).
+    doc_coverage_source_roots: list[SourceRoot] = field(default_factory=list)
+    doc_coverage_doc_scopes: list[str] = field(default_factory=list)
 
 
 def _require(mapping: dict, key: str, context: str) -> object:
@@ -235,6 +240,16 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
         )
         for r in data.get("boundaries", {}).get("rules", [])
     ]
+
+    doc_coverage = data.get("doc_coverage", {})
+    cfg.doc_coverage_source_roots = [
+        SourceRoot(
+            path=str(_require(s, "path", "doc_coverage.source_roots entry")),
+            extensions=[str(e) for e in s.get("extensions", [".py"])],
+        )
+        for s in doc_coverage.get("source_roots", [])
+    ]
+    cfg.doc_coverage_doc_scopes = [str(s) for s in doc_coverage.get("doc_scopes", [])]
     return cfg
 
 

@@ -12,6 +12,7 @@ from jk_standards.checks import (
     boundaries,
     count_drift,
     doc_completeness,
+    doc_coverage,
     doc_drift,
     doc_taxonomy,
     file_line_refs,
@@ -31,6 +32,7 @@ CHECKS = {
     "snippet-regions": snippet_regions.run,
     "boundaries": boundaries.run,
     "doc-completeness": doc_completeness.run,
+    "doc-coverage": doc_coverage.run,
     "doc-drift": doc_drift.run,
 }
 

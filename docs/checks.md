@@ -179,6 +179,58 @@ mappings entry missing its `doc` key fails the same way
 missing drift map is itself a failure
 [verified: test_doc_completeness::test_missing_drift_map_fails].
 
+## doc-coverage
+
+The doc-drift family catches a doc that lies about code; this check catches the
+opposite gap — code that no doc, and no docstring, describes at all. It walks the
+configured Python source roots and enumerates each module's public documentable
+units (the module itself, its top-level public classes and functions, and those
+classes' public methods), then asks of every unit whether ANY of three
+independent OR-signals holds:
+
+- **docstring** — the unit carries a non-empty docstring.
+- **drift** — the unit's file matches a `sources:` glob in the drift map, so a
+  change to it is already touch-correlated to a doc.
+- **mention** — the unit's bare symbol name appears as a whole word in one of the
+  configured doc scopes.
+
+A unit is documented iff at least one signal fires — the disjunction, not the
+conjunction [verified: test_doc_coverage::test_docunit_documented_is_disjunction].
+A docstring on the module alone keeps the module green
+[verified: test_doc_coverage::test_module_docstring_alone_keeps_module_green], a
+`sources:` glob match documents it via the drift signal
+[verified: test_doc_coverage::test_drift_map_glob_documents_module], and a
+whole-word symbol mention in a doc scope documents it via the mention signal
+[verified: test_doc_coverage::test_symbol_mention_in_doc_scope_documents_module].
+The mention is a whole-word match, not a substring — a symbol embedded in a
+longer token does not count
+[verified: test_doc_coverage::test_mention_is_whole_word_not_substring].
+
+The gate is deliberately lenient: it fails at **module granularity**. A module is
+flagged only when EVERY one of its public units is undocumented by all three
+signals — a genuinely bare file that nothing, anywhere, describes
+[verified: test_doc_coverage::test_fully_bare_module_fails]. One
+`::error file=<module>,line=1::` is emitted per fully-undocumented module so it
+surfaces inline on PRs
+[verified: test_doc_coverage::test_bare_module_emits_error_with_path_and_line],
+and the summary line reports the unit count, module count, undocumented count,
+and live-waiver count
+[verified: test_doc_coverage::test_clean_run_summary_reports_unit_and_module_counts].
+
+Escape hatch: a `# doc-coverage-ok: <reason>` marker in the file's leading comment
+block (before the first code) waives the whole module in place
+[verified: test_doc_coverage::test_escape_hatch_waives_module]; a shebang above
+the marker is fine
+[verified: test_doc_coverage::test_escape_hatch_after_shebang_still_waives], but a
+marker buried in code or a docstring does not waive
+[verified: test_doc_coverage::test_marker_buried_in_code_does_not_waive]. Live
+waivers are counted in the summary line so rising escape-hatch usage stays visible
+in CI logs.
+
+Scope: Python-only. The enumerator is an `ast` walk over the configured source
+roots; C++ documentable-unit coverage is deferred to M010. With no source roots
+configured the check skips cleanly.
+
 ## action-pinning
 
 Every GitHub Actions `uses:` reference under `.github/workflows/**/*.yml`

@@ -41,6 +41,18 @@
       "type": "list[str]"
     },
     {
+      "default": [],
+      "has_default_factory": true,
+      "name": "doc_coverage_doc_scopes",
+      "type": "list[str]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "doc_coverage_source_roots",
+      "type": "list[SourceRoot]"
+    },
+    {
       "default": [
         {
           "extensions": [

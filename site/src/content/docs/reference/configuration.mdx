@@ -7,7 +7,7 @@ description: Every field of jk-standards.yaml plus the CLI surface.
 import CodeSnippet from '../../../components/CodeSnippet.astro';
 import schema from '../../../generated/config-schema.json';
 
-Status: current (2026-07-26)
+Status: current (2026-07-28)
 
 All project-specific surface lives in one file, `{schema.config_file_name}`,
 at the consuming repo's root (override with `--config`). Every key is
@@ -67,6 +67,16 @@ a `forbid` regex a line under it must not match, and optional `name`,
 [checks reference](/reference/checks/#boundaries) for the rule these fields
 tune.
 
+The `doc_coverage_source_roots` and `doc_coverage_doc_scopes` fields are read
+from a `doc_coverage:` section (`source_roots` and `doc_scopes` keys) and tune
+the `doc-coverage` check, which catches Python code that no doc and no docstring
+describes at all. `source_roots` are the trees whose modules the AST enumerator
+walks (each entry defaults to `.py` files); `doc_scopes` are the doc
+directories scanned for the whole-word symbol "mention" OR-signal. Both default
+to empty, so the section is optional. See the
+[checks reference](/reference/checks/#doc-coverage) for the rule these fields
+tune.
+
 ## Example — this repo's own config
 
 jk-standards dogfoods itself, so its own `jk-standards.yaml` is a live
@@ -83,7 +93,8 @@ jk-standards all            # every configured static check (+ doc-drift
 jk-standards list           # list check names
 jk-standards emit <name>    # regenerate one drift-proof fixture under
                             # site/src/generated/; <name> is one of
-                            # checks | config-schema | skills | coverage | all
+                            # checks | config-schema | skills | coverage |
+                            # doc-coverage | all
 jk-standards emit <name> --check
                             # exit 1 if the on-disk fixture differs from
                             # what would be emitted now (CI drift gate)

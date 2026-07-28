@@ -1,0 +1,965 @@
+{
+  "toolkit_version": "0.5.0",
+  "units": [
+    {
+      "documented": true,
+      "file": "src/jk_standards/__init__.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "__init__",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/__init__.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "__init__",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/action_pinning.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "action_pinning",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/action_pinning.py",
+      "kind": "function",
+      "lineno": 45,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/behavioral_claims.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "behavioral_claims",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/behavioral_claims.py",
+      "kind": "function",
+      "lineno": 28,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/boundaries.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "boundaries",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/boundaries.py",
+      "kind": "function",
+      "lineno": 82,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/count_drift.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "count_drift",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/count_drift.py",
+      "kind": "function",
+      "lineno": 45,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_completeness.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "doc_completeness",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_completeness.py",
+      "kind": "function",
+      "lineno": 29,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_coverage.py",
+      "kind": "class",
+      "lineno": 53,
+      "name": "DocUnit",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_coverage.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "doc_coverage",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_coverage.py",
+      "kind": "method",
+      "lineno": 70,
+      "name": "documented",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_coverage.py",
+      "kind": "function",
+      "lineno": 168,
+      "name": "enumerate_units",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_coverage.py",
+      "kind": "function",
+      "lineno": 203,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_drift.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "doc_drift",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_drift.py",
+      "kind": "function",
+      "lineno": 49,
+      "name": "is_deps_only_diff",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_drift.py",
+      "kind": "function",
+      "lineno": 104,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_taxonomy.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "doc_taxonomy",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_taxonomy.py",
+      "kind": "function",
+      "lineno": 18,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/file_line_refs.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "file_line_refs",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/file_line_refs.py",
+      "kind": "function",
+      "lineno": 63,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/generated_freshness.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "generated_freshness",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/generated_freshness.py",
+      "kind": "function",
+      "lineno": 19,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/snippet_regions.py",
+      "kind": "function",
+      "lineno": 124,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/snippet_regions.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "snippet_regions",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/status_prose.py",
+      "kind": "function",
+      "lineno": 47,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/status_prose.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "status_prose",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/cli.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "cli",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/cli.py",
+      "kind": "function",
+      "lineno": 60,
+      "name": "main",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "class",
+      "lineno": 54,
+      "name": "BoundaryRule",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "class",
+      "lineno": 48,
+      "name": "ClaimSource",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "class",
+      "lineno": 84,
+      "name": "Config",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "class",
+      "lineno": 19,
+      "name": "ConfigError",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "class",
+      "lineno": 24,
+      "name": "DocRoot",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "class",
+      "lineno": 42,
+      "name": "ForbiddenPhrase",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "class",
+      "lineno": 36,
+      "name": "GeneratedDoc",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "class",
+      "lineno": 71,
+      "name": "SnippetMarkerSyntax",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "class",
+      "lineno": 30,
+      "name": "SourceRoot",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "config",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "function",
+      "lineno": 256,
+      "name": "iter_docs",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/config.py",
+      "kind": "function",
+      "lineno": 139,
+      "name": "load_config",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/emit.py",
+      "kind": "class",
+      "lineno": 167,
+      "name": "CoverageToolingMissing",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/emit.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "emit",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/emit.py",
+      "kind": "function",
+      "lineno": 60,
+      "name": "emit_checks",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/emit.py",
+      "kind": "function",
+      "lineno": 138,
+      "name": "emit_config_schema",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/emit.py",
+      "kind": "function",
+      "lineno": 226,
+      "name": "emit_coverage",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/emit.py",
+      "kind": "function",
+      "lineno": 262,
+      "name": "emit_doc_coverage",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/emit.py",
+      "kind": "function",
+      "lineno": 103,
+      "name": "emit_skills",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/emit.py",
+      "kind": "function",
+      "lineno": 302,
+      "name": "run",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/frontmatter.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "frontmatter",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/frontmatter.py",
+      "kind": "function",
+      "lineno": 11,
+      "name": "read_class",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": false,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "class",
+      "lineno": 10,
+      "name": "GitError",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": false,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
+      "lineno": 45,
+      "name": "changed_files",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
+      "lineno": 56,
+      "name": "commit_trailers",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": false,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
+      "lineno": 51,
+      "name": "file_diff",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "gitutil",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
+      "lineno": 21,
+      "name": "resolve_base_ref",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/output.py",
+      "kind": "function",
+      "lineno": 13,
+      "name": "error",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/output.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "output",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/output.py",
+      "kind": "function",
+      "lineno": 21,
+      "name": "summary",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/output.py",
+      "kind": "function",
+      "lineno": 17,
+      "name": "warning",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "class",
+      "lineno": 49,
+      "name": "LockError",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": false,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 200,
+      "name": "check_skills",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": false,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 61,
+      "name": "compute_hash",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": false,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 65,
+      "name": "download_archive",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 99,
+      "name": "extract_skill",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 270,
+      "name": "find_project_root",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": false,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 123,
+      "name": "install_skills",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": false,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 53,
+      "name": "load_lock",
+      "signals": {
+        "docstring": false,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 307,
+      "name": "main",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "skills_install",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 229,
+      "name": "update_lock",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/testindex.py",
+      "kind": "function",
+      "lineno": 70,
+      "name": "build_index",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/testindex.py",
+      "kind": "function",
+      "lineno": 37,
+      "name": "scrape_gtest",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/testindex.py",
+      "kind": "function",
+      "lineno": 45,
+      "name": "scrape_js",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/testindex.py",
+      "kind": "function",
+      "lineno": 56,
+      "name": "scrape_pytest",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/testindex.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "testindex",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    }
+  ]
+}

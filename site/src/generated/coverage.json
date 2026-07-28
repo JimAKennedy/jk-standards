@@ -5,8 +5,8 @@
       "percent_covered": 100.0
     },
     "src/jk_standards/checks/__init__.py": {
-      "missing_lines": 1,
-      "percent_covered": 75.0
+      "missing_lines": 0,
+      "percent_covered": 100.0
     },
     "src/jk_standards/checks/action_pinning.py": {
       "missing_lines": 1,
@@ -24,9 +24,17 @@
       "missing_lines": 7,
       "percent_covered": 85.71
     },
+    "src/jk_standards/checks/doc_completeness.py": {
+      "missing_lines": 0,
+      "percent_covered": 100.0
+    },
+    "src/jk_standards/checks/doc_coverage.py": {
+      "missing_lines": 24,
+      "percent_covered": 69.23
+    },
     "src/jk_standards/checks/doc_drift.py": {
-      "missing_lines": 28,
-      "percent_covered": 62.76
+      "missing_lines": 7,
+      "percent_covered": 91.72
     },
     "src/jk_standards/checks/doc_taxonomy.py": {
       "missing_lines": 0,
@@ -49,16 +57,16 @@
       "percent_covered": 100.0
     },
     "src/jk_standards/cli.py": {
-      "missing_lines": 7,
-      "percent_covered": 89.32
+      "missing_lines": 4,
+      "percent_covered": 94.17
     },
     "src/jk_standards/config.py": {
       "missing_lines": 1,
-      "percent_covered": 98.57
+      "percent_covered": 98.62
     },
     "src/jk_standards/emit.py": {
-      "missing_lines": 41,
-      "percent_covered": 69.31
+      "missing_lines": 57,
+      "percent_covered": 56.92
     },
     "src/jk_standards/frontmatter.py": {
       "missing_lines": 2,
@@ -83,9 +91,9 @@
   },
   "toolkit_version": "0.5.0",
   "totals": {
-    "covered_lines": 1039,
-    "missing_lines": 133,
-    "num_statements": 1172,
-    "percent_covered": 86.4
+    "covered_lines": 1181,
+    "missing_lines": 148,
+    "num_statements": 1329,
+    "percent_covered": 86.41
   }
 }

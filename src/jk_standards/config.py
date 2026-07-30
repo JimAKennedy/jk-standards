@@ -128,6 +128,11 @@ class Config:
     # source_roots, so the check trivially passes (nothing to enumerate).
     doc_coverage_source_roots: list[SourceRoot] = field(default_factory=list)
     doc_coverage_doc_scopes: list[str] = field(default_factory=list)
+    # doc-coverage advisory floor: when set (0..100), modules whose live
+    # documented-unit ratio falls below this percent emit a warning-only
+    # annotation that is counted in the summary but NEVER changes the exit code
+    # on its own (D014/MEM061). Default None = advisory off.
+    doc_coverage_module_min_percent: int | None = None
 
 
 def _require(mapping: dict, key: str, context: str) -> object:
@@ -250,7 +255,30 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
         for s in doc_coverage.get("source_roots", [])
     ]
     cfg.doc_coverage_doc_scopes = [str(s) for s in doc_coverage.get("doc_scopes", [])]
+    cfg.doc_coverage_module_min_percent = _module_min_percent(
+        doc_coverage.get("module_min_percent")
+    )
     return cfg
+
+
+def _module_min_percent(value: object) -> int | None:
+    """Validate the optional doc_coverage.module_min_percent advisory floor.
+
+    Accepts an int in ``[0, 100]`` (0 and 100 inclusive) or an unset/``None``
+    value (advisory off). Everything else is a :class:`ConfigError` so the CLI
+    surfaces it as exit 2 (D010) rather than silently coercing: ``bool`` is
+    rejected explicitly (it is an ``int`` subclass, so ``True``/``False`` would
+    otherwise slip through as 1/0), and floats/strings fail the int check.
+    """
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ConfigError(
+            f"doc_coverage.module_min_percent must be an int in [0, 100] or unset, got {value!r}"
+        )
+    if not 0 <= value <= 100:
+        raise ConfigError(f"doc_coverage.module_min_percent must be in [0, 100], got {value}")
+    return value
 
 
 def iter_docs(root: Path, cfg: Config) -> list[Path]:

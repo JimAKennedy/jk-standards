@@ -329,6 +329,50 @@ def test_boundaries_missing_forbid_raises(tmp_path):
         load_config(tmp_path)
 
 
+# --- doc_coverage.module_min_percent (advisory floor) ----------------------
+
+
+def test_module_min_percent_default_is_none(tmp_path):
+    cfg = load_config(tmp_path)
+    assert cfg.doc_coverage_module_min_percent is None
+
+
+def test_module_min_percent_absent_when_section_present(tmp_path):
+    write(tmp_path, "jk-standards.yaml", "doc_coverage:\n  doc_scopes: ['docs']\n")
+    cfg = load_config(tmp_path)
+    assert cfg.doc_coverage_module_min_percent is None
+
+
+@pytest.mark.parametrize("value", [0, 50, 100])
+def test_module_min_percent_valid_values_accepted(tmp_path, value):
+    write(tmp_path, "jk-standards.yaml", f"doc_coverage:\n  module_min_percent: {value}\n")
+    cfg = load_config(tmp_path)
+    assert cfg.doc_coverage_module_min_percent == value
+
+
+@pytest.mark.parametrize("value", [101, -1])
+def test_module_min_percent_out_of_range_raises(tmp_path, value):
+    write(tmp_path, "jk-standards.yaml", f"doc_coverage:\n  module_min_percent: {value}\n")
+    with pytest.raises(ConfigError, match=r"module_min_percent must be in \[0, 100\]"):
+        load_config(tmp_path)
+
+
+@pytest.mark.parametrize("literal", ["true", "false"])
+def test_module_min_percent_bool_raises(tmp_path, literal):
+    # YAML `true`/`false` parse to Python bool; bool is an int subclass, so it
+    # must be rejected explicitly rather than coerced to 1/0.
+    write(tmp_path, "jk-standards.yaml", f"doc_coverage:\n  module_min_percent: {literal}\n")
+    with pytest.raises(ConfigError, match="module_min_percent must be an int"):
+        load_config(tmp_path)
+
+
+@pytest.mark.parametrize("literal", ["85.5", "'85'", "high"])
+def test_module_min_percent_non_int_raises(tmp_path, literal):
+    write(tmp_path, "jk-standards.yaml", f"doc_coverage:\n  module_min_percent: {literal}\n")
+    with pytest.raises(ConfigError, match="module_min_percent must be an int"):
+        load_config(tmp_path)
+
+
 # --- iter_docs --------------------------------------------------------------
 
 

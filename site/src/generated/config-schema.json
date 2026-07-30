@@ -41,6 +41,24 @@
       "type": "list[str]"
     },
     {
+      "default": [],
+      "has_default_factory": true,
+      "name": "doc_coverage_doc_scopes",
+      "type": "list[str]"
+    },
+    {
+      "default": null,
+      "has_default_factory": false,
+      "name": "doc_coverage_module_min_percent",
+      "type": "int | None"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "doc_coverage_source_roots",
+      "type": "list[SourceRoot]"
+    },
+    {
       "default": [
         {
           "extensions": [
@@ -141,5 +159,5 @@
       "type": "list[str]"
     }
   ],
-  "toolkit_version": "0.5.0"
+  "toolkit_version": "0.6.0"
 }

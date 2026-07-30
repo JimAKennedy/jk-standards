@@ -68,6 +68,8 @@ generated:
     command: jk-standards emit config-schema
   - doc: site/src/generated/skills.json
     command: jk-standards emit skills
+  - doc: site/src/generated/doc-coverage.json
+    command: jk-standards emit doc-coverage
 # endregion:generated-fixtures
 
 # The .mdx reference pages slice source via <CodeSnippet file=… region=… />;
@@ -101,4 +103,17 @@ boundaries:
       forbid: 'jk_standards\.emit\b|from jk_standards import [^\n]*\bemit\b'
       hint: "a check must not import the emitter — emit depends on checks, not the reverse"
 # endregion:boundaries-config
+
+# doc-coverage inverts doc-completeness: the ast enumerator walks these Python
+# source roots listing public documentable units, and scans doc_scopes for the
+# word-boundary "mention" OR-signal. A module fails only if EVERY unit in it is
+# undocumented (no docstring, no drift-map glob match, no doc mention); a
+# top-of-file `# doc-coverage-ok: <reason>` marker waives a module.
+# region:doc-coverage-config
+doc_coverage:
+  source_roots:
+    - path: src/jk_standards
+      extensions: [".py"]
+  doc_scopes: [docs, site/src/content/docs, conventions]
+# endregion:doc-coverage-config
 # endregion:full-config

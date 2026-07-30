@@ -4,7 +4,7 @@ class: gated
 
 # Checks reference
 
-Status: current (2026-07-25)
+Status: current (2026-07-28)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit
@@ -122,6 +122,177 @@ same file still triggers
 [verified: test_doc_drift::test_scripts_block_change_still_triggers], and
 manifests not listed get no exemption
 [verified: test_doc_drift::test_unlisted_manifest_still_triggers_on_deps_bump].
+
+The map also carries a `cannot_drift` registry: docs that legitimately have
+no touch-correlation source, each recording a required, non-empty `reason` so
+a deliberate exemption is distinguishable from an accidental omission (the
+distinction doc-completeness keys off). A valid entry parses
+[verified: test_doc_drift::test_cannot_drift_valid_entry_parses]; an entry
+missing its reason
+[verified: test_doc_drift::test_cannot_drift_missing_reason_rejected], with a
+blank reason
+[verified: test_doc_drift::test_cannot_drift_empty_reason_rejected], or missing
+its `doc` key
+[verified: test_doc_drift::test_cannot_drift_missing_doc_rejected] is a config
+error surfaced as exit 2
+[verified: test_doc_drift::test_cannot_drift_invalid_entry_cli_exit_2]. The
+worked example is `site/src/content/docs/reference/skills.mdx`: it renders its
+catalog by importing `site/src/generated/skills.json` at build time — nothing
+on the page is hand-maintained — so a skill add or rename updates the
+generated JSON (freshness-gated by generated-freshness and the emit `--check`)
+and the page reflects it with no source edit to mirror. Mapping a
+touch-correlation rule at a build-time-generated page would only manufacture a
+false positive on every skill change, so it is declared cannot_drift instead.
+
+## doc-completeness
+
+Every doc `iter_docs` enumerates under a configured `doc_root` must be
+accounted for in the drift map — either as a mapping's `doc:` target or as a
+`cannot_drift` entry. A page that is neither is an accidental omission, and
+this check names it: it emits `::error file=<doc>,line=1::` for each
+unregistered doc and fails
+[verified: test_doc_completeness::test_unregistered_doc_fails_naming_it], while
+a doc that is mapped
+[verified: test_doc_completeness::test_mapped_only_passes] or declared
+un-driftable
+[verified: test_doc_completeness::test_cannot_drift_only_passes] passes. The
+remediation names both escape routes — add a mappings entry or a cannot_drift
+entry — and deliberately does not name the docs already accounted for. On
+success it prints `doc-completeness: all N doc(s) mapped or declared`
+[verified: test_doc_completeness::test_success_emits_summary].
+
+Unlike doc-drift it needs no git base ref: the working tree and the map are
+its only inputs, so it runs unconditionally as a static check under
+`jk-standards all` and as a pre-commit hook. It honors the same `doc_roots`,
+extensions, and `exempt_dirs` as every other doc check — a file outside the
+configured extensions is never enumerated
+[verified: test_doc_completeness::test_multiple_doc_roots_and_extensions] and
+an `exempt_dirs` path is skipped
+[verified: test_doc_completeness::test_exempt_dirs_excluded].
+
+It reuses doc-drift's `cannot_drift` parser, so a malformed registry — an entry
+missing its required `reason` — surfaces as the same `config error:` (exit 2)
+rather than a traceback
+[verified: test_doc_completeness::test_malformed_cannot_drift_cli_exit_2], and a
+mappings entry missing its `doc` key fails the same way
+[verified: test_doc_completeness::test_mapping_missing_doc_key_cli_exit_2]. A
+missing drift map is itself a failure
+[verified: test_doc_completeness::test_missing_drift_map_fails].
+
+## doc-coverage
+
+The doc-drift family catches a doc that lies about code; this check catches the
+opposite gap — code that no doc, and no docstring, describes at all. It walks the
+configured Python source roots and enumerates each module's public documentable
+units (the module itself, its top-level public classes and functions, and those
+classes' public methods), then asks of every unit whether ANY of three
+independent OR-signals holds:
+
+- **docstring** — the unit carries a non-empty docstring.
+- **drift** — the unit's file matches a `sources:` glob in the drift map, so a
+  change to it is already touch-correlated to a doc.
+- **mention** — the unit's bare symbol name appears as a whole word in one of the
+  configured doc scopes.
+
+A unit is documented iff at least one signal fires — the disjunction, not the
+conjunction [verified: test_doc_coverage::test_docunit_documented_is_disjunction].
+A docstring on the module alone keeps the module green
+[verified: test_doc_coverage::test_module_docstring_alone_keeps_module_green], a
+`sources:` glob match documents it via the drift signal
+[verified: test_doc_coverage::test_drift_map_glob_documents_module], and a
+whole-word symbol mention in a doc scope documents it via the mention signal
+[verified: test_doc_coverage::test_symbol_mention_in_doc_scope_documents_module].
+The mention is a whole-word match, not a substring — a symbol embedded in a
+longer token does not count
+[verified: test_doc_coverage::test_mention_is_whole_word_not_substring].
+
+The gate is deliberately lenient: it fails at **module granularity**. A module is
+flagged only when EVERY one of its public units is undocumented by all three
+signals — a genuinely bare file that nothing, anywhere, describes
+[verified: test_doc_coverage::test_fully_bare_module_fails]. One
+`::error file=<module>,line=1::` is emitted per fully-undocumented module so it
+surfaces inline on PRs
+[verified: test_doc_coverage::test_bare_module_emits_error_with_path_and_line],
+and the summary line reports the unit count, module count, undocumented count,
+and live-waiver count
+[verified: test_doc_coverage::test_clean_run_summary_reports_unit_and_module_counts].
+
+**Baseline ratchet.** Beyond the binary bare-module gate, the check enforces a
+per-module floor: it recomputes each module's live documented-unit ratio and
+compares it against the committed floor recorded at `baselines/doc-coverage.json`,
+hard-failing any module that slipped below its recorded ratio and naming the
+module with its before/after ratio
+[verified: test_doc_coverage::test_ratchet_regression_below_floor_fails_naming_module_and_ratio].
+The ratchet composes with — it does not replace — the binary gate
+[verified: test_doc_coverage::test_ratchet_composes_with_binary_gate]: holding at
+the floor passes
+[verified: test_doc_coverage::test_ratchet_holding_at_floor_passes], improving
+above it passes
+[verified: test_doc_coverage::test_ratchet_improvement_above_floor_passes], and a
+module not yet in the baseline is first-seen-passes
+[verified: test_doc_coverage::test_ratchet_new_module_not_in_baseline_passes]. With
+no baseline committed yet the ratchet is inert and the summary line says so
+[verified: test_doc_coverage::test_ratchet_no_baseline_passes_and_reports_first_run].
+The floor map is recorded — and ratcheted up — only through the explicit
+`doc-coverage --update-baseline` CLI flag (never `emit all`, so a floor can never
+silently self-heal); a write that would *lower* an existing floor is refused
+unless `--allow-regression` is also passed
+[verified: test_doc_coverage::test_update_baseline_lowering_refused_without_allow_regression],
+and re-recording an unchanged tree reproduces the file byte-for-byte
+[verified: test_doc_coverage::test_update_baseline_is_byte_idempotent].
+
+**Advisory floor.** An optional `doc_coverage.module_min_percent` sets a soft
+per-module target: a module whose live documented-unit ratio is below that
+percentage emits a `::warning` (surfaced inline on the PR) and is tallied in the
+summary line, but the advisory never fails the build — it is strictly additive to
+the binary gate and the ratchet
+[verified: test_doc_coverage::test_advisory_below_floor_warns_but_exit_stays_zero].
+A module exactly at the floor is not flagged
+[verified: test_doc_coverage::test_advisory_at_floor_not_flagged], and when the
+field is unset the summary line is byte-identical to before, with no advisory
+clause and no warnings
+[verified: test_doc_coverage::test_advisory_unset_adds_no_clause_and_no_warning].
+
+Escape hatch: a `# doc-coverage-ok: <reason>` marker in the file's leading comment
+block (before the first code) waives the whole module in place
+[verified: test_doc_coverage::test_escape_hatch_waives_module]; a shebang above
+the marker is fine
+[verified: test_doc_coverage::test_escape_hatch_after_shebang_still_waives], but a
+marker buried in code or a docstring does not waive
+[verified: test_doc_coverage::test_marker_buried_in_code_does_not_waive]. Live
+waivers are counted in the summary line so rising escape-hatch usage stays visible
+in CI logs.
+
+Scope: Python and C++. The default enumerator is an `ast` walk over the
+configured source roots; sources with a C++ suffix (`.cpp`, `.cc`, `.cxx`,
+`.c++`, `.hpp`, `.hh`, `.hxx`, `.h++`, `.h`, `.c`) are instead parsed with
+tree-sitter-cpp and enumerated by a public-declaration heuristic:
+
+- **function** — a named function declaration or definition at namespace scope
+  (recursing into `namespace`/`extern "C"` bodies so the true name is used).
+- **class** / **struct** — a named `class` or `struct` specifier; anonymous ones
+  are skipped since no doc could name them.
+- **method** — a *public* member function, resolved with C++ default-access
+  rules: a `class` starts private and a `struct` starts public, and each
+  `public:`/`private:`/`protected:` label flips visibility for the members that
+  follow, so only currently-public methods are enumerated.
+
+The `has_docstring` signal fires when a Doxygen doc comment — one opening with
+`///`, `//!`, `/**`, or `/*!` — sits on the line immediately above the
+declaration; a plain `//` or `/* */` comment does not count, mirroring how a
+Python docstring (not any comment) is the signal. The drift and mention
+OR-signals, the disjunction rule, and the module-granular gate all carry over
+unchanged — a C++ unit is documented iff it has a doc comment, its file matches a
+drift-map `sources:` glob, or its bare name is mentioned in a doc scope.
+
+Known limits: the native grammar ships only in the optional `jk-standards[cpp]`
+extra. When a C++ source root is configured but tree-sitter-cpp is not installed,
+the check degrades gracefully rather than failing — the C++ files contribute zero
+units and a single summary line reports how many were skipped and points at
+`jk-standards[cpp]`, so a grammar-less repo keeps working on the PyYAML-only
+zero-dependency default. A C++ file that fails to parse into a translation unit
+likewise contributes zero units instead of raising. With no source roots
+configured the check skips cleanly.
 
 ## action-pinning
 

@@ -4,7 +4,7 @@ class: gated
 
 # Configuration reference
 
-Status: current (2026-07-25)
+Status: current (2026-07-28)
 
 All project-specific surface lives in one file, `jk-standards.yaml`, at the
 consuming repo's root (override with `--config`). Every key is optional; an
@@ -84,6 +84,16 @@ boundaries:                   # forbidden cross-directory references
       forbid: 'jk_standards\.cli'     # regex a line MUST NOT match
       extensions: [".py"]             # files to scan; empty = all
       hint: a check must not reach back into the CLI
+
+doc_coverage:                 # code no doc or docstring describes at all
+  source_roots:               # trees the enumerator walks (Python or C++)
+    - path: src/jk_standards
+      extensions: [".py"]     # .py roots use the ast enumerator (default)
+    - path: engine/src        # a C++ root needs the jk-standards[cpp] extra
+      extensions: [".cpp", ".h"]   # C++ suffixes → tree-sitter-cpp enumerator
+  doc_scopes:                 # dirs scanned for the whole-word "mention" signal
+    - docs
+    - site/src/content/docs
 ```
 
 The `action_pinning` section tunes the `action-pinning` check: `workflow_dir`
@@ -110,6 +120,36 @@ explaining the boundary. `from` and `forbid` are required; a rule with neither
 is meaningless. With no rules the check is skipped. See the
 [checks reference](checks.md#boundaries) for the rule these fields tune.
 
+The `doc_coverage` section tunes the `doc-coverage` check, which catches code
+that no doc and no docstring describes at all. `source_roots` are the trees the
+enumerator walks (each entry defaults to `.py` files); with none configured the
+check has nothing to enumerate and trivially passes. A root whose entries carry
+Python suffixes is walked with the `ast` enumerator, while a root with C++
+suffixes (`.cpp`, `.cc`, `.cxx`, `.c++`, `.hpp`, `.hh`, `.hxx`, `.h++`, `.h`,
+`.c`) is parsed with tree-sitter-cpp and enumerated by the public-declaration
+heuristic — so the `engine/src` entry above adds C++ coverage alongside the
+Python root. `doc_scopes` are the doc directories scanned for the whole-word
+symbol "mention" OR-signal. Both fields default to empty, so the section is
+optional.
+
+An optional `module_min_percent` (an int in `[0, 100]`, unset by default) sets a
+soft advisory floor: a module whose live documented-unit ratio falls below that
+percentage emits a `::warning` (surfaced inline on the PR) and is tallied in the
+check's summary line, but it is strictly advisory — it never fails the build. It
+composes with, and is additive to, both the binary bare-module gate and the
+per-module baseline ratchet (the ratchet's committed floor map lives at
+`baselines/doc-coverage.json` and is recorded only through the
+`doc-coverage --update-baseline` CLI flag; see below).
+
+The C++ grammar is not a base dependency: install it with the optional extra,
+`pip install jk-standards[cpp]`, which pulls in `tree-sitter` and
+`tree-sitter-cpp`. When a C++ source root is configured but that extra is not
+installed, the check degrades gracefully rather than failing — the C++ files
+contribute zero units and a single summary line reports how many were skipped
+and points at `jk-standards[cpp]`, so a grammar-less repo keeps working on the
+zero-dependency default. See the [checks reference](checks.md#doc-coverage) for
+the rule these fields tune.
+
 ## CLI
 
 ```
@@ -119,11 +159,23 @@ jk-standards all            # every configured static check (+ doc-drift
 jk-standards list           # list check names
 jk-standards emit <name>    # regenerate one drift-proof fixture under
                             # site/src/generated/; <name> is one of
-                            # checks | config-schema | skills | coverage | all
+                            # checks | config-schema | skills | coverage |
+                            # doc-coverage | all
 jk-standards emit <name> --check
                             # exit 1 if the on-disk fixture differs from
                             # what would be emitted now (CI drift gate)
+jk-standards doc-coverage --update-baseline
+                            # record/ratchet the per-module floor map at
+                            # baselines/doc-coverage.json (never via emit, so
+                            # a floor can never silently self-heal)
+jk-standards doc-coverage --update-baseline --allow-regression
+                            # with --update-baseline: permit a write that
+                            # LOWERS an existing floor (refused otherwise)
 ```
+
+`--update-baseline` and `--allow-regression` are check flags, not emit verbs:
+they belong to `jk-standards doc-coverage`, and `--allow-regression` is valid
+only alongside `--update-baseline`.
 
 Exit codes: 0 clean, 1 violations, 2 usage/config error. Checks whose
 config section is empty report themselves as skipped rather than failing —

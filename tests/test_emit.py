@@ -11,7 +11,7 @@ import pytest
 import yaml
 
 from jk_standards import emit
-from jk_standards.checks import CHECKS
+from jk_standards.checks import CHECKS, doc_coverage
 from jk_standards.config import Config
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -35,7 +35,7 @@ def test_each_emitter_is_byte_idempotent():
 # --- committed-fixture parity (schema-drift guards) ---------------------------
 
 
-@pytest.mark.parametrize("name", ["checks", "config-schema", "skills"])
+@pytest.mark.parametrize("name", ["checks", "config-schema", "skills", "doc-coverage"])
 def test_deterministic_emitters_match_committed_fixture(name):
     """Fresh emission must equal the committed fixture, byte for byte.
 
@@ -229,3 +229,163 @@ def test_check_mode_for_coverage_does_not_shell_out(monkeypatch, tmp_path):
 def test_check_mode_for_coverage_fails_when_fixture_missing(tmp_path):
     """Missing fixture is still a hard error — the gate isn't a no-op."""
     assert emit.run(tmp_path, "coverage", check_only=True) == 1
+
+
+# --- emit_doc_coverage: symbol-level worklist contract ------------------------
+#
+# doc-coverage is a DETERMINISTIC emitter (unlike coverage): it must NOT be in
+# NON_DETERMINISTIC, its fresh output must equal the committed fixture, and its
+# `--check` path recomputes-and-diffs rather than short-circuiting on presence.
+# These tests lock the JSON shape (S03 + downstream remediation consume it),
+# the sort, the per-signal fields, and the two-run determinism guarantee.
+
+
+def _fresh_doc_coverage() -> dict:
+    """Parse the emitter's live output (not the committed file) so these tests
+    assert the contract the emitter produces, not just fixture bytes on disk."""
+    return json.loads(emit.emit_doc_coverage(REPO_ROOT).decode("utf-8"))
+
+
+def test_doc_coverage_is_not_marked_non_deterministic():
+    """MEM043: doc-coverage is deterministic and must be diff-gated. If it ever
+    leaks into NON_DETERMINISTIC, `emit --check` would degrade to a presence
+    check and stop catching stale worklists."""
+    assert "doc-coverage" not in emit.NON_DETERMINISTIC
+
+
+def test_doc_coverage_top_level_shape():
+    data = _fresh_doc_coverage()
+    assert set(data) == {"toolkit_version", "units"}
+    assert isinstance(data["toolkit_version"], str) and data["toolkit_version"]
+    assert isinstance(data["units"], list) and data["units"]
+
+
+def test_doc_coverage_every_unit_has_the_full_field_set():
+    """Every row is a concrete file+symbol remediation target: it must carry the
+    locus (file/kind/name/lineno), the rolled-up `documented` verdict, and all
+    three per-signal booleans nested under `signals`."""
+    for row in _fresh_doc_coverage()["units"]:
+        assert set(row) == {"file", "kind", "name", "lineno", "documented", "signals"}
+        assert isinstance(row["file"], str)
+        assert row["kind"] in {"module", "class", "function", "method"}
+        assert isinstance(row["name"], str)
+        assert isinstance(row["lineno"], int)
+        assert isinstance(row["documented"], bool)
+        assert set(row["signals"]) == {"docstring", "drift", "mention"}
+        assert all(isinstance(v, bool) for v in row["signals"].values())
+
+
+def test_doc_coverage_documented_is_the_or_of_the_three_signals():
+    """`documented` is exactly the disjunction the S01 gate consumes — never a
+    stored field that could drift from the per-signal booleans."""
+    for row in _fresh_doc_coverage()["units"]:
+        s = row["signals"]
+        assert row["documented"] == (s["docstring"] or s["drift"] or s["mention"])
+
+
+def test_doc_coverage_units_are_sorted_by_file_name_lineno():
+    """Byte-stable output depends on the (file, name, lineno) sort — an unsorted
+    walk would make the fixture reorder nondeterministically across runs."""
+    units = _fresh_doc_coverage()["units"]
+    keys = [(r["file"], r["name"], r["lineno"]) for r in units]
+    assert keys == sorted(keys)
+
+
+def test_doc_coverage_is_byte_idempotent_across_two_runs():
+    """The determinism guarantee, asserted at the byte level on real source."""
+    assert emit.emit_doc_coverage(REPO_ROOT) == emit.emit_doc_coverage(REPO_ROOT)
+
+
+def test_doc_coverage_carries_the_undocumented_backlog():
+    """The worklist's whole point: fully-undocumented symbols (all three signals
+    false → documented false) surface as targets. The backlog is emitter-derived
+    — we assert its shape and known members, never a hardcoded count."""
+    units = _fresh_doc_coverage()["units"]
+    undocumented = [r for r in units if not r["documented"]]
+    assert undocumented, "expected a non-empty undocumented backlog"
+    # A `documented: false` row must have every signal off — the invariant that
+    # makes it an honest remediation target.
+    for row in undocumented:
+        assert not any(row["signals"].values())
+    # The known bare files from the slice contract (gitutil.py + skills_install.py).
+    undocumented_files = {r["file"] for r in undocumented}
+    assert any(f.endswith("gitutil.py") for f in undocumented_files)
+    assert any(f.endswith("skills_install.py") for f in undocumented_files)
+
+
+def test_doc_coverage_check_path_is_fresh_against_committed_fixture():
+    """`emit --check doc-coverage` recomputes and diffs (deterministic branch),
+    returning 0 when the committed worklist is fresh. This is the CI signal."""
+    assert emit.run(REPO_ROOT, "doc-coverage", check_only=True) == 0
+
+
+def test_doc_coverage_check_path_detects_a_stale_fixture(tmp_path, monkeypatch):
+    """The deterministic `--check` branch must return 1 when bytes drift — proof
+    the gate diffs content rather than merely asserting the file exists."""
+    out_path = tmp_path / emit.GENERATED_DIR / "doc-coverage.json"
+    out_path.parent.mkdir(parents=True)
+    out_path.write_text('{"stale": true}\n', encoding="utf-8")
+    monkeypatch.setitem(
+        emit.EMITTERS, "doc-coverage", (lambda _root: b'{"fresh": true}\n', "doc-coverage.json")
+    )
+    assert emit.run(tmp_path, "doc-coverage", check_only=True) == 1
+
+
+# --- self-heal invariant: `emit all` must never touch the ratchet baseline ----
+#
+# The load-bearing M011 guarantee (D016) is that baselines/doc-coverage.json can
+# never be freshened by `emit all` — if it could, a coverage regression would
+# silently heal itself into the new floor and the ratchet would gate nothing.
+# That exclusion is enforced structurally: the baseline is absent from
+# emit.EMITTERS (nothing emits it) AND from jk-standards.yaml's `generated:`
+# list (generated-freshness never regenerates it). The three tests below pin
+# both halves plus a live write-mode proof, so the exclusion cannot be undone
+# without a red test.
+
+
+def test_baseline_path_is_not_a_registered_emitter_output():
+    """No emitter targets the baseline. `emit all` only ever writes
+    root/GENERATED_DIR/<filename> for a registered emitter, so a path absent
+    from that set is structurally unreachable — the ratchet floor cannot
+    self-heal. The baseline also lives OUTSIDE the emitted GENERATED_DIR."""
+    baseline = (REPO_ROOT / doc_coverage.BASELINE_PATH).resolve()
+    emitter_outputs = {
+        (REPO_ROOT / emit.GENERATED_DIR / filename).resolve()
+        for _, (_, filename) in emit.EMITTERS.items()
+    }
+    assert baseline not in emitter_outputs
+    assert (REPO_ROOT / emit.GENERATED_DIR).resolve() not in baseline.parents
+
+
+def test_baseline_path_is_absent_from_generated_freshness_gate():
+    """generated-freshness re-runs each `generated:` command and diffs the
+    result against the tracked file; listing the baseline there would let CI
+    regenerate (self-heal) it. It must be absent so the explicit --update-baseline
+    writer stays the ONLY path that mutates the floor."""
+    yaml_data = yaml.safe_load((REPO_ROOT / "jk-standards.yaml").read_text(encoding="utf-8"))
+    gated = {entry["doc"] for entry in yaml_data.get("generated", [])}
+    assert doc_coverage.BASELINE_PATH not in gated
+
+
+def test_emit_all_write_mode_leaves_the_baseline_byte_identical(monkeypatch):
+    """The invariant proven dynamically: a real write-mode `emit all` pass leaves
+    baselines/doc-coverage.json byte-for-byte unchanged. `coverage` is dropped
+    (non-deterministic, and would recurse inside pytest). Every fixture the pass
+    would write is snapshotted and restored in a finally, so the test is hermetic
+    — it never leaves a tracked file modified even if one was stale on entry."""
+    deterministic = {k: v for k, v in emit.EMITTERS.items() if k != "coverage"}
+    targets = {
+        REPO_ROOT / emit.GENERATED_DIR / filename: (
+            REPO_ROOT / emit.GENERATED_DIR / filename
+        ).read_bytes()
+        for _, (_, filename) in deterministic.items()
+    }
+    baseline_path = REPO_ROOT / doc_coverage.BASELINE_PATH
+    baseline_before = baseline_path.read_bytes()
+    monkeypatch.setattr(emit, "EMITTERS", deterministic)
+    try:
+        assert emit.run(REPO_ROOT, "all", check_only=False) == 0
+        assert baseline_path.read_bytes() == baseline_before
+    finally:
+        for path, data in targets.items():
+            path.write_bytes(data)

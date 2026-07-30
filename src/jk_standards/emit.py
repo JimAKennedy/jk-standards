@@ -25,8 +25,8 @@ from pathlib import Path
 import yaml
 
 from jk_standards import __version__
-from jk_standards.checks import CHECKS, STATIC_CHECKS
-from jk_standards.config import DEFAULT_CONFIG_NAME, Config
+from jk_standards.checks import CHECKS, STATIC_CHECKS, doc_coverage
+from jk_standards.config import DEFAULT_CONFIG_NAME, Config, load_config
 
 GENERATED_DIR = Path("site/src/generated")
 
@@ -259,11 +259,43 @@ def emit_coverage(root: Path) -> bytes:
     return _serialize(_coverage_payload(raw))
 
 
+def emit_doc_coverage(root: Path) -> bytes:
+    """Project the S01 doc-coverage walk as a symbol-level worklist.
+
+    Reuses the ``doc_coverage.enumerate_units`` seam (no re-walk / re-parse):
+    each DocUnit becomes a row carrying all three OR-signals, so a
+    ``documented: false`` row is a concrete file+symbol remediation target.
+    Rows are sorted by (file, name, lineno) for byte-stable output, and no
+    timestamp / absolute path / env-sensitive value is emitted — the fixture is
+    deterministic and thus diff-gated by generated-freshness (unlike coverage).
+    """
+    cfg = load_config(root)
+    units = doc_coverage.enumerate_units(root, cfg)
+    rows = [
+        {
+            "file": u.file,
+            "kind": u.kind,
+            "name": u.name,
+            "lineno": u.lineno,
+            "documented": u.documented,
+            "signals": {
+                "docstring": u.has_docstring,
+                "drift": u.drift_match,
+                "mention": u.mention,
+            },
+        }
+        for u in units
+    ]
+    rows.sort(key=lambda r: (r["file"], r["name"], r["lineno"]))
+    return _serialize({"toolkit_version": __version__, "units": rows})
+
+
 EMITTERS: dict[str, tuple[Callable[[Path], bytes], str]] = {
     "checks": (emit_checks, "checks.json"),
     "config-schema": (emit_config_schema, "config-schema.json"),
     "skills": (emit_skills, "skills.json"),
     "coverage": (emit_coverage, "coverage.json"),
+    "doc-coverage": (emit_doc_coverage, "doc-coverage.json"),
 }
 
 

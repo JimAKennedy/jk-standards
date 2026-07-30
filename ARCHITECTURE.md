@@ -4,7 +4,7 @@ class: gated
 
 # Architecture
 
-Status: current (2026-07-27)
+Status: current (2026-07-28)
 
 This document is jk-standards' own architecture document, written to the
 [architecture standard](docs/architecture-standard.md) this toolkit publishes.
@@ -98,10 +98,11 @@ listed as an invariant — those live in the prose above.
 | Inventory counts are not hardcoded as numerals in prose | `count-drift` check |
 | Every `<CodeSnippet>` region reference resolves to a real marker | `snippet-regions` check |
 | GitHub Actions are pinned to a full commit SHA | `action-pinning` check |
+| No Python module is wholly undocumented — every module has a unit reached by a docstring, drift-map glob, or doc mention | `doc-coverage` check |
 | The test suite passes with coverage at or above the 80% floor | `test` + `coverage` CI jobs |
 | The whole conformance gate stays green on this repo | `dogfood` CI job (`jk-standards all`) / `scripts/verify.sh` |
 
-The first eleven mechanisms are checks in this repository's own `CHECKS`
+The first twelve mechanisms are checks in this repository's own `CHECKS`
 registry, run together by `jk-standards all` in the `dogfood` CI job and
 reproduced locally by `scripts/verify.sh`. The last two are CI jobs defined in
 `.github/workflows/ci.yml`. The two `boundaries` rules are configured in

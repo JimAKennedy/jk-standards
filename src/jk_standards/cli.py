@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 from jk_standards import __version__, emit, skills_install
-from jk_standards.checks import CHECKS, STATIC_CHECKS
+from jk_standards.checks import CHECKS, STATIC_CHECKS, doc_coverage
 from jk_standards.config import ConfigError, load_config
 from jk_standards.gitutil import GitError
 
@@ -73,6 +73,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--config", type=Path, default=None)
     parser.add_argument("--base", default=None, help="git base ref for doc-drift")
+    parser.add_argument(
+        "--update-baseline",
+        action="store_true",
+        help="doc-coverage only: record/ratchet the per-module floor map at "
+        "baselines/doc-coverage.json instead of checking against it",
+    )
+    parser.add_argument(
+        "--allow-regression",
+        action="store_true",
+        help="with --update-baseline: permit lowering a recorded floor (D015)",
+    )
     parser.add_argument("--version", action="version", version=__version__)
     # pre-commit passes matched filenames; the checks scan configured roots
     # themselves, so filenames are accepted and ignored.
@@ -91,8 +102,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"config error: {e}", file=sys.stderr)
         return 2
 
+    # --allow-regression is meaningful only alongside the record/ratchet writer.
+    if args.allow_regression and not args.update_baseline:
+        print("--allow-regression requires --update-baseline", file=sys.stderr)
+        return 2
+
     try:
-        if args.check == "all":
+        if args.update_baseline:
+            # The baseline writer is a dedicated action, not a check — it must
+            # never be reached through the generic CHECKS[...] run path, and a
+            # plain doc-coverage run must never write the floor map.
+            if args.check != "doc-coverage":
+                print("--update-baseline is only valid for doc-coverage", file=sys.stderr)
+                return 2
+            errors = doc_coverage.update_baseline(root, cfg, allow_regression=args.allow_regression)
+        elif args.check == "all":
             errors = sum(CHECKS[name](root, cfg) for name in STATIC_CHECKS)
             if args.base or os.environ.get("GITHUB_BASE_REF"):
                 errors += CHECKS["doc-drift"](root, cfg, base=args.base)
@@ -102,6 +126,9 @@ def main(argv: list[str] | None = None) -> int:
             errors = CHECKS["doc-drift"](root, cfg, base=args.base)
         else:
             errors = CHECKS[args.check](root, cfg)
+    except ConfigError as e:
+        print(f"config error: {e}", file=sys.stderr)
+        return 2
     except GitError as e:
         print(f"git error: {e}", file=sys.stderr)
         return 2

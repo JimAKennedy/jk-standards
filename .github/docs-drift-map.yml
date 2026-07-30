@@ -57,13 +57,93 @@ mappings:
     doc: "conventions/warning-flags.md"
     reason: "cmake/jk_warnings.cmake is the reference implementation of the gated warning-flags standard: jk_target_warnings/jk_suppress_sdk_warnings encode the exact warnings-as-errors + extended diagnostic set the doc mandates. Changing the module's flags or scope handling without updating conventions/warning-flags.md would make the standard describe a module that no longer exists."
 
-  # NOTE: site/src/content/docs/reference/skills.mdx is intentionally NOT
-  # mapped here. Unlike checks.mdx/configuration.mdx (which bake in per-item
-  # prose that a source change must be mirrored into), skills.mdx renders its
-  # catalog by importing site/src/generated/skills.json and mapping over it at
-  # build time — "Nothing on this page is hand-maintained." A skill add/rename
-  # updates skills.json (gated by generated-freshness / emit-check), and the
-  # page reflects it automatically with no source edit to make. Mapping a
-  # touch-correlation rule at a build-time-generated page only manufactures a
-  # false positive on every skill change (the map's own header: "Do NOT map
-  # generated docs"). M006 will make this "cannot-drift" status explicit.
+# Cannot-drift registry: docs explicitly declared un-driftable. Each entry
+# names a `doc` that deliberately has no `mappings` rule and records the
+# `reason` it cannot drift, so the completeness check can distinguish a
+# documented exemption from an accidental omission. The reason is required
+# and must be non-empty (enforced by doc_drift._parse_cannot_drift).
+cannot_drift:
+  - doc: "site/src/content/docs/reference/skills.mdx"
+    reason: >-
+      skills.mdx is generated, not hand-maintained. Unlike checks.mdx and
+      configuration.mdx (which bake in per-item prose a source change must be
+      mirrored into), skills.mdx renders its catalog by importing
+      site/src/generated/skills.json and mapping over it at build time —
+      "Nothing on this page is hand-maintained." A skill add/rename updates
+      skills.json (gated by generated-freshness / emit-check) and the page
+      reflects it automatically with no source edit to make. Mapping a
+      touch-correlation rule at a build-time-generated page would only
+      manufacture a false positive on every skill change (the map's own
+      header: "Do NOT map generated docs"), so it is declared cannot_drift
+      instead.
+
+  - doc: "docs/architecture-standard.md"
+    reason: >-
+      architecture-standard.md is a normative standard — RFC-2119 prose a
+      consuming repo follows — not a description of this toolkit's code
+      surface. It defines what an ARCHITECTURE.md must contain; no module in
+      this repo implements it. The repo's own ARCHITECTURE.md is the exemplar
+      that IS touch-correlated (mapped above to checks/cli/emit); the standard
+      itself has no code source to drift against. class:gated, freshness-
+      governed by doc-taxonomy + status-prose (the Status: current line), so a
+      touch-correlation rule would only manufacture false positives.
+
+  - doc: "conventions/cpp-language-standard.md"
+    reason: >-
+      cpp-language-standard.md is a normative standard fixing the ISO C++
+      revision a consuming repo targets — prose a downstream repo follows, not
+      a description of code in this repo. Unlike conventions/warning-flags.md
+      (whose rule cmake/jk_warnings.cmake implements and which is mapped above),
+      no module here implements the language-revision policy, so there is no
+      touch-correlation source. class:gated, freshness-governed by doc-taxonomy
+      + status-prose.
+
+  - doc: "conventions/msvc-portability.md"
+    reason: >-
+      msvc-portability.md is a normative standard governing the MSVC-specific
+      hazards a consuming repo must avoid — prose a downstream repo follows,
+      with no reference-implementation module in this repo (its sibling
+      warning-flags.md has cmake/jk_warnings.cmake; this one does not). No
+      touch-correlation source exists. class:gated, freshness-governed by
+      doc-taxonomy + status-prose.
+
+  - doc: "site/src/content/docs/index.mdx"
+    reason: >-
+      index.mdx is the site landing page: hand-authored narrative plus catalog
+      counts imported from generated JSON (checks.json / skills.json /
+      coverage.json) that update automatically at build time. Its prose
+      describes the project's philosophy, not any single code surface, so no
+      source glob correlates to it. class:gated, freshness-governed by
+      doc-taxonomy + status-prose.
+
+  - doc: "site/src/content/docs/guide/introduction.mdx"
+    reason: >-
+      introduction.mdx is a hand-authored narrative guide (what jk-standards
+      is, what it isn't) with catalog counts imported from generated JSON that
+      update automatically. It narrates cross-cutting intent rather than
+      tracking one code surface, so no touch-correlation source applies.
+      class:gated, freshness-governed by doc-taxonomy + status-prose.
+
+  - doc: "site/src/content/docs/guide/quickstart.mdx"
+    reason: >-
+      quickstart.mdx is a hand-authored tutorial walkthrough (five steps to
+      adopt jk-standards). It spans config, hooks, and CI rather than mirroring
+      a single module, so no source glob correlates to it. class:gated,
+      freshness-governed by doc-taxonomy + status-prose.
+
+  - doc: "site/src/content/docs/how-to/add-a-check.mdx"
+    reason: >-
+      add-a-check.mdx is a hand-authored how-to explaining the check-authoring
+      shape. It narrates conventions across the whole checks subsystem rather
+      than tracking a specific module's behavior — the per-check reference that
+      IS touch-correlated is reference/checks.mdx, mapped above — so it has no
+      single touch-correlation source. class:gated, freshness-governed by
+      doc-taxonomy + status-prose.
+
+  - doc: "site/src/content/docs/how-to/adopt-in-a-repo.mdx"
+    reason: >-
+      adopt-in-a-repo.mdx is a hand-authored how-to walkthrough wiring
+      pre-commit hooks and reusable workflows into a fresh repository. It spans
+      multiple subsystems rather than one code surface, so no source glob
+      correlates to it. class:gated, freshness-governed by doc-taxonomy +
+      status-prose.

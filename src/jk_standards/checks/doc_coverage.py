@@ -213,16 +213,24 @@ def enumerate_units(root: Path, cfg: Config) -> list[DocUnit]:
     names how many files were skipped — so a misconfigured repo is diagnosable
     from CI logs rather than silently dropping files.
     """
+    # Imported lazily to avoid a circular import (doc_coverage_cpp imports
+    # ``DocUnit`` from this module) and to keep the native grammar off the
+    # zero-dependency import path until a C++ file is actually enumerated.
+    from jk_standards.checks import doc_coverage_cpp
+
     patterns = _drift_patterns(root, cfg)
     tokens = _mention_tokens(root, cfg)
+    cpp_parser_absent = doc_coverage_cpp._get_cpp_parser() is None
     cpp_skipped = 0
     units: list[DocUnit] = []
     for path in _iter_py_files(root, cfg):
         rel = path.relative_to(root).as_posix()
         drift = any(doc_drift._matches(p, [rel], set()) for p in patterns)
         if _is_cpp(rel):
-            cpp_skipped += 1
-            continue
+            if cpp_parser_absent:
+                cpp_skipped += 1
+                continue
+            units.extend(doc_coverage_cpp.cpp_units_for_file(rel, path.read_bytes(), drift, tokens))
         else:
             source = path.read_text(encoding="utf-8", errors="replace")
             units.extend(_units_for_file(rel, source, drift, tokens))

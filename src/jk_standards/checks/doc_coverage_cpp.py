@@ -34,8 +34,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from jk_standards.checks.doc_coverage import DocUnit
     from tree_sitter import Node, Parser
+
+    from jk_standards.checks.doc_coverage import DocUnit
 
 # The Doxygen doc-comment openers. A plain ``//`` line comment or ``/* */`` block
 # comment is deliberately NOT a doc comment — only these four forms set the
@@ -159,6 +160,12 @@ def _class_units(
     public; each ``public:``/``private:``/``protected:`` label flips the current
     visibility for the members that follow.
     """
+    # Imported lazily (not at module top level) to break the import cycle
+    # doc_coverage <-> doc_coverage_cpp that CodeQL flags: doc_coverage imports
+    # this module inside enumerate_units, so importing DocUnit here at call time
+    # (rather than eagerly) means neither module imports the other at load time.
+    from jk_standards.checks.doc_coverage import DocUnit
+
     name = _name_of(spec.child_by_field_name("name"))
     if name is None:
         return []  # anonymous class/struct — nothing a doc could name
@@ -222,6 +229,9 @@ def _walk_container(
     Recurses into ``namespace``/``linkage`` bodies so a function inside
     ``namespace foo { ... }`` is enumerated at its true name.
     """
+    # Lazy import to break the doc_coverage <-> doc_coverage_cpp cycle; see
+    # the matching note in _class_units.
+    from jk_standards.checks.doc_coverage import DocUnit
 
     def make(kind: str, name: str, lineno: int, has_doc: bool) -> DocUnit:
         return DocUnit(

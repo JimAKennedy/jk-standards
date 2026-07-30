@@ -233,7 +233,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage_cpp.py",
       "kind": "function",
-      "lineno": 286,
+      "lineno": 295,
       "name": "cpp_units_for_file",
       "signals": {
         "docstring": true,

@@ -418,7 +418,7 @@ def _write_baseline(path: Path, counts: dict[str, tuple[int, int]]) -> None:
 
     Byte-idempotent by construction: sorted keys, 2-space indent, trailing
     newline — the same stable shape :func:`emit._serialize` uses, inlined here
-    because ``checks/*.py`` may not import :mod:`jk_standards.emit` (the
+    because ``checks/*.py`` may not import the ``emit`` module (the
     ``checks-no-emit`` boundary rule). Re-recording an unchanged tree therefore
     reproduces the file byte-for-byte, so a byte-comparison test cannot drift.
     """

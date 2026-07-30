@@ -410,3 +410,101 @@ def test_ratchet_malformed_baseline_raises_config_error_from_run(tmp_path):
     write(tmp_path, doc_coverage.BASELINE_PATH, "{bad json")
     with pytest.raises(ConfigError):
         doc_coverage.run(tmp_path, cfg())
+
+
+# --- update_baseline: the explicit record/ratchet writer (D015) -------------
+
+
+def test_update_baseline_first_run_records_and_passes(tmp_path, capsys):
+    # No committed baseline yet → records the live distribution, exits 0, and
+    # the written file round-trips back through the loader unchanged.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    """d."""\n')
+    assert doc_coverage.update_baseline(tmp_path, cfg()) == 0
+    floors = doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH)
+    assert floors == {"src/m.py": (2, 2)}
+    assert "baseline recorded" in capsys.readouterr().out
+
+
+def test_update_baseline_is_byte_idempotent(tmp_path):
+    # Recording the same tree twice reproduces the file byte-for-byte — the
+    # committed baseline (T04) is produced by this writer, so a later
+    # --update-baseline or byte-comparison test must not drift.
+    write(tmp_path, "src/a.py", '"""A."""\n\n\ndef f():\n    pass\n')
+    write(tmp_path, "src/b.py", '"""B."""\n')
+    path = tmp_path / doc_coverage.BASELINE_PATH
+    doc_coverage.update_baseline(tmp_path, cfg())
+    first = path.read_bytes()
+    doc_coverage.update_baseline(tmp_path, cfg())
+    assert path.read_bytes() == first
+    # Stable shape: sorted module keys, 2-space indent, trailing newline.
+    text = first.decode("utf-8")
+    assert text.endswith("}\n")
+    assert text.index('"src/a.py"') < text.index('"src/b.py"')
+
+
+def test_update_baseline_raising_a_floor_is_allowed(tmp_path):
+    # Live 2/2 exceeds a recorded 1/2 floor → ratchet up freely, no opt-in.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    """d."""\n')
+    write_baseline(tmp_path, {"src/m.py": (1, 2)})
+    assert doc_coverage.update_baseline(tmp_path, cfg()) == 0
+    floors = doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH)
+    assert floors == {"src/m.py": (2, 2)}
+
+
+def test_update_baseline_lowering_refused_without_allow_regression(tmp_path, capsys):
+    # Live 1/2 is below a recorded 2/2 floor → refuse, leave the file untouched,
+    # name the offending module, and return non-zero.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    pass\n')
+    write_baseline(tmp_path, {"src/m.py": (2, 2)})
+    before = (tmp_path / doc_coverage.BASELINE_PATH).read_bytes()
+    assert doc_coverage.update_baseline(tmp_path, cfg()) == 1
+    assert (tmp_path / doc_coverage.BASELINE_PATH).read_bytes() == before
+    captured = capsys.readouterr()
+    assert "::error file=src/m.py,line=1::" in captured.err
+    assert "refusing to lower the baseline floor" in captured.err
+    assert "baseline NOT written" in captured.out
+
+
+def test_update_baseline_lowering_allowed_with_allow_regression(tmp_path):
+    # The explicit --allow-regression opt-in records the lower floor.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    pass\n')
+    write_baseline(tmp_path, {"src/m.py": (2, 2)})
+    assert doc_coverage.update_baseline(tmp_path, cfg(), allow_regression=True) == 0
+    floors = doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH)
+    assert floors == {"src/m.py": (1, 2)}
+
+
+def test_update_baseline_new_module_recorded_freely(tmp_path):
+    # A module absent from the floor map is recorded without any opt-in, and an
+    # existing (unchanged) floor is preserved.
+    write(tmp_path, "src/known.py", '"""Doc."""\n')
+    write(tmp_path, "src/new.py", '"""Also doc."""\n')
+    write_baseline(tmp_path, {"src/known.py": (1, 1)})
+    assert doc_coverage.update_baseline(tmp_path, cfg()) == 0
+    floors = doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH)
+    assert floors == {"src/known.py": (1, 1), "src/new.py": (1, 1)}
+
+
+def test_update_baseline_deleted_module_dropped(tmp_path):
+    # A module in the floor map but no longer on disk cannot regress; the writer
+    # records only the live distribution, so it is dropped from the new baseline.
+    write(tmp_path, "src/present.py", '"""Doc."""\n')
+    write_baseline(tmp_path, {"src/present.py": (1, 1), "src/gone.py": (5, 5)})
+    assert doc_coverage.update_baseline(tmp_path, cfg()) == 0
+    floors = doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH)
+    assert floors == {"src/present.py": (1, 1)}
+
+
+def test_update_baseline_no_source_roots_does_not_write(tmp_path):
+    write(tmp_path, "src/bare.py", "x = 1\n")
+    assert doc_coverage.update_baseline(tmp_path, Config()) == 0
+    assert not (tmp_path / doc_coverage.BASELINE_PATH).exists()
+
+
+def test_update_baseline_malformed_existing_raises_config_error(tmp_path):
+    # Cannot ratchet on top of a garbage baseline — surfaces as ConfigError
+    # (CLI exit 2), even with --allow-regression.
+    write(tmp_path, "src/m.py", '"""Doc."""\n')
+    write(tmp_path, doc_coverage.BASELINE_PATH, "{bad json")
+    with pytest.raises(ConfigError):
+        doc_coverage.update_baseline(tmp_path, cfg(), allow_regression=True)

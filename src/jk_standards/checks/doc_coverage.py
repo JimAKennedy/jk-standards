@@ -386,3 +386,90 @@ def run(root: Path, cfg: Config) -> int:
         f"{waived} waived via doc-coverage-ok; {baseline_note}"
     )
     return failing + regressed
+
+
+def _write_baseline(path: Path, counts: dict[str, tuple[int, int]]) -> None:
+    """Serialize the live per-module fractions as the committed floor map.
+
+    Byte-idempotent by construction: sorted keys, 2-space indent, trailing
+    newline — the same stable shape :func:`emit._serialize` uses, inlined here
+    because ``checks/*.py`` may not import :mod:`jk_standards.emit` (the
+    ``checks-no-emit`` boundary rule). Re-recording an unchanged tree therefore
+    reproduces the file byte-for-byte, so a byte-comparison test cannot drift.
+    """
+    payload = {
+        "modules": {
+            mod: {"documented": documented, "total": total}
+            for mod, (documented, total) in sorted(counts.items())
+        }
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def update_baseline(root: Path, cfg: Config, allow_regression: bool = False) -> int:
+    """Record (or ratchet up) the per-module floor map — the explicit writer.
+
+    This is the ONLY path that writes ``baselines/doc-coverage.json``; a plain
+    :func:`run` never mutates it, and it is deliberately excluded from
+    ``emit all`` (D016) so the floor can never silently self-heal.
+
+    Ratchet-up semantics (D015): recording a floor for a new module, and raising
+    or holding an existing floor, are always allowed. **Lowering** an existing
+    floor — the live fraction dropped below the recorded one — is refused unless
+    ``allow_regression`` is passed, so accidentally blessing a real regression as
+    the new floor takes a deliberate, auditable opt-in. When any floor would be
+    lowered without the opt-in, the file is left untouched and each offending
+    module is named via ``::error`` (exit non-zero); nothing is partially written.
+
+    Returns 0 on a successful write, or the count of would-be-lowered modules
+    when the write is refused. A malformed existing baseline bubbles up as
+    :class:`ConfigError` (CLI exit 2) — you cannot ratchet on top of garbage.
+    """
+    if not cfg.doc_coverage_source_roots:
+        output.summary("doc-coverage: no source roots configured — baseline not written")
+        return 0
+
+    units = enumerate_units(root, cfg)
+    counts = per_module_counts(units)
+    path = root / BASELINE_PATH
+    floors = _load_baseline(path)  # None on first run; ConfigError if malformed
+
+    lowered = 0
+    if floors is not None and not allow_regression:
+        for rel, (live_doc, live_total) in sorted(counts.items()):
+            floor = floors.get(rel)
+            if floor is None:
+                continue  # new module — recording its floor is always allowed
+            base_doc, base_total = floor
+            # Exact fraction compare (cross-multiply) — same test the ratchet
+            # uses, so "would refuse to lower" mirrors "would fail the gate".
+            if live_doc * base_total < base_doc * live_total:
+                output.error(
+                    rel,
+                    1,
+                    f"doc-coverage: refusing to lower the baseline floor for module "
+                    f"{rel} — floor is {base_doc}/{base_total} "
+                    f"({_ratio(base_doc, base_total):.1%}), live is "
+                    f"{live_doc}/{live_total} ({_ratio(live_doc, live_total):.1%}). "
+                    f"Re-run with --allow-regression to record the lower floor.",
+                )
+                lowered += 1
+
+    if lowered:
+        output.summary(
+            f"doc-coverage: baseline NOT written — {lowered} module(s) would drop "
+            f"below their recorded floor; pass --allow-regression to override"
+        )
+        return lowered
+
+    _write_baseline(path, counts)
+    action = "recorded" if floors is None else "updated"
+    output.summary(
+        f"doc-coverage: baseline {action} at {BASELINE_PATH} — "
+        f"{len(counts)} module(s), {len(units)} public unit(s)"
+    )
+    return 0

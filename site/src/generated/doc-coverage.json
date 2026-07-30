@@ -221,7 +221,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage.py",
       "kind": "function",
-      "lineno": 409,
+      "lineno": 438,
       "name": "update_baseline",
       "signals": {
         "docstring": true,
@@ -557,7 +557,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 256,
+      "lineno": 284,
       "name": "iter_docs",
       "signals": {
         "docstring": true,
@@ -569,7 +569,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 139,
+      "lineno": 144,
       "name": "load_config",
       "signals": {
         "docstring": false,

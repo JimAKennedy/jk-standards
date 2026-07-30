@@ -50,7 +50,14 @@ jobs:
     with:
       # This repo's prebuild is Python-backed: `jk-standards emit all` regenerates
       # the site's fixtures (the coverage emitter needs [dev] extras -> pytest).
-      prebuild: jk-standards emit all
+      # deploy-site.yml runs the prebuild with working-directory: site, so
+      # `jk-standards emit all` would resolve its root to site/ -- where
+      # `emit coverage`'s `pytest tests/` collects zero Python tests (they live
+      # at the repo root) and exits 5. Pin the emit root to the repo root with
+      # `--root ..` so the caller command works from site/ the same way the
+      # site's own `npm run prebuild` hook (which does `cd .. && jk-standards
+      # emit all`) and the green deploy-site-smoke caller both do.
+      prebuild: jk-standards emit all --root ..
       python-version: "3.12"
       python-install: pip install -e ".[dev]"
       # Claim-tests cross-check rendered HTML against the generated fixtures; a

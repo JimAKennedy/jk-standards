@@ -1,5 +1,6 @@
 """In-process tests for jk_standards.cli.main across every dispatch branch."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -125,3 +126,80 @@ def test_emit_verb_with_root_after_verb(tmp_path):
     fixture_dir.mkdir(parents=True)
     (fixture_dir / "checks.json").write_bytes(emit_mod.emit_checks(tmp_path))
     assert main(["emit", "checks", "--root", str(tmp_path), "--check"]) == 0
+
+
+# --- doc-coverage --update-baseline / --allow-regression dispatch (T03) ------
+
+
+def _doc_coverage_repo(root: Path) -> Path:
+    """Config + one fully-documented module so the writer records a real floor."""
+    write(
+        root,
+        "jk-standards.yaml",
+        'doc_coverage:\n  source_roots:\n    - path: src\n      extensions: [".py"]\n',
+    )
+    write(root, "src/mod.py", '"""Module doc."""\n')
+    return root / "baselines" / "doc-coverage.json"
+
+
+def test_update_baseline_writes_via_writer(tmp_path):
+    """`--update-baseline` routes to the writer and records the floor map."""
+    baseline = _doc_coverage_repo(tmp_path)
+    assert not baseline.exists()
+    assert main(["doc-coverage", "--update-baseline", "--root", str(tmp_path)]) == 0
+    data = json.loads(baseline.read_text(encoding="utf-8"))
+    assert data == {"modules": {"src/mod.py": {"documented": 1, "total": 1}}}
+
+
+def test_plain_doc_coverage_run_never_writes_baseline(tmp_path):
+    """A plain check run must never mutate the floor map — read-only path."""
+    baseline = _doc_coverage_repo(tmp_path)
+    assert main(["doc-coverage", "--root", str(tmp_path)]) == 0
+    assert not baseline.exists()
+
+
+def test_update_baseline_rejects_non_doc_coverage(tmp_path, capsys):
+    """`--update-baseline` is a doc-coverage-only action, else a usage error."""
+    write(tmp_path, "docs/a.md", "---\nclass: gated\n---\n# Doc\n")
+    assert main(["doc-taxonomy", "--update-baseline", "--root", str(tmp_path)]) == 2
+    assert "only valid for doc-coverage" in capsys.readouterr().err
+
+
+def test_allow_regression_requires_update_baseline(tmp_path, capsys):
+    """`--allow-regression` alone is a no-op flag — reject it as a usage error."""
+    _doc_coverage_repo(tmp_path)
+    assert main(["doc-coverage", "--allow-regression", "--root", str(tmp_path)]) == 2
+    assert "requires --update-baseline" in capsys.readouterr().err
+
+
+def test_update_baseline_refuses_lower_without_allow_regression(tmp_path, capsys):
+    """Ratchet-up default: lowering a floor is refused (non-zero, file intact)."""
+    baseline = _doc_coverage_repo(tmp_path)
+    assert main(["doc-coverage", "--update-baseline", "--root", str(tmp_path)]) == 0
+    before = baseline.read_text(encoding="utf-8")
+    # Drop the docstring so the live fraction falls below the recorded floor.
+    write(tmp_path, "src/mod.py", "x = 1\n")
+    assert main(["doc-coverage", "--update-baseline", "--root", str(tmp_path)]) == 1
+    assert "--allow-regression" in capsys.readouterr().err
+    assert baseline.read_text(encoding="utf-8") == before  # untouched
+
+
+def test_update_baseline_allow_regression_lowers_floor(tmp_path):
+    """`--allow-regression` threads through and records the lower floor."""
+    baseline = _doc_coverage_repo(tmp_path)
+    assert main(["doc-coverage", "--update-baseline", "--root", str(tmp_path)]) == 0
+    write(tmp_path, "src/mod.py", "x = 1\n")
+    assert (
+        main(
+            [
+                "doc-coverage",
+                "--update-baseline",
+                "--allow-regression",
+                "--root",
+                str(tmp_path),
+            ]
+        )
+        == 0
+    )
+    data = json.loads(baseline.read_text(encoding="utf-8"))
+    assert data == {"modules": {"src/mod.py": {"documented": 0, "total": 1}}}

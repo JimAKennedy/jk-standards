@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jk-standards"
-version = "0.6.0"
+version = "0.7.0"
 description = "Reusable engineering-discipline toolkit: documentation anti-drift checks, pre-commit hooks, reusable CI workflows, and agent skills"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,6 +20,14 @@ dev = [
   "build>=1.2",
   "twine>=5.0",
   "pre-commit>=3.7",
+]
+# Optional native grammar for the C++ doc-coverage enumerator. This is the ONLY
+# place tree-sitter is declared — the base `dependencies` list stays PyYAML-only
+# so `pip install jk-standards` never pulls a native wheel and a C++-free repo
+# degrades gracefully (parser import fails → C++ path is a no-op).
+cpp = [
+  "tree-sitter>=0.23",
+  "tree-sitter-cpp>=0.23",
 ]
 
 [project.scripts]

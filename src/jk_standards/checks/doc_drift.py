@@ -30,7 +30,7 @@ from pathlib import Path
 import yaml
 
 from jk_standards import gitutil, output
-from jk_standards.config import Config
+from jk_standards.config import Config, ConfigError
 
 TRAILER = "Docs-Not-Affected"
 
@@ -73,6 +73,34 @@ def is_deps_only_diff(diff: str) -> bool:
     return saw_change
 
 
+def _parse_cannot_drift(data: dict) -> list[dict]:
+    """Validate the optional `cannot_drift` registry.
+
+    Each entry declares a doc as un-driftable with a written justification. An
+    entry must be a mapping with a `doc` (string) and a non-empty `reason`
+    (truthy after ``str().strip()``). A malformed entry raises ConfigError
+    naming the offending index so the CLI can surface a clean config diagnostic
+    instead of a KeyError traceback. Entries are recorded, not matched against
+    the diff — S02 consumes the registry for the completeness check.
+    """
+    entries = data.get("cannot_drift", [])
+    if not isinstance(entries, list):
+        raise ConfigError("cannot_drift must be a list of {doc, reason} entries")
+    parsed: list[dict] = []
+    for i, entry in enumerate(entries):
+        where = f"cannot_drift entry {i}"
+        if not isinstance(entry, dict):
+            raise ConfigError(f"{where} must be a mapping with 'doc' and 'reason'")
+        doc = entry.get("doc")
+        if not isinstance(doc, str) or not doc.strip():
+            raise ConfigError(f"{where} missing a non-empty string 'doc'")
+        reason = entry.get("reason")
+        if reason is None or not str(reason).strip():
+            raise ConfigError(f"{where} ({doc}) missing a non-empty 'reason'")
+        parsed.append({"doc": doc, "reason": str(reason)})
+    return parsed
+
+
 def run(root: Path, cfg: Config, base: str | None = None) -> int:
     map_path = root / cfg.drift_map
     if not map_path.is_file():
@@ -81,6 +109,9 @@ def run(root: Path, cfg: Config, base: str | None = None) -> int:
 
     data = yaml.safe_load(map_path.read_text(encoding="utf-8")) or {}
     mappings = data.get("mappings", [])
+    # Parse + validate up front so a malformed registry fails as a config error
+    # (exit 2 via the CLI) rather than midway through the diff correlation.
+    _parse_cannot_drift(data)
 
     base_ref = gitutil.resolve_base_ref(root, base)
     changed = gitutil.changed_files(root, base_ref)
@@ -108,7 +139,9 @@ def run(root: Path, cfg: Config, base: str | None = None) -> int:
 
     errors = 0
     satisfied = 0
-    for mapping in mappings:
+    for i, mapping in enumerate(mappings):
+        if not isinstance(mapping, dict) or "doc" not in mapping or "sources" not in mapping:
+            raise ConfigError(f"mappings entry {i} must have 'doc' and 'sources' keys")
         doc = mapping["doc"]
         triggered = sorted(
             {f for pattern in mapping["sources"] for f in _matches(pattern, changed, deps_only)}

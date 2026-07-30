@@ -1,0 +1,100 @@
+{
+  "modules": {
+    "src/jk_standards/__init__.py": {
+      "documented": 1,
+      "total": 1
+    },
+    "src/jk_standards/checks/__init__.py": {
+      "documented": 1,
+      "total": 1
+    },
+    "src/jk_standards/checks/action_pinning.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/behavioral_claims.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/boundaries.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/count_drift.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/doc_completeness.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/doc_coverage.py": {
+      "documented": 7,
+      "total": 7
+    },
+    "src/jk_standards/checks/doc_coverage_cpp.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/doc_drift.py": {
+      "documented": 3,
+      "total": 3
+    },
+    "src/jk_standards/checks/doc_taxonomy.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/file_line_refs.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/generated_freshness.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/research_provenance.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/snippet_regions.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/checks/status_prose.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/cli.py": {
+      "documented": 2,
+      "total": 2
+    },
+    "src/jk_standards/config.py": {
+      "documented": 12,
+      "total": 12
+    },
+    "src/jk_standards/emit.py": {
+      "documented": 8,
+      "total": 8
+    },
+    "src/jk_standards/frontmatter.py": {
+      "documented": 3,
+      "total": 3
+    },
+    "src/jk_standards/gitutil.py": {
+      "documented": 3,
+      "total": 6
+    },
+    "src/jk_standards/output.py": {
+      "documented": 4,
+      "total": 4
+    },
+    "src/jk_standards/skills_install.py": {
+      "documented": 6,
+      "total": 11
+    },
+    "src/jk_standards/testindex.py": {
+      "documented": 5,
+      "total": 5
+    }
+  }
+}

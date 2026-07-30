@@ -24,9 +24,21 @@
       "missing_lines": 7,
       "percent_covered": 85.71
     },
+    "src/jk_standards/checks/doc_completeness.py": {
+      "missing_lines": 0,
+      "percent_covered": 100.0
+    },
+    "src/jk_standards/checks/doc_coverage.py": {
+      "missing_lines": 6,
+      "percent_covered": 95.71
+    },
+    "src/jk_standards/checks/doc_coverage_cpp.py": {
+      "missing_lines": 97,
+      "percent_covered": 11.8
+    },
     "src/jk_standards/checks/doc_drift.py": {
-      "missing_lines": 4,
-      "percent_covered": 94.69
+      "missing_lines": 7,
+      "percent_covered": 91.72
     },
     "src/jk_standards/checks/doc_taxonomy.py": {
       "missing_lines": 0,
@@ -54,15 +66,15 @@
     },
     "src/jk_standards/cli.py": {
       "missing_lines": 4,
-      "percent_covered": 94.0
+      "percent_covered": 94.96
     },
     "src/jk_standards/config.py": {
       "missing_lines": 1,
-      "percent_covered": 98.66
+      "percent_covered": 98.82
     },
     "src/jk_standards/emit.py": {
-      "missing_lines": 41,
-      "percent_covered": 69.31
+      "missing_lines": 35,
+      "percent_covered": 74.36
     },
     "src/jk_standards/frontmatter.py": {
       "missing_lines": 1,
@@ -85,11 +97,11 @@
       "percent_covered": 71.05
     }
   },
-  "toolkit_version": "0.6.0",
+  "toolkit_version": "0.7.0",
   "totals": {
-    "covered_lines": 1128,
-    "missing_lines": 107,
-    "num_statements": 1235,
-    "percent_covered": 89.9
+    "covered_lines": 1436,
+    "missing_lines": 207,
+    "num_statements": 1643,
+    "percent_covered": 85.3
   }
 }

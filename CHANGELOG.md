@@ -4,7 +4,7 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] - 2026-07-30
+## [0.7.0] - 2026-07-30
 
 ### Added
 
@@ -52,7 +52,57 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **ARCHITECTURE.md invariant table**: added the research-provenance row so
   the new mechanism lands with its stated invariant, per the architecture
   standard's bidirectional rule.
+- Package version bumped to `0.7.0` in the two source-of-truth files
+  (`pyproject.toml` and `src/jk_standards/__init__.py`); the deterministic
+  `site/src/generated/*.json` fixtures were regenerated to embed the new
+  `toolkit_version` (with `config-schema.json` also carrying the four new
+  `provenance_*` fields), and RELEASE.md pins moved to `v0.7.0`.
 
+## [0.6.0] - 2026-07-30
+
+### Added
+
+- **Per-module documentation-coverage baseline ratchet**
+  (`src/jk_standards/checks/doc_coverage.py`): the `doc-coverage` check now
+  recomputes each module's live documented-unit ratio on every run and hard-fails
+  any module whose ratio drops below its committed floor, emitting an
+  `::error file=<module>,line=1` annotation naming the module and its before/after
+  ratio. The ratchet composes with — it does not replace — the existing binary
+  fully-undocumented-module gate, and both counts are reported on one summary line.
+- **`--update-baseline` / `--allow-regression` CLI flags**
+  (`src/jk_standards/cli.py`): `jk-standards doc-coverage --update-baseline`
+  records (and ratchets up) the per-module floor map into a committed fixture,
+  dispatched before the generic check path so a plain `doc-coverage` run stays
+  read-only. Lowering an existing floor is refused all-or-nothing unless
+  `--allow-regression` is also passed; `--allow-regression` without
+  `--update-baseline` is a usage error (exit 2).
+- **Committed per-module floor map** (`baselines/doc-coverage.json`): the repo's
+  own documentation-coverage floor, produced exclusively by the writer (never
+  hand-authored) and deliberately excluded from `emit.EMITTERS` and the
+  `jk-standards.yaml` `generated:` list so `jk-standards emit all` leaves it
+  byte-identical and the ratchet cannot self-heal.
+- **`doc_coverage.module_min_percent` opt-in advisory floor**
+  (`src/jk_standards/config.py`, `src/jk_standards/checks/doc_coverage.py`): an
+  int-valued (0–100, default off) config field that emits a counted,
+  warning-only `::warning file=<module>,line=1` annotation for each module below
+  the target and appends an `; advisory: N module(s) below P% floor` clause to
+  the summary line. The advisory never changes the exit code on its own; an
+  out-of-range, bool, or non-int value surfaces as an exit-2 config error.
+- **Reference docs for the ratchet and advisory**
+  (`docs/checks.md`, `docs/configuration.md`, and their drift-mapped
+  `site/src/content/docs/reference/checks.mdx` and
+  `site/src/content/docs/reference/configuration.mdx` pairs): document the
+  baseline ratchet, the `--update-baseline` / `--allow-regression` flags (as
+  check flags, not `emit` verbs), and the `module_min_percent` advisory field.
+
+### Changed
+
+- Package version bumped to `0.6.0` in the two source-of-truth files
+  (`pyproject.toml` and `src/jk_standards/__init__.py`); the
+  `site/src/generated/*.json` fixtures were regenerated to embed the new
+  `toolkit_version` (with `config-schema.json` also carrying the new
+  `doc_coverage_module_min_percent` field), and RELEASE.md pins plus the README
+  Status block moved to `v0.6.0`.
 ## [0.5.0] - 2026-07-27
 
 ### Added
@@ -284,6 +334,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `behavioral-claims`, `generated-freshness`, `doc-drift`), the `jk-standards`
   CLI, the self-hosting `jk-standards.yaml` config, and the dogfood CI job.
 
+[0.6.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.6.0
 [0.5.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.5.0
 [0.4.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.4.0
 [0.3.0]: https://github.com/JimAKennedy/jk-standards/releases/tag/v0.3.0

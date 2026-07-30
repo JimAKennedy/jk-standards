@@ -5,8 +5,9 @@ from pathlib import Path
 
 import pytest
 
+from jk_standards import cli
 from jk_standards.checks import doc_drift
-from jk_standards.config import Config
+from jk_standards.config import Config, ConfigError
 
 
 def git(root: Path, *args: str) -> None:
@@ -131,3 +132,70 @@ def test_unlisted_manifest_still_triggers_on_deps_bump(manifest_repo):
     (manifest_repo / "site/package.json").write_text(bumped)
     git(manifest_repo, "commit", "-am", "bump astro")
     assert doc_drift.run(manifest_repo, Config(), base="main") == 1
+
+
+# --- cannot_drift registry --------------------------------------------------
+
+_BASE_MAP = (
+    "version: 1\n"
+    "mappings:\n"
+    "  - sources:\n"
+    '      - "src/**"\n'
+    '    doc: "docs/spec.md"\n'
+    '    reason: "spec describes src"\n'
+)
+
+
+def set_map(repo: Path, cannot_drift_yaml: str) -> None:
+    """Overwrite the drift map with the base mappings plus a cannot_drift block.
+
+    Reject cases need no commit: `run()` validates the registry (reading the
+    working-tree map) before any git diff, so a malformed block raises up front.
+    """
+    (repo / ".github/docs-drift-map.yml").write_text(_BASE_MAP + cannot_drift_yaml)
+
+
+def test_cannot_drift_valid_entry_parses(repo):
+    set_map(
+        repo,
+        "cannot_drift:\n"
+        '  - doc: "docs/skills.mdx"\n'
+        '    reason: "prose overview, no checkable claim tied to code"\n',
+    )
+    (repo / "unrelated.txt").write_text("hi\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "valid cannot_drift + unrelated change")
+    # Registry parses cleanly and does not (yet) affect drift correlation.
+    assert doc_drift.run(repo, Config(), base="main") == 0
+
+
+def test_cannot_drift_missing_reason_rejected(repo):
+    set_map(repo, 'cannot_drift:\n  - doc: "docs/skills.mdx"\n')
+    with pytest.raises(ConfigError, match="missing a non-empty 'reason'"):
+        doc_drift.run(repo, Config(), base="main")
+
+
+def test_cannot_drift_empty_reason_rejected(repo):
+    set_map(
+        repo,
+        'cannot_drift:\n  - doc: "docs/skills.mdx"\n    reason: "   "\n',
+    )
+    with pytest.raises(ConfigError, match="missing a non-empty 'reason'"):
+        doc_drift.run(repo, Config(), base="main")
+
+
+def test_cannot_drift_missing_doc_rejected(repo):
+    set_map(repo, 'cannot_drift:\n  - reason: "prose overview"\n')
+    with pytest.raises(ConfigError, match="missing a non-empty string 'doc'"):
+        doc_drift.run(repo, Config(), base="main")
+
+
+def test_cannot_drift_invalid_entry_cli_exit_2(repo, capsys):
+    # Slice criterion: a malformed entry surfaces as `config error: ...` on
+    # stderr with exit 2, not a KeyError traceback.
+    set_map(repo, 'cannot_drift:\n  - doc: "docs/skills.mdx"\n')
+    rc = cli.main(["doc-drift", "--root", str(repo), "--base", "main"])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "config error:" in err
+    assert "reason" in err

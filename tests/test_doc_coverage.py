@@ -29,12 +29,14 @@ def cfg(
     source: str = "src",
     scopes: list[str] | None = None,
     drift_map: str = ".github/docs-drift-map.yml",
+    module_min_percent: int | None = None,
 ) -> Config:
     """A doc-coverage config walking `source/*.py`, scanning `scopes` for mentions."""
     return Config(
         doc_coverage_source_roots=[SourceRoot(source, [".py"])],
         doc_coverage_doc_scopes=scopes or [],
         drift_map=drift_map,
+        doc_coverage_module_min_percent=module_min_percent,
     )
 
 
@@ -407,6 +409,71 @@ def test_ratchet_malformed_baseline_raises_config_error_from_run(tmp_path):
     write(tmp_path, doc_coverage.BASELINE_PATH, "{bad json")
     with pytest.raises(ConfigError):
         doc_coverage.run(tmp_path, cfg())
+
+
+# --- module_min_percent advisory (warning-only, non-fatal) ------------------
+
+
+def test_advisory_below_floor_warns_but_exit_stays_zero(tmp_path, capsys):
+    # module unit (docstring) + one bare fn → 1/2 = 50%; floor 80% → below.
+    # THE load-bearing invariant: a below-floor module warns yet run() == 0.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    pass\n')
+    assert doc_coverage.run(tmp_path, cfg(module_min_percent=80)) == 0
+    out = capsys.readouterr().out
+    assert "::warning file=src/m.py,line=1::" in out
+    assert "below the advisory floor of 80%" in out
+    assert "advisory: 1 module(s) below 80% floor" in out
+
+
+def test_advisory_unset_adds_no_clause_and_no_warning(tmp_path, capsys):
+    # module_min_percent unset → summary byte-identical to post-S01, no warning.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    pass\n')
+    assert doc_coverage.run(tmp_path, cfg()) == 0
+    captured = capsys.readouterr()
+    assert "advisory:" not in captured.out
+    assert "::warning" not in captured.out
+
+
+def test_advisory_at_floor_not_flagged(tmp_path, capsys):
+    # 1/2 = 50% exactly at a 50% floor → strict `<`, so no advisory.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    pass\n')
+    assert doc_coverage.run(tmp_path, cfg(module_min_percent=50)) == 0
+    out = capsys.readouterr().out
+    assert "::warning" not in out
+    assert "advisory: 0 module(s) below 50% floor" in out
+
+
+def test_advisory_above_floor_not_flagged(tmp_path, capsys):
+    # 2/2 = 100% ≥ a 100% floor → no advisory even at the strictest floor.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    """d."""\n')
+    assert doc_coverage.run(tmp_path, cfg(module_min_percent=100)) == 0
+    out = capsys.readouterr().out
+    assert "::warning" not in out
+    assert "advisory: 0 module(s) below 100% floor" in out
+
+
+def test_advisory_composes_with_ratchet_exit_from_ratchet_only(tmp_path, capsys):
+    # Live 1/2 = 50%: below the 80% advisory floor AND below a 2/2 ratchet floor.
+    # The ratchet fails (exit 1); the advisory warning is strictly additive and
+    # does NOT double-count — the exit code comes from the ratchet alone.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    pass\n')
+    write_baseline(tmp_path, {"src/m.py": (2, 2)})
+    assert doc_coverage.run(tmp_path, cfg(module_min_percent=80)) == 1
+    captured = capsys.readouterr()
+    assert "::error file=src/m.py,line=1::" in captured.err  # ratchet finding
+    assert "regressed below its baseline floor" in captured.err
+    assert "::warning file=src/m.py,line=1::" in captured.out  # advisory (additive)
+    assert "advisory: 1 module(s) below 80% floor" in captured.out
+
+
+def test_advisory_floor_zero_never_flags(tmp_path, capsys):
+    # A 0% floor is the vacuous case: no module can be below 0%, even a bare one.
+    write(tmp_path, "src/bare.py", "x = 1\n")
+    # bare module still fails the binary gate (exit 1) but the advisory adds 0.
+    assert doc_coverage.run(tmp_path, cfg(module_min_percent=0)) == 1
+    out = capsys.readouterr().out
+    assert "::warning" not in out
+    assert "advisory: 0 module(s) below 0% floor" in out
 
 
 # --- update_baseline: the explicit record/ratchet writer (D015) -------------

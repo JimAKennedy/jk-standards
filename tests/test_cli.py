@@ -203,3 +203,39 @@ def test_update_baseline_allow_regression_lowers_floor(tmp_path):
     )
     data = json.loads(baseline.read_text(encoding="utf-8"))
     assert data == {"modules": {"src/mod.py": {"documented": 0, "total": 1}}}
+
+
+# --- doc_coverage.module_min_percent advisory end-to-end (T02) ---------------
+
+
+def test_module_min_percent_out_of_range_is_config_error_exit_2(tmp_path, capsys):
+    """An out-of-range floor is a config error (exit 2), not a traceback."""
+    write(
+        tmp_path,
+        "jk-standards.yaml",
+        "doc_coverage:\n"
+        "  source_roots:\n"
+        '    - path: src\n      extensions: [".py"]\n'
+        "  module_min_percent: 101\n",
+    )
+    write(tmp_path, "src/mod.py", '"""Module doc."""\n')
+    assert main(["doc-coverage", "--root", str(tmp_path)]) == 2
+    assert "config error" in capsys.readouterr().err
+
+
+def test_module_min_percent_below_floor_module_still_exits_0(tmp_path, capsys):
+    """A below-floor module warns but the advisory alone yields exit 0."""
+    write(
+        tmp_path,
+        "jk-standards.yaml",
+        "doc_coverage:\n"
+        "  source_roots:\n"
+        '    - path: src\n      extensions: [".py"]\n'
+        "  module_min_percent: 80\n",
+    )
+    # module docstring + one bare fn → 1/2 = 50%, below the 80% floor.
+    write(tmp_path, "src/mod.py", '"""Doc."""\n\n\ndef f():\n    pass\n')
+    assert main(["doc-coverage", "--root", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "::warning file=src/mod.py,line=1::" in out
+    assert "advisory: 1 module(s) below 80% floor" in out

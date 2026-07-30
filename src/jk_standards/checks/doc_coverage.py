@@ -376,10 +376,39 @@ def run(root: Path, cfg: Config) -> int:
             f"{evaluated} module(s) evaluated against baseline, {regressed} ratchet failure(s)"
         )
 
+    # Opt-in per-module advisory floor (D014/MEM061). Reuses the already-computed
+    # ``counts`` map — no second tree walk. A module whose live documented-unit
+    # ratio is below ``module_min_percent`` emits a ``::warning`` (to stdout, so
+    # GitHub surfaces it inline without failing the build) and is tallied in the
+    # summary, but the advisory NEVER contributes to the return value: it
+    # composes with, and is strictly additive to, the binary gate and the S01
+    # ratchet. When the field is unset the summary line is byte-identical to
+    # post-S01 (no clause appended).
+    advisory_note = ""
+    floor_pct = cfg.doc_coverage_module_min_percent
+    if floor_pct is not None:
+        below = 0
+        for rel, (live_doc, live_total) in sorted(counts.items()):
+            # Exact integer compare: live ratio < floor_pct/100 iff
+            # live_doc*100 < floor_pct*live_total. Strict `<` means a module
+            # *at* the floor is not flagged. No float rounding, no false warning.
+            if live_doc * 100 < floor_pct * live_total:
+                output.warning(
+                    rel,
+                    1,
+                    f"doc-coverage: module {rel} documentation coverage is "
+                    f"{live_doc}/{live_total} ({_ratio(live_doc, live_total):.1%}), "
+                    f"below the advisory floor of {floor_pct}% — this is a warning "
+                    f"only and does not fail the build. Add a docstring or a doc "
+                    f"mention to lift it above the floor.",
+                )
+                below += 1
+        advisory_note = f"; advisory: {below} module(s) below {floor_pct}% floor"
+
     output.summary(
         f"doc-coverage: {len(units)} public unit(s) across {len(by_file)} "
         f"module(s), {failing} fully-undocumented module(s), "
-        f"{waived} waived via doc-coverage-ok; {baseline_note}"
+        f"{waived} waived via doc-coverage-ok; {baseline_note}{advisory_note}"
     )
     return failing + regressed
 

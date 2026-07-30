@@ -24,8 +24,7 @@ from pathlib import Path
 
 import pytest
 
-from jk_standards.checks import doc_coverage
-from jk_standards.checks import doc_coverage_cpp
+from jk_standards.checks import doc_coverage, doc_coverage_cpp
 from jk_standards.config import Config, SourceRoot
 
 FIX = Path(__file__).parent / "fixtures" / "doc-coverage-cpp"

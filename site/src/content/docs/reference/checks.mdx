@@ -239,6 +239,42 @@ and the summary line reports the unit count, module count, undocumented count,
 and live-waiver count
 [verified: test_doc_coverage::test_clean_run_summary_reports_unit_and_module_counts].
 
+**Baseline ratchet.** Beyond the binary bare-module gate, the check enforces a
+per-module floor: it recomputes each module's live documented-unit ratio and
+compares it against the committed floor recorded at `baselines/doc-coverage.json`,
+hard-failing any module that slipped below its recorded ratio and naming the
+module with its before/after ratio
+[verified: test_doc_coverage::test_ratchet_regression_below_floor_fails_naming_module_and_ratio].
+The ratchet composes with — it does not replace — the binary gate
+[verified: test_doc_coverage::test_ratchet_composes_with_binary_gate]: holding at
+the floor passes
+[verified: test_doc_coverage::test_ratchet_holding_at_floor_passes], improving
+above it passes
+[verified: test_doc_coverage::test_ratchet_improvement_above_floor_passes], and a
+module not yet in the baseline is first-seen-passes
+[verified: test_doc_coverage::test_ratchet_new_module_not_in_baseline_passes]. With
+no baseline committed yet the ratchet is inert and the summary line says so
+[verified: test_doc_coverage::test_ratchet_no_baseline_passes_and_reports_first_run].
+The floor map is recorded — and ratcheted up — only through the explicit
+`doc-coverage --update-baseline` CLI flag (never `emit all`, so a floor can never
+silently self-heal); a write that would *lower* an existing floor is refused
+unless `--allow-regression` is also passed
+[verified: test_doc_coverage::test_update_baseline_lowering_refused_without_allow_regression],
+and re-recording an unchanged tree reproduces the file byte-for-byte
+[verified: test_doc_coverage::test_update_baseline_is_byte_idempotent].
+
+**Advisory floor.** An optional `doc_coverage.module_min_percent` sets a soft
+per-module target: a module whose live documented-unit ratio is below that
+percentage emits a `::warning` (surfaced inline on the PR) and is tallied in the
+summary line, but the advisory never fails the build — it is strictly additive to
+the binary gate and the ratchet
+[verified: test_doc_coverage::test_advisory_below_floor_warns_but_exit_stays_zero].
+A module exactly at the floor is not flagged
+[verified: test_doc_coverage::test_advisory_at_floor_not_flagged], and when the
+field is unset the summary line is byte-identical to before, with no advisory
+clause and no warnings
+[verified: test_doc_coverage::test_advisory_unset_adds_no_clause_and_no_warning].
+
 Escape hatch: a `# doc-coverage-ok: <reason>` marker in the file's leading comment
 block (before the first code) waives the whole module in place
 [verified: test_doc_coverage::test_escape_hatch_waives_module]; a shebang above
@@ -249,8 +285,35 @@ marker buried in code or a docstring does not waive
 waivers are counted in the summary line so rising escape-hatch usage stays visible
 in CI logs.
 
-Scope: Python-only. The enumerator is an `ast` walk over the configured source
-roots; C++ documentable-unit coverage is deferred to M010. With no source roots
+Scope: Python and C++. The default enumerator is an `ast` walk over the
+configured source roots; sources with a C++ suffix (`.cpp`, `.cc`, `.cxx`,
+`.c++`, `.hpp`, `.hh`, `.hxx`, `.h++`, `.h`, `.c`) are instead parsed with
+tree-sitter-cpp and enumerated by a public-declaration heuristic:
+
+- **function** — a named function declaration or definition at namespace scope
+  (recursing into `namespace`/`extern "C"` bodies so the true name is used).
+- **class** / **struct** — a named `class` or `struct` specifier; anonymous ones
+  are skipped since no doc could name them.
+- **method** — a *public* member function, resolved with C++ default-access
+  rules: a `class` starts private and a `struct` starts public, and each
+  `public:`/`private:`/`protected:` label flips visibility for the members that
+  follow, so only currently-public methods are enumerated.
+
+The `has_docstring` signal fires when a Doxygen doc comment — one opening with
+`///`, `//!`, `/**`, or `/*!` — sits on the line immediately above the
+declaration; a plain `//` or `/* */` comment does not count, mirroring how a
+Python docstring (not any comment) is the signal. The drift and mention
+OR-signals, the disjunction rule, and the module-granular gate all carry over
+unchanged — a C++ unit is documented iff it has a doc comment, its file matches a
+drift-map `sources:` glob, or its bare name is mentioned in a doc scope.
+
+Known limits: the native grammar ships only in the optional `jk-standards[cpp]`
+extra. When a C++ source root is configured but tree-sitter-cpp is not installed,
+the check degrades gracefully rather than failing — the C++ files contribute zero
+units and a single summary line reports how many were skipped and points at
+`jk-standards[cpp]`, so a grammar-less repo keeps working on the PyYAML-only
+zero-dependency default. A C++ file that fails to parse into a translation unit
+likewise contributes zero units instead of raising. With no source roots
 configured the check skips cleanly.
 
 ## action-pinning

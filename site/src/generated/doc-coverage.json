@@ -1,5 +1,5 @@
 {
-  "toolkit_version": "0.5.0",
+  "toolkit_version": "0.6.0",
   "units": [
     {
       "documented": true,
@@ -149,7 +149,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage.py",
       "kind": "class",
-      "lineno": 55,
+      "lineno": 63,
       "name": "DocUnit",
       "signals": {
         "docstring": true,
@@ -173,7 +173,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage.py",
       "kind": "method",
-      "lineno": 72,
+      "lineno": 80,
       "name": "documented",
       "signals": {
         "docstring": false,
@@ -185,7 +185,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage.py",
       "kind": "function",
-      "lineno": 191,
+      "lineno": 199,
       "name": "enumerate_units",
       "signals": {
         "docstring": true,
@@ -197,7 +197,19 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_coverage.py",
       "kind": "function",
-      "lineno": 259,
+      "lineno": 265,
+      "name": "per_module_counts",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/doc_coverage.py",
+      "kind": "function",
+      "lineno": 317,
       "name": "run",
       "signals": {
         "docstring": false,
@@ -207,9 +219,21 @@
     },
     {
       "documented": true,
+      "file": "src/jk_standards/checks/doc_coverage.py",
+      "kind": "function",
+      "lineno": 438,
+      "name": "update_baseline",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
       "file": "src/jk_standards/checks/doc_coverage_cpp.py",
       "kind": "function",
-      "lineno": 288,
+      "lineno": 286,
       "name": "cpp_units_for_file",
       "signals": {
         "docstring": true,
@@ -533,7 +557,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 256,
+      "lineno": 284,
       "name": "iter_docs",
       "signals": {
         "docstring": true,
@@ -545,7 +569,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 139,
+      "lineno": 144,
       "name": "load_config",
       "signals": {
         "docstring": false,

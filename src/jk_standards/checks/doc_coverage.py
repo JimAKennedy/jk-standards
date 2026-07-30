@@ -31,6 +31,7 @@ signal booleans, so a downstream emitter can reuse the walk without re-parsing.
 from __future__ import annotations
 
 import ast
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,7 +40,14 @@ import yaml
 
 from jk_standards import output
 from jk_standards.checks import doc_drift
-from jk_standards.config import Config
+from jk_standards.config import Config, ConfigError
+
+# The per-module floor map. Committed but deliberately OUT of emit.EMITTERS and
+# the jk-standards.yaml ``generated:`` list (D016) so ``emit all`` never
+# freshens it — that exclusion is what lets the ratchet catch a regression
+# instead of silently self-healing. Path is a module constant (not a Config
+# field) so S01 adds no config-schema surface.
+BASELINE_PATH = "baselines/doc-coverage.json"
 
 # `doc-coverage-ok` after a comment opener. A Python `#` comment or a C++ `//`
 # line comment both open a valid waiver, so the same escape hatch works whether
@@ -222,9 +230,7 @@ def enumerate_units(root: Path, cfg: Config) -> list[DocUnit]:
             if cpp_parser_absent:
                 cpp_skipped += 1
                 continue
-            units.extend(
-                doc_coverage_cpp.cpp_units_for_file(rel, path.read_bytes(), drift, tokens)
-            )
+            units.extend(doc_coverage_cpp.cpp_units_for_file(rel, path.read_bytes(), drift, tokens))
         else:
             source = path.read_text(encoding="utf-8", errors="replace")
             units.extend(_units_for_file(rel, source, drift, tokens))
@@ -256,6 +262,58 @@ def _has_waiver(path: Path) -> bool:
     return False
 
 
+def per_module_counts(units: list[DocUnit]) -> dict[str, tuple[int, int]]:
+    """Aggregate the per-unit records into ``{module: (documented, total)}``.
+
+    The module key is :attr:`DocUnit.file` — the exact repo-relative posix key
+    ``run()``'s ``by_file`` and the baseline map both use. Counts are stored as
+    an integer fraction (not a rounded float) so the ratchet can compare live
+    vs. floor by exact cross-multiplication, immune to float-rounding noise.
+    """
+    counts: dict[str, tuple[int, int]] = {}
+    for u in units:
+        documented, total = counts.get(u.file, (0, 0))
+        counts[u.file] = (documented + int(u.documented), total + 1)
+    return counts
+
+
+def _load_baseline(path: Path) -> dict[str, tuple[int, int]] | None:
+    """Load the committed floor map, or ``None`` when no baseline exists yet.
+
+    Returns ``{module: (documented, total)}``. A missing file is the first-run
+    signal (``None``) — not an error. A file that is not valid JSON, or whose
+    shape does not match ``{"modules": {mod: {"documented": int, "total":
+    int}}}``, raises :class:`ConfigError` so the CLI surfaces it as a config
+    error (exit 2) rather than a traceback — mirroring drift-map parse handling.
+    """
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as e:  # JSONDecodeError is a ValueError subclass
+        raise ConfigError(f"{path}: malformed baseline JSON: {e}") from e
+    if not isinstance(data, dict) or not isinstance(data.get("modules"), dict):
+        raise ConfigError(f"{path}: baseline must be a mapping with a 'modules' object")
+    floors: dict[str, tuple[int, int]] = {}
+    for mod, entry in data["modules"].items():
+        if (
+            not isinstance(entry, dict)
+            or not isinstance(entry.get("documented"), int)
+            or not isinstance(entry.get("total"), int)
+            or isinstance(entry.get("documented"), bool)
+            or isinstance(entry.get("total"), bool)
+        ):
+            raise ConfigError(
+                f"{path}: module {mod!r} must map to {{'documented': int, 'total': int}}"
+            )
+        floors[str(mod)] = (entry["documented"], entry["total"])
+    return floors
+
+
+def _ratio(documented: int, total: int) -> float:
+    return documented / total if total else 1.0
+
+
 def run(root: Path, cfg: Config) -> int:
     if not cfg.doc_coverage_source_roots:
         output.summary("doc-coverage: no source roots configured — skipped")
@@ -285,9 +343,158 @@ def run(root: Path, cfg: Config) -> int:
         )
         failing += 1
 
+    # Per-module baseline ratchet — composes with (does not replace) the binary
+    # gate above. Recompute live per-module ratios, compare each against its
+    # committed floor, and hard-fail any module that dropped below it.
+    counts = per_module_counts(units)
+    floors = _load_baseline(root / BASELINE_PATH)
+    regressed = 0
+    evaluated = 0
+    if floors is None:
+        baseline_note = "no committed baseline (run --update-baseline to record a floor)"
+    else:
+        for rel, (live_doc, live_total) in sorted(counts.items()):
+            floor = floors.get(rel)
+            if floor is None:
+                continue  # new module — not in the baseline, first-seen passes
+            evaluated += 1
+            base_doc, base_total = floor
+            # Exact fraction compare: live < floor iff the cross-products
+            # disagree. No float rounding, so no false regression on noise.
+            if live_doc * base_total < base_doc * live_total:
+                output.error(
+                    rel,
+                    1,
+                    f"doc-coverage: module {rel} documentation coverage regressed "
+                    f"below its baseline floor — was {base_doc}/{base_total} "
+                    f"({_ratio(base_doc, base_total):.1%}), now {live_doc}/{live_total} "
+                    f"({_ratio(live_doc, live_total):.1%}). Restore a docstring, or "
+                    f"ratchet the floor with --update-baseline --allow-regression.",
+                )
+                regressed += 1
+        baseline_note = (
+            f"{evaluated} module(s) evaluated against baseline, {regressed} ratchet failure(s)"
+        )
+
+    # Opt-in per-module advisory floor (D014/MEM061). Reuses the already-computed
+    # ``counts`` map — no second tree walk. A module whose live documented-unit
+    # ratio is below ``module_min_percent`` emits a ``::warning`` (to stdout, so
+    # GitHub surfaces it inline without failing the build) and is tallied in the
+    # summary, but the advisory NEVER contributes to the return value: it
+    # composes with, and is strictly additive to, the binary gate and the S01
+    # ratchet. When the field is unset the summary line is byte-identical to
+    # post-S01 (no clause appended).
+    advisory_note = ""
+    floor_pct = cfg.doc_coverage_module_min_percent
+    if floor_pct is not None:
+        below = 0
+        for rel, (live_doc, live_total) in sorted(counts.items()):
+            # Exact integer compare: live ratio < floor_pct/100 iff
+            # live_doc*100 < floor_pct*live_total. Strict `<` means a module
+            # *at* the floor is not flagged. No float rounding, no false warning.
+            if live_doc * 100 < floor_pct * live_total:
+                output.warning(
+                    rel,
+                    1,
+                    f"doc-coverage: module {rel} documentation coverage is "
+                    f"{live_doc}/{live_total} ({_ratio(live_doc, live_total):.1%}), "
+                    f"below the advisory floor of {floor_pct}% — this is a warning "
+                    f"only and does not fail the build. Add a docstring or a doc "
+                    f"mention to lift it above the floor.",
+                )
+                below += 1
+        advisory_note = f"; advisory: {below} module(s) below {floor_pct}% floor"
+
     output.summary(
         f"doc-coverage: {len(units)} public unit(s) across {len(by_file)} "
         f"module(s), {failing} fully-undocumented module(s), "
-        f"{waived} waived via doc-coverage-ok"
+        f"{waived} waived via doc-coverage-ok; {baseline_note}{advisory_note}"
     )
-    return failing
+    return failing + regressed
+
+
+def _write_baseline(path: Path, counts: dict[str, tuple[int, int]]) -> None:
+    """Serialize the live per-module fractions as the committed floor map.
+
+    Byte-idempotent by construction: sorted keys, 2-space indent, trailing
+    newline — the same stable shape :func:`emit._serialize` uses, inlined here
+    because ``checks/*.py`` may not import the ``emit`` module (the
+    ``checks-no-emit`` boundary rule). Re-recording an unchanged tree therefore
+    reproduces the file byte-for-byte, so a byte-comparison test cannot drift.
+    """
+    payload = {
+        "modules": {
+            mod: {"documented": documented, "total": total}
+            for mod, (documented, total) in sorted(counts.items())
+        }
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def update_baseline(root: Path, cfg: Config, allow_regression: bool = False) -> int:
+    """Record (or ratchet up) the per-module floor map — the explicit writer.
+
+    This is the ONLY path that writes ``baselines/doc-coverage.json``; a plain
+    :func:`run` never mutates it, and it is deliberately excluded from
+    ``emit all`` (D016) so the floor can never silently self-heal.
+
+    Ratchet-up semantics (D015): recording a floor for a new module, and raising
+    or holding an existing floor, are always allowed. **Lowering** an existing
+    floor — the live fraction dropped below the recorded one — is refused unless
+    ``allow_regression`` is passed, so accidentally blessing a real regression as
+    the new floor takes a deliberate, auditable opt-in. When any floor would be
+    lowered without the opt-in, the file is left untouched and each offending
+    module is named via ``::error`` (exit non-zero); nothing is partially written.
+
+    Returns 0 on a successful write, or the count of would-be-lowered modules
+    when the write is refused. A malformed existing baseline bubbles up as
+    :class:`ConfigError` (CLI exit 2) — you cannot ratchet on top of garbage.
+    """
+    if not cfg.doc_coverage_source_roots:
+        output.summary("doc-coverage: no source roots configured — baseline not written")
+        return 0
+
+    units = enumerate_units(root, cfg)
+    counts = per_module_counts(units)
+    path = root / BASELINE_PATH
+    floors = _load_baseline(path)  # None on first run; ConfigError if malformed
+
+    lowered = 0
+    if floors is not None and not allow_regression:
+        for rel, (live_doc, live_total) in sorted(counts.items()):
+            floor = floors.get(rel)
+            if floor is None:
+                continue  # new module — recording its floor is always allowed
+            base_doc, base_total = floor
+            # Exact fraction compare (cross-multiply) — same test the ratchet
+            # uses, so "would refuse to lower" mirrors "would fail the gate".
+            if live_doc * base_total < base_doc * live_total:
+                output.error(
+                    rel,
+                    1,
+                    f"doc-coverage: refusing to lower the baseline floor for module "
+                    f"{rel} — floor is {base_doc}/{base_total} "
+                    f"({_ratio(base_doc, base_total):.1%}), live is "
+                    f"{live_doc}/{live_total} ({_ratio(live_doc, live_total):.1%}). "
+                    f"Re-run with --allow-regression to record the lower floor.",
+                )
+                lowered += 1
+
+    if lowered:
+        output.summary(
+            f"doc-coverage: baseline NOT written — {lowered} module(s) would drop "
+            f"below their recorded floor; pass --allow-regression to override"
+        )
+        return lowered
+
+    _write_baseline(path, counts)
+    action = "recorded" if floors is None else "updated"
+    output.summary(
+        f"doc-coverage: baseline {action} at {BASELINE_PATH} — "
+        f"{len(counts)} module(s), {len(units)} public unit(s)"
+    )
+    return 0

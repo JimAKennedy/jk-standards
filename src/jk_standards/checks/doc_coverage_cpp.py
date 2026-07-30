@@ -45,10 +45,10 @@ _DOC_COMMENT_PREFIXES = ("///", "//!", "/**", "/*!")
 
 # Cached lazily-built parser. ``False`` is the "not yet attempted" sentinel;
 # ``None`` records a prior failed import so we never re-try (and never re-warn).
-_PARSER: "Parser | None | bool" = False
+_PARSER: Parser | None | bool = False
 
 
-def _get_cpp_parser() -> "Parser | None":
+def _get_cpp_parser() -> Parser | None:
     """Return a cached tree-sitter C++ parser, or ``None`` if unavailable.
 
     Mirrors nfr-review's ``_get_parser()`` fallback: the native grammar lives
@@ -69,11 +69,11 @@ def _get_cpp_parser() -> "Parser | None":
     return _PARSER  # type: ignore[return-value]
 
 
-def _text(node: "Node", source: bytes) -> str:
+def _text(node: Node, source: bytes) -> str:
     return source[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
 
 
-def _name_of(node: "Node | None") -> str | None:
+def _name_of(node: Node | None) -> str | None:
     """Extract the bare name a (possibly nested) declarator introduces.
 
     Unwraps pointer/reference/parenthesised declarators and qualified names so a
@@ -88,8 +88,10 @@ def _name_of(node: "Node | None") -> str | None:
         # A destructor (~Foo), an operator (operator==), or a qualified name
         # (ns::Foo::bar) — the trailing name is what a doc scope would mention.
         target = node.child_by_field_name("name")
-        return _name_of(target) if target is not None else (
-            node.text.decode("utf-8", errors="replace") if node.text else None
+        return (
+            _name_of(target)
+            if target is not None
+            else (node.text.decode("utf-8", errors="replace") if node.text else None)
         )
     # pointer_declarator, reference_declarator, parenthesized_declarator, etc.
     inner = node.child_by_field_name("declarator")
@@ -102,7 +104,7 @@ def _name_of(node: "Node | None") -> str | None:
     return None
 
 
-def _find_function_declarator(node: "Node") -> "Node | None":
+def _find_function_declarator(node: Node) -> Node | None:
     """Return the (first) ``function_declarator`` under *node*, if any.
 
     Skips the parameter list so a function-typed parameter never masquerades as
@@ -119,7 +121,7 @@ def _find_function_declarator(node: "Node") -> "Node | None":
     return None
 
 
-def _function_name(node: "Node") -> str | None:
+def _function_name(node: Node) -> str | None:
     """The name of the function a declaration/definition introduces, or ``None``."""
     func_decl = _find_function_declarator(node)
     if func_decl is None:
@@ -127,7 +129,7 @@ def _function_name(node: "Node") -> str | None:
     return _name_of(func_decl.child_by_field_name("declarator"))
 
 
-def _is_doc_comment(node: "Node | None", target_row: int, source: bytes) -> bool:
+def _is_doc_comment(node: Node | None, target_row: int, source: bytes) -> bool:
     """True if *node* is a Doxygen doc comment sitting just above *target_row*.
 
     "Just above" means the comment ends on the line immediately preceding the
@@ -143,10 +145,10 @@ def _is_doc_comment(node: "Node | None", target_row: int, source: bytes) -> bool
 
 
 def _class_units(
-    spec: "Node",
-    node_for_comment: "Node",
+    spec: Node,
+    node_for_comment: Node,
     kind: str,
-    prev: "Node | None",
+    prev: Node | None,
     rel: str,
     source: bytes,
     drift: bool,
@@ -187,7 +189,7 @@ def _class_units(
         return units
 
     access = "public" if kind == "struct" else "private"
-    member_prev: "Node | None" = None
+    member_prev: Node | None = None
     for child in body.named_children:
         if child.type == "access_specifier":
             label = _text(child, source).strip().rstrip(":").strip()
@@ -210,7 +212,7 @@ def _class_units(
 
 
 def _walk_container(
-    container: "Node",
+    container: Node,
     rel: str,
     source: bytes,
     drift: bool,
@@ -234,7 +236,7 @@ def _walk_container(
         )
 
     units: list[DocUnit] = []
-    prev: "Node | None" = None
+    prev: Node | None = None
     for child in container.named_children:
         if child.type in ("namespace_definition", "linkage_specification"):
             body = child.child_by_field_name("body")
@@ -242,9 +244,7 @@ def _walk_container(
                 units.extend(_walk_container(body, rel, source, drift, tokens))
         elif child.type in ("class_specifier", "struct_specifier"):
             kind = "struct" if child.type == "struct_specifier" else "class"
-            units.extend(
-                _class_units(child, child, kind, prev, rel, source, drift, tokens)
-            )
+            units.extend(_class_units(child, child, kind, prev, rel, source, drift, tokens))
         elif child.type == "declaration":
             spec = next(
                 (
@@ -256,9 +256,7 @@ def _walk_container(
             )
             if spec is not None:
                 kind = "struct" if spec.type == "struct_specifier" else "class"
-                units.extend(
-                    _class_units(spec, child, kind, prev, rel, source, drift, tokens)
-                )
+                units.extend(_class_units(spec, child, kind, prev, rel, source, drift, tokens))
             else:
                 fname = _function_name(child)
                 if fname is not None:
@@ -285,9 +283,7 @@ def _walk_container(
     return units
 
 
-def cpp_units_for_file(
-    rel: str, source: bytes, drift: bool, tokens: set[str]
-) -> list[DocUnit]:
+def cpp_units_for_file(rel: str, source: bytes, drift: bool, tokens: set[str]) -> list[DocUnit]:
     """Enumerate the public C++ units in *source* (bytes), or ``[]`` if degraded.
 
     Returns zero units — without raising — when the grammar is unavailable

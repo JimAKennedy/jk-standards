@@ -164,6 +164,16 @@ for `--no-site`).
 
 ## Status
 
+v0.6.0: hardens the `doc-coverage` check with a per-module baseline ratchet — each
+module's live documented-unit ratio is recomputed on every run and hard-fails if it
+drops below its committed floor in `baselines/doc-coverage.json`, composing with (not
+replacing) the existing fully-undocumented-module gate. New `--update-baseline` /
+`--allow-regression` flags maintain that floor map, whose write path is deliberately
+excluded from `emit all` so the ratchet cannot self-heal; lowering a floor is refused
+all-or-nothing unless `--allow-regression` is also passed. An opt-in
+`doc_coverage.module_min_percent` advisory emits warning-only annotations for modules
+below a target percent without ever changing the exit code on its own.
+
 v0.5.0: opens the toolkit's native-code authoring layer — three C++/DSP skills plus
 a gated conventions doc set indexed on the site. `realtime-audio-safety` keeps the
 audio callback thread real-time-safe and is gated by the shipped

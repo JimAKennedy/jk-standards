@@ -52,6 +52,10 @@
       "documented": 2,
       "total": 2
     },
+    "src/jk_standards/checks/research_provenance.py": {
+      "documented": 2,
+      "total": 2
+    },
     "src/jk_standards/checks/snippet_regions.py": {
       "documented": 2,
       "total": 2
@@ -73,8 +77,8 @@
       "total": 8
     },
     "src/jk_standards/frontmatter.py": {
-      "documented": 2,
-      "total": 2
+      "documented": 3,
+      "total": 3
     },
     "src/jk_standards/gitutil.py": {
       "documented": 3,

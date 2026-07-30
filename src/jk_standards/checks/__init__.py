@@ -17,6 +17,7 @@ from jk_standards.checks import (
     doc_taxonomy,
     file_line_refs,
     generated_freshness,
+    research_provenance,
     snippet_regions,
     status_prose,
 )
@@ -33,6 +34,7 @@ CHECKS = {
     "boundaries": boundaries.run,
     "doc-completeness": doc_completeness.run,
     "doc-coverage": doc_coverage.run,
+    "research-provenance": research_provenance.run,
     "doc-drift": doc_drift.run,
 }
 

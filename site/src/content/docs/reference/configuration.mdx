@@ -7,7 +7,7 @@ description: Every field of jk-standards.yaml plus the CLI surface.
 import CodeSnippet from '../../../components/CodeSnippet.astro';
 import schema from '../../../generated/config-schema.json';
 
-Status: current (2026-07-28)
+Status: current (2026-07-30)
 
 All project-specific surface lives in one file, `{schema.config_file_name}`,
 at the consuming repo's root (override with `--config`). Every key is
@@ -87,6 +87,14 @@ bare-module gate and the per-module baseline ratchet, whose committed floor map
 lives at `baselines/doc-coverage.json` and is recorded only through the
 `doc-coverage --update-baseline` CLI flag (see the CLI section below).
 
+The four `provenance_*` fields are read from a `research_provenance:`
+section (`bib_file`, `anchor_pattern`, `phrase`, and `doc_roots` keys).
+`bib_file` names the bibliography whose `id="..."` spans define the stable
+citation anchors — configuring it is what opts the `research-provenance`
+check in; with no bibliography the check is skipped. Everything else
+defaults. See the
+[checks reference](/reference/checks/#research-provenance) for the rule
+these fields tune.
 ## Example — this repo's own config
 
 jk-standards dogfoods itself, so its own `jk-standards.yaml` is a live

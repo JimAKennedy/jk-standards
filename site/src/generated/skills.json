@@ -36,6 +36,11 @@
       "path": "skills/realtime-audio-safety/SKILL.md"
     },
     {
+      "description": "Discipline for documentation that summarises external research, scholarship, or practitioner knowledge — make provenance explicit, credit precisely, and never let summarised prior work read as original research. Use whenever documentation states claims derived from published sources.",
+      "name": "research-provenance",
+      "path": "skills/research-provenance/SKILL.md"
+    },
+    {
       "description": "Wire ASan/UBSan/TSan and fuzzing into CI for C/C++ projects — nightly sanitizer matrices, issue-dedupe notification paths, sanitizer-aware stress tests, integration-surface instrumentation. Use when setting up or auditing the native-code sanitizer layer of a project's CI.",
       "name": "sanitizer-ci-setup",
       "path": "skills/sanitizer-ci-setup/SKILL.md"
@@ -46,5 +51,5 @@
       "path": "skills/versioned-state-serialization/SKILL.md"
     }
   ],
-  "toolkit_version": "0.6.0"
+  "toolkit_version": "0.7.0"
 }

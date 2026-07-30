@@ -71,6 +71,15 @@
   pass_filenames: false
 # endregion:hook-snippet-regions
 
+# region:hook-research-provenance
+- id: research-provenance
+  name: research citations resolve and pages declare provenance
+  entry: jk-standards research-provenance
+  language: python
+  types_or: [markdown, mdx]
+  pass_filenames: false
+# endregion:hook-research-provenance
+
 # region:hook-secrets-scan
 - id: secrets-scan
   name: no hardcoded secrets in staged changes

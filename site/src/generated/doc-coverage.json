@@ -1,5 +1,5 @@
 {
-  "toolkit_version": "0.6.0",
+  "toolkit_version": "0.7.0",
   "units": [
     {
       "documented": true,
@@ -363,6 +363,30 @@
     },
     {
       "documented": true,
+      "file": "src/jk_standards/checks/research_provenance.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "research_provenance",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/research_provenance.py",
+      "kind": "function",
+      "lineno": 65,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
       "file": "src/jk_standards/checks/snippet_regions.py",
       "kind": "function",
       "lineno": 124,
@@ -557,7 +581,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 284,
+      "lineno": 306,
       "name": "iter_docs",
       "signals": {
         "docstring": true,
@@ -569,7 +593,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 144,
+      "lineno": 152,
       "name": "load_config",
       "signals": {
         "docstring": false,
@@ -689,8 +713,20 @@
       "documented": true,
       "file": "src/jk_standards/frontmatter.py",
       "kind": "function",
-      "lineno": 11,
+      "lineno": 27,
       "name": "read_class",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/frontmatter.py",
+      "kind": "function",
+      "lineno": 11,
+      "name": "read_field",
       "signals": {
         "docstring": true,
         "drift": false,

@@ -4,7 +4,7 @@ class: gated
 
 # Configuration reference
 
-Status: current (2026-07-28)
+Status: current (2026-07-30)
 
 All project-specific surface lives in one file, `jk-standards.yaml`, at the
 consuming repo's root (override with `--config`). Every key is optional; an
@@ -94,6 +94,14 @@ doc_coverage:                 # code no doc or docstring describes at all
   doc_scopes:                 # dirs scanned for the whole-word "mention" signal
     - docs
     - site/src/content/docs
+
+research_provenance:          # summarised research declares its provenance
+  bib_file: site/src/content/docs/appendix-references.mdx   # opts the check in
+  anchor_pattern: '(ref|fr)-[A-Za-z0-9-]+'    # citation-anchor id regex (default)
+  phrase: 'not original (research|theory)'    # provenance-sentence regex (default)
+  doc_roots:                  # docs scanned; default: top-level doc_roots
+    - path: site/src/content/docs
+      extensions: [".mdx"]
 ```
 
 The `action_pinning` section tunes the `action-pinning` check: `workflow_dir`
@@ -150,6 +158,15 @@ and points at `jk-standards[cpp]`, so a grammar-less repo keeps working on the
 zero-dependency default. See the [checks reference](checks.md#doc-coverage) for
 the rule these fields tune.
 
+The `research_provenance` section tunes the `research-provenance` check.
+`bib_file` names the bibliography whose `id="..."` spans define the stable
+citation anchors — configuring it is what opts the check in; with no
+bibliography the check is skipped. `anchor_pattern` is the regex an anchor
+id must match, `phrase` is the regex a research-derived page's provenance
+sentence must match, and `doc_roots` narrows which docs are scanned,
+defaulting to the top-level `doc_roots`. Everything but `bib_file`
+defaults. See the [checks reference](checks.md#research-provenance) for the
+rule these fields tune.
 ## CLI
 
 ```

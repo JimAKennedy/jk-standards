@@ -119,6 +119,30 @@
       "type": "list[GeneratedDoc]"
     },
     {
+      "default": "(ref|fr)-[A-Za-z0-9-]+",
+      "has_default_factory": false,
+      "name": "provenance_anchor_pattern",
+      "type": "str"
+    },
+    {
+      "default": "",
+      "has_default_factory": false,
+      "name": "provenance_bib_file",
+      "type": "str"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "provenance_doc_roots",
+      "type": "list[DocRoot]"
+    },
+    {
+      "default": "not original (research|theory)",
+      "has_default_factory": false,
+      "name": "provenance_phrase",
+      "type": "str"
+    },
+    {
       "default": [],
       "has_default_factory": true,
       "name": "snippet_doc_roots",
@@ -159,5 +183,5 @@
       "type": "list[str]"
     }
   ],
-  "toolkit_version": "0.6.0"
+  "toolkit_version": "0.7.0"
 }

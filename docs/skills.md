@@ -4,7 +4,7 @@ class: gated
 
 # Skills index
 
-Status: current (2026-07-27)
+Status: current (2026-07-30)
 
 Agent skills shipped by this repo, under `skills/<name>/SKILL.md`. They are
 the authoring-time half of the discipline: the checks enforce the
@@ -19,6 +19,7 @@ first place.
 | determinism-testing | Making DSP output reproducible so golden tests catch regressions: the identical `(patch, seed, transport)` → byte-identical output contract, deriving oscillator/LFO phase from absolute transport time rather than per-block accumulation, and wiring a checked-in golden/snapshot suite into CI as a required gate |
 | doc-anti-drift | Writing and maintaining docs under the anti-drift discipline: lifecycle classes, drift-map upkeep, dated status claims, symbol-based references, test-cited behavioral claims |
 | escape-hatch-discipline | Designing and using suppressions: in-band, greppable, reasoned; narrowest-scope-first; ratchet baselines |
+| research-provenance | The provenance discipline for documentation that summarises external research or scholarship: every substantive claim is a sourced claim (inline citation), a practical distillation (flagged in the page's Attribution note), or a project-specific value (declared as the project's own); bibliography entries carry stable HTML anchors, terminology credits its coiner, organising frameworks are declared as arrangement rather than discovery, and cultural material claims fidelity to cited scholarship only — mechanically gated by the `research-provenance` check |
 | realtime-audio-safety | Keeping the audio callback thread real-time-safe — no heap allocation, locks, blocking syscalls, exceptions, or unbounded container growth — and gating it with the greppable `check-realtime-safety.sh` scanner honoring an in-band `RT-SAFE-OK: <reason>` waiver with a live suppression count, with RealtimeSanitizer as the dynamic backstop |
 | sanitizer-ci-setup | Layered quality gates for native projects: ASan/UBSan/TSan matrices, sanitizer-aware tests, fuzzer wiring, notification paths that can't be ignored |
 | versioned-state-serialization | Serializing persistent state so old data still loads after the format changes: write a version tag first, branch on it when reading, and never reinterpret unversioned bytes, illustrated with JUCE/VST3 plugin preset/patch state and the "preset compatibility time bomb" anti-pattern |

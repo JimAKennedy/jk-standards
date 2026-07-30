@@ -288,10 +288,7 @@ def test_per_module_counts_aggregates_documented_and_total(tmp_path):
     write(
         tmp_path,
         "src/mixed.py",
-        "def a():\n"
-        '    """doc."""\n\n\n'
-        "def b():\n"
-        "    pass\n",
+        'def a():\n    """doc."""\n\n\ndef b():\n    pass\n',
     )
     units = doc_coverage.enumerate_units(tmp_path, cfg())
     counts = doc_coverage.per_module_counts(units)

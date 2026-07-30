@@ -88,8 +88,10 @@ def _name_of(node: "Node | None") -> str | None:
         # A destructor (~Foo), an operator (operator==), or a qualified name
         # (ns::Foo::bar) — the trailing name is what a doc scope would mention.
         target = node.child_by_field_name("name")
-        return _name_of(target) if target is not None else (
-            node.text.decode("utf-8", errors="replace") if node.text else None
+        return (
+            _name_of(target)
+            if target is not None
+            else (node.text.decode("utf-8", errors="replace") if node.text else None)
         )
     # pointer_declarator, reference_declarator, parenthesized_declarator, etc.
     inner = node.child_by_field_name("declarator")
@@ -242,9 +244,7 @@ def _walk_container(
                 units.extend(_walk_container(body, rel, source, drift, tokens))
         elif child.type in ("class_specifier", "struct_specifier"):
             kind = "struct" if child.type == "struct_specifier" else "class"
-            units.extend(
-                _class_units(child, child, kind, prev, rel, source, drift, tokens)
-            )
+            units.extend(_class_units(child, child, kind, prev, rel, source, drift, tokens))
         elif child.type == "declaration":
             spec = next(
                 (
@@ -256,9 +256,7 @@ def _walk_container(
             )
             if spec is not None:
                 kind = "struct" if spec.type == "struct_specifier" else "class"
-                units.extend(
-                    _class_units(spec, child, kind, prev, rel, source, drift, tokens)
-                )
+                units.extend(_class_units(spec, child, kind, prev, rel, source, drift, tokens))
             else:
                 fname = _function_name(child)
                 if fname is not None:
@@ -285,9 +283,7 @@ def _walk_container(
     return units
 
 
-def cpp_units_for_file(
-    rel: str, source: bytes, drift: bool, tokens: set[str]
-) -> list[DocUnit]:
+def cpp_units_for_file(rel: str, source: bytes, drift: bool, tokens: set[str]) -> list[DocUnit]:
     """Enumerate the public C++ units in *source* (bytes), or ``[]`` if degraded.
 
     Returns zero units — without raising — when the grammar is unavailable

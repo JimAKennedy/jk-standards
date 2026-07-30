@@ -11,7 +11,7 @@ import pytest
 import yaml
 
 from jk_standards import emit
-from jk_standards.checks import CHECKS
+from jk_standards.checks import CHECKS, doc_coverage
 from jk_standards.config import Config
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -329,3 +329,63 @@ def test_doc_coverage_check_path_detects_a_stale_fixture(tmp_path, monkeypatch):
         emit.EMITTERS, "doc-coverage", (lambda _root: b'{"fresh": true}\n', "doc-coverage.json")
     )
     assert emit.run(tmp_path, "doc-coverage", check_only=True) == 1
+
+
+# --- self-heal invariant: `emit all` must never touch the ratchet baseline ----
+#
+# The load-bearing M011 guarantee (D016) is that baselines/doc-coverage.json can
+# never be freshened by `emit all` — if it could, a coverage regression would
+# silently heal itself into the new floor and the ratchet would gate nothing.
+# That exclusion is enforced structurally: the baseline is absent from
+# emit.EMITTERS (nothing emits it) AND from jk-standards.yaml's `generated:`
+# list (generated-freshness never regenerates it). The three tests below pin
+# both halves plus a live write-mode proof, so the exclusion cannot be undone
+# without a red test.
+
+
+def test_baseline_path_is_not_a_registered_emitter_output():
+    """No emitter targets the baseline. `emit all` only ever writes
+    root/GENERATED_DIR/<filename> for a registered emitter, so a path absent
+    from that set is structurally unreachable — the ratchet floor cannot
+    self-heal. The baseline also lives OUTSIDE the emitted GENERATED_DIR."""
+    baseline = (REPO_ROOT / doc_coverage.BASELINE_PATH).resolve()
+    emitter_outputs = {
+        (REPO_ROOT / emit.GENERATED_DIR / filename).resolve()
+        for _, (_, filename) in emit.EMITTERS.items()
+    }
+    assert baseline not in emitter_outputs
+    assert (REPO_ROOT / emit.GENERATED_DIR).resolve() not in baseline.parents
+
+
+def test_baseline_path_is_absent_from_generated_freshness_gate():
+    """generated-freshness re-runs each `generated:` command and diffs the
+    result against the tracked file; listing the baseline there would let CI
+    regenerate (self-heal) it. It must be absent so the explicit --update-baseline
+    writer stays the ONLY path that mutates the floor."""
+    yaml_data = yaml.safe_load((REPO_ROOT / "jk-standards.yaml").read_text(encoding="utf-8"))
+    gated = {entry["doc"] for entry in yaml_data.get("generated", [])}
+    assert doc_coverage.BASELINE_PATH not in gated
+
+
+def test_emit_all_write_mode_leaves_the_baseline_byte_identical(monkeypatch):
+    """The invariant proven dynamically: a real write-mode `emit all` pass leaves
+    baselines/doc-coverage.json byte-for-byte unchanged. `coverage` is dropped
+    (non-deterministic, and would recurse inside pytest). Every fixture the pass
+    would write is snapshotted and restored in a finally, so the test is hermetic
+    — it never leaves a tracked file modified even if one was stale on entry."""
+    deterministic = {k: v for k, v in emit.EMITTERS.items() if k != "coverage"}
+    targets = {
+        REPO_ROOT / emit.GENERATED_DIR / filename: (
+            REPO_ROOT / emit.GENERATED_DIR / filename
+        ).read_bytes()
+        for _, (_, filename) in deterministic.items()
+    }
+    baseline_path = REPO_ROOT / doc_coverage.BASELINE_PATH
+    baseline_before = baseline_path.read_bytes()
+    monkeypatch.setattr(emit, "EMITTERS", deterministic)
+    try:
+        assert emit.run(REPO_ROOT, "all", check_only=False) == 0
+        assert baseline_path.read_bytes() == baseline_before
+    finally:
+        for path, data in targets.items():
+            path.write_bytes(data)

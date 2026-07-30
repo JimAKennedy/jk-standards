@@ -230,9 +230,7 @@ def enumerate_units(root: Path, cfg: Config) -> list[DocUnit]:
             if cpp_parser_absent:
                 cpp_skipped += 1
                 continue
-            units.extend(
-                doc_coverage_cpp.cpp_units_for_file(rel, path.read_bytes(), drift, tokens)
-            )
+            units.extend(doc_coverage_cpp.cpp_units_for_file(rel, path.read_bytes(), drift, tokens))
         else:
             source = path.read_text(encoding="utf-8", errors="replace")
             units.extend(_units_for_file(rel, source, drift, tokens))
@@ -306,8 +304,7 @@ def _load_baseline(path: Path) -> dict[str, tuple[int, int]] | None:
             or isinstance(entry.get("total"), bool)
         ):
             raise ConfigError(
-                f"{path}: module {mod!r} must map to "
-                f"{{'documented': int, 'total': int}}"
+                f"{path}: module {mod!r} must map to {{'documented': int, 'total': int}}"
             )
         floors[str(mod)] = (entry["documented"], entry["total"])
     return floors
@@ -376,8 +373,7 @@ def run(root: Path, cfg: Config) -> int:
                 )
                 regressed += 1
         baseline_note = (
-            f"{evaluated} module(s) evaluated against baseline, "
-            f"{regressed} ratchet failure(s)"
+            f"{evaluated} module(s) evaluated against baseline, {regressed} ratchet failure(s)"
         )
 
     output.summary(

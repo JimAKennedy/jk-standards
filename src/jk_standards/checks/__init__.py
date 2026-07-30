@@ -15,6 +15,7 @@ from jk_standards.checks import (
     doc_taxonomy,
     file_line_refs,
     generated_freshness,
+    research_provenance,
     snippet_regions,
     status_prose,
 )
@@ -29,6 +30,7 @@ CHECKS = {
     "action-pinning": action_pinning.run,
     "snippet-regions": snippet_regions.run,
     "boundaries": boundaries.run,
+    "research-provenance": research_provenance.run,
     "doc-drift": doc_drift.run,
 }
 

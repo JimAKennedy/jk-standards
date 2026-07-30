@@ -4,6 +4,55 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-30
+
+### Added
+
+- **`research-provenance` skill**
+  (`skills/research-provenance/SKILL.md`): the discipline for documentation
+  that summarises external research, scholarship, or practitioner knowledge —
+  every substantive claim is one of three visible classes (sourced claim with
+  inline citation, practical distillation flagged in the page's Attribution
+  note, or project-specific value declared as the project's own), bibliography
+  entries carry stable HTML anchors and are never renumbered, provenance is
+  declared at both the bibliography and per-page level, terminology credits
+  its coiner, organising frameworks are declared as arrangement rather than
+  discovery, and cultural material claims fidelity to cited scholarship only
+  ("idiom-aware", never "authentic"). Extracted from the crediting pass on
+  Poly's Theory Deep Dives section (JimAKennedy/poly PR #159), the reference
+  implementation. Indexed in `docs/skills.md` and projected into
+  `site/src/generated/skills.json`.
+- **`research-provenance` check**
+  (`src/jk_standards/checks/research_provenance.py`): the mechanical gate for
+  the skill's checkable subset — every citation link resolves to a defined
+  `id="..."` anchor in the configured bibliography, bibliography ids are
+  unique, and pages opted in via `provenance: research` front-matter carry a
+  provenance sentence matching the configured phrase plus an
+  `**Attribution:**` note. Skipped when no bibliography is configured
+  (incremental adoption), archived docs exempt, with a
+  `# provenance-ok: <reason>` two-line-window escape hatch for links that
+  legitimately point outside the project's bibliography. Registered in the
+  `CHECKS` registry, exposed as the `research-provenance` CLI subcommand and
+  pre-commit hook (`.pre-commit-hooks.yaml`), documented in `docs/checks.md`
+  and the site checks reference, and covered by fixture-repo tests in
+  `tests/test_checks.py`.
+- **`research_provenance` config section** (`src/jk_standards/config.py`):
+  four new `Config` fields — `provenance_bib_file` (opts the check in),
+  `provenance_anchor_pattern`, `provenance_phrase`, and
+  `provenance_doc_roots` (defaulting to the top-level `doc_roots`) — read
+  from a `research_provenance:` YAML section and documented in
+  `docs/configuration.md` and the site configuration reference.
+
+### Changed
+
+- **`frontmatter.read_field`** (`src/jk_standards/frontmatter.py`): the
+  front-matter reader now exposes a generic top-level scalar field reader;
+  `read_class` delegates to it, and the `research-provenance` check uses it
+  to read the `provenance:` marker.
+- **ARCHITECTURE.md invariant table**: added the research-provenance row so
+  the new mechanism lands with its stated invariant, per the architecture
+  standard's bidirectional rule.
+
 ## [0.5.0] - 2026-07-27
 
 ### Added

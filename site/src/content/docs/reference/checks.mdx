@@ -6,7 +6,7 @@ description: Every check the toolkit ships — rule, mechanism, and escape hatch
 
 import checksData from '../../../generated/checks.json';
 
-Status: current (2026-07-26)
+Status: current (2026-07-30)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit
@@ -258,3 +258,53 @@ suppressions are counted and reported in the check's summary line
 [verified: test_checks::test_boundaries_suppression_count_reported_in_summary],
 so rising escape-hatch usage is visible in CI logs rather than silent. Rules
 are declared in the `boundaries` config section.
+## research-provenance
+
+Documentation that summarises published scholarship must make its
+provenance mechanically visible, so summarised prior work can never be
+mistaken for original research. The check is opted in by configuring
+`research_provenance.bib_file`; with no bibliography configured it is
+skipped [verified: test_checks::test_provenance_unconfigured_skips], and a
+configured path that doesn't exist is flagged rather than silently passing
+[verified: test_checks::test_provenance_missing_bib_file_flagged].
+
+Citation resolution applies to every non-archived doc: a citation link
+(`#ref-*` / `#fr-*`, or whatever `anchor_pattern` matches) must resolve to
+an `id="..."` defined in the bibliography file — a dangling anchor is
+flagged with `path:line`
+[verified: test_checks::test_provenance_dangling_citation_flagged_with_path_line],
+a resolving one passes
+[verified: test_checks::test_provenance_resolved_citation_passes], and a
+bibliography id defined twice is flagged at its redefinition
+[verified: test_checks::test_provenance_duplicate_bib_ids_flagged_with_file_line]
+— entries are stable anchors, never renumbered. The anchor pattern is
+configurable
+[verified: test_checks::test_provenance_custom_anchor_pattern], and a
+malformed pattern is surfaced as a violation so a broken config fails
+loudly
+[verified: test_checks::test_provenance_invalid_anchor_pattern_is_a_violation].
+
+Pages opted in via `provenance: research` front-matter must additionally
+carry a provenance sentence matching the configured `phrase` regex
+(default `not original (research|theory)`)
+[verified: test_checks::test_provenance_research_page_missing_sentence_flagged]
+and an `**Attribution:**` note assigning claims to the three provenance
+classes — sourced claim, practical distillation, project-specific value
+[verified: test_checks::test_provenance_research_page_missing_attribution_flagged].
+A page carrying both passes
+[verified: test_checks::test_provenance_conformant_research_page_passes];
+pages without the front-matter marker get citation checking only
+[verified: test_checks::test_provenance_unmarked_page_needs_no_markers],
+and archived docs are exempt throughout
+[verified: test_checks::test_provenance_archived_docs_exempt]. The prose
+discipline behind the markers is the `research-provenance` skill.
+
+Escape hatch: a `# provenance-ok: <reason>` marker on the citing line
+[verified: test_checks::test_provenance_ok_marker_same_line_exempts] or the
+line immediately above it
+[verified: test_checks::test_provenance_ok_marker_line_above_exempts]
+suppresses citation-resolution findings, for links that legitimately point
+outside the project's bibliography — the same two-line window used by
+action-pinning, count-drift, and snippet-regions. The page-level
+requirements have no marker hatch: a page that shouldn't carry them
+shouldn't declare `provenance: research`.

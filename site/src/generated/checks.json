@@ -50,6 +50,12 @@
     },
     {
       "is_static": true,
+      "name": "research-provenance",
+      "source_file": "src/jk_standards/checks/research_provenance.py",
+      "summary": "research-provenance: summarised research never reads as original research."
+    },
+    {
+      "is_static": true,
       "name": "snippet-regions",
       "source_file": "src/jk_standards/checks/snippet_regions.py",
       "summary": "snippet-regions: doc references to code regions resolve to real markers."
@@ -61,5 +67,5 @@
       "summary": "status-prose: ban stale progress-tracking prose in gated docs."
     }
   ],
-  "toolkit_version": "0.5.0"
+  "toolkit_version": "0.6.0"
 }

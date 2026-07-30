@@ -123,6 +123,14 @@ class Config:
     snippet_markers: list[SnippetMarkerSyntax] = field(default_factory=list)
     # boundaries: directed forbidden-reference rules between component dirs.
     boundaries: list[BoundaryRule] = field(default_factory=list)
+    # research-provenance: bib_file opts the check in (empty = skipped);
+    # anchor_pattern matches citation-anchor ids; phrase is the regex a
+    # research-derived page's provenance sentence must match; doc_roots
+    # default to the top-level doc_roots (falls back at run time).
+    provenance_bib_file: str = ""
+    provenance_anchor_pattern: str = r"(ref|fr)-[A-Za-z0-9-]+"
+    provenance_phrase: str = r"not original (research|theory)"
+    provenance_doc_roots: list[DocRoot] = field(default_factory=list)
 
 
 def _require(mapping: dict, key: str, context: str) -> object:
@@ -223,6 +231,20 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
             prefixes=[str(p) for p in _require(m, "prefixes", "snippet_regions.markers entry")],
         )
         for m in snippet.get("markers", [])
+    ]
+
+    provenance = data.get("research_provenance", {})
+    cfg.provenance_bib_file = str(provenance.get("bib_file", cfg.provenance_bib_file))
+    cfg.provenance_anchor_pattern = str(
+        provenance.get("anchor_pattern", cfg.provenance_anchor_pattern)
+    )
+    cfg.provenance_phrase = str(provenance.get("phrase", cfg.provenance_phrase))
+    cfg.provenance_doc_roots = [
+        DocRoot(
+            path=str(_require(d, "path", "research_provenance.doc_roots entry")),
+            extensions=[str(e) for e in d.get("extensions", [".md", ".mdx"])],
+        )
+        for d in provenance.get("doc_roots", [])
     ]
 
     cfg.boundaries = [

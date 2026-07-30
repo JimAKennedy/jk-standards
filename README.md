@@ -37,6 +37,7 @@ A typed lifecycle for documentation, machine-enforced:
 | count-drift | Inventory facts ("N presets", "N chapters") live in one generated JSON and are interpolated, never restated |
 | action-pinning | Every GitHub Actions `uses:` is pinned to a 40-char commit SHA; a floating ref (`@v6`, `@main`) is flagged with `file:line`, with a `# action-pin-ok: <reason>` escape hatch and local `./` refs accepted |
 | snippet-regions | Docs referencing a code region — MDX `<CodeSnippet region=…>` or prose `region:<name>` — must point at a real `region:<name>` marker in the source tree; a dangling reference is flagged with `file:line`, with a `# snippet-region-ok: <reason>` escape hatch and per-file-type marker syntax |
+| research-provenance | Docs summarising published research make provenance mechanically visible: citation links resolve to stable `id="…"` anchors in the bibliography (never duplicated, never renumbered), and pages opted in via `provenance: research` front-matter carry a provenance sentence plus an `**Attribution:**` note, with a `# provenance-ok: <reason>` escape hatch |
 
 ### 2. Pre-commit hooks (`.pre-commit-hooks.yaml`)
 

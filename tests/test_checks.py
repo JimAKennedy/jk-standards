@@ -10,6 +10,7 @@ from jk_standards.checks import (
     doc_taxonomy,
     file_line_refs,
     generated_freshness,
+    research_provenance,
     snippet_regions,
     status_prose,
 )
@@ -696,3 +697,139 @@ def test_poly_drumcore_ok_marker_shell_and_python_suppress(tmp_path, capsys):
     )
     assert boundaries.run(tmp_path, _poly_drumcore_config()) == 0
     assert "2 suppression(s) via boundary-ok" in capsys.readouterr().out
+
+
+# --- research-provenance ----------------------------------------------------
+
+BIB = "docs/references.md"
+
+
+def _provenance_config(**overrides) -> Config:
+    return Config(provenance_bib_file=BIB, **overrides)
+
+
+def _write_bib(root: Path, *anchors: str) -> None:
+    entries = "\n".join(f'- <span id="{a}">Author (Year). *Title*.</span>' for a in anchors)
+    write(root, BIB, f"---\nclass: gated\n---\n# References\n\n{entries}\n")
+
+
+def test_provenance_unconfigured_skips(tmp_path):
+    write(tmp_path, "docs/a.md", "---\nclass: gated\n---\nSee [X](#ref-nowhere).\n")
+    assert research_provenance.run(tmp_path, Config()) == 0
+
+
+def test_provenance_missing_bib_file_flagged(tmp_path):
+    write(tmp_path, "docs/a.md", "---\nclass: gated\n---\nProse.\n")
+    assert research_provenance.run(tmp_path, _provenance_config()) == 1
+
+
+def test_provenance_duplicate_bib_ids_flagged_with_file_line(tmp_path, capsys):
+    _write_bib(tmp_path, "ref-keil-1987", "ref-keil-1987")
+    assert research_provenance.run(tmp_path, _provenance_config()) == 1
+    assert f"::error file={BIB},line=7::" in capsys.readouterr().err
+
+
+def test_provenance_dangling_citation_flagged_with_path_line(tmp_path, capsys):
+    _write_bib(tmp_path, "ref-arom-1991")
+    write(
+        tmp_path,
+        "docs/a.md",
+        "---\nclass: gated\n---\nThe referent concept is [Arom's](#fr-arom-1991).\n",
+    )
+    assert research_provenance.run(tmp_path, _provenance_config()) == 1
+    assert "::error file=docs/a.md,line=4::" in capsys.readouterr().err
+
+
+def test_provenance_resolved_citation_passes(tmp_path):
+    _write_bib(tmp_path, "fr-arom-1991", "ref-1")
+    write(
+        tmp_path,
+        "docs/a.md",
+        "---\nclass: gated\n---\nSee [Arom 1991](references.md#fr-arom-1991) and [1](#ref-1).\n",
+    )
+    assert research_provenance.run(tmp_path, _provenance_config()) == 0
+
+
+def test_provenance_research_page_missing_sentence_flagged(tmp_path):
+    _write_bib(tmp_path, "ref-1")
+    write(
+        tmp_path,
+        "docs/a.md",
+        "---\nclass: gated\nprovenance: research\n---\n"
+        "Rules here.\n\n**Attribution:** Rule 1 is [1](#ref-1) summarised.\n",
+    )
+    assert research_provenance.run(tmp_path, _provenance_config()) == 1
+
+
+def test_provenance_research_page_missing_attribution_flagged(tmp_path):
+    _write_bib(tmp_path, "ref-1")
+    write(
+        tmp_path,
+        "docs/a.md",
+        "---\nclass: gated\nprovenance: research\n---\n"
+        "Summarised from published scholarship — not original theory.\n",
+    )
+    assert research_provenance.run(tmp_path, _provenance_config()) == 1
+
+
+def test_provenance_conformant_research_page_passes(tmp_path):
+    _write_bib(tmp_path, "ref-1")
+    write(
+        tmp_path,
+        "docs/a.md",
+        "---\nclass: gated\nprovenance: research\n---\n"
+        "Prior work restated — not original research.\n\n"
+        "**Attribution:** Rule 1 is [1](#ref-1) summarised; all values are ours.\n",
+    )
+    assert research_provenance.run(tmp_path, _provenance_config()) == 0
+
+
+def test_provenance_unmarked_page_needs_no_markers(tmp_path):
+    # Citation resolution applies everywhere, but the sentence/Attribution
+    # requirements bind only pages that opt in via `provenance: research`.
+    _write_bib(tmp_path, "ref-1")
+    write(tmp_path, "docs/a.md", "---\nclass: gated\n---\nPlain prose citing [1](#ref-1).\n")
+    assert research_provenance.run(tmp_path, _provenance_config()) == 0
+
+
+def test_provenance_archived_docs_exempt(tmp_path):
+    _write_bib(tmp_path, "ref-1")
+    write(tmp_path, "docs/old.md", "---\nclass: archived\n---\nRotted cite [9](#ref-9).\n")
+    assert research_provenance.run(tmp_path, _provenance_config()) == 0
+
+
+def test_provenance_ok_marker_same_line_exempts(tmp_path):
+    _write_bib(tmp_path, "ref-1")
+    write(
+        tmp_path,
+        "docs/a.md",
+        "---\nclass: gated\n---\n"
+        "External page [anchor](https://example.com/#ref-x) "
+        "<!-- provenance-ok: not our bibliography -->\n",
+    )
+    assert research_provenance.run(tmp_path, _provenance_config()) == 0
+
+
+def test_provenance_ok_marker_line_above_exempts(tmp_path):
+    _write_bib(tmp_path, "ref-1")
+    write(
+        tmp_path,
+        "docs/a.md",
+        "---\nclass: gated\n---\n"
+        "<!-- provenance-ok: not our bibliography -->\n"
+        "External page [anchor](https://example.com/#ref-x).\n",
+    )
+    assert research_provenance.run(tmp_path, _provenance_config()) == 0
+
+
+def test_provenance_custom_anchor_pattern(tmp_path):
+    write(tmp_path, BIB, '---\nclass: gated\n---\n<span id="bib-arom"></span>\n')
+    write(tmp_path, "docs/a.md", "---\nclass: gated\n---\nSee [Arom](#bib-nope).\n")
+    cfg = _provenance_config(provenance_anchor_pattern=r"bib-[a-z]+")
+    assert research_provenance.run(tmp_path, cfg) == 1
+
+
+def test_provenance_invalid_anchor_pattern_is_a_violation(tmp_path):
+    _write_bib(tmp_path, "ref-1")
+    cfg = _provenance_config(provenance_anchor_pattern=r"(unclosed")
+    assert research_provenance.run(tmp_path, cfg) == 1

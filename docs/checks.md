@@ -217,6 +217,42 @@ and the summary line reports the unit count, module count, undocumented count,
 and live-waiver count
 [verified: test_doc_coverage::test_clean_run_summary_reports_unit_and_module_counts].
 
+**Baseline ratchet.** Beyond the binary bare-module gate, the check enforces a
+per-module floor: it recomputes each module's live documented-unit ratio and
+compares it against the committed floor recorded at `baselines/doc-coverage.json`,
+hard-failing any module that slipped below its recorded ratio and naming the
+module with its before/after ratio
+[verified: test_doc_coverage::test_ratchet_regression_below_floor_fails_naming_module_and_ratio].
+The ratchet composes with — it does not replace — the binary gate
+[verified: test_doc_coverage::test_ratchet_composes_with_binary_gate]: holding at
+the floor passes
+[verified: test_doc_coverage::test_ratchet_holding_at_floor_passes], improving
+above it passes
+[verified: test_doc_coverage::test_ratchet_improvement_above_floor_passes], and a
+module not yet in the baseline is first-seen-passes
+[verified: test_doc_coverage::test_ratchet_new_module_not_in_baseline_passes]. With
+no baseline committed yet the ratchet is inert and the summary line says so
+[verified: test_doc_coverage::test_ratchet_no_baseline_passes_and_reports_first_run].
+The floor map is recorded — and ratcheted up — only through the explicit
+`doc-coverage --update-baseline` CLI flag (never `emit all`, so a floor can never
+silently self-heal); a write that would *lower* an existing floor is refused
+unless `--allow-regression` is also passed
+[verified: test_doc_coverage::test_update_baseline_lowering_refused_without_allow_regression],
+and re-recording an unchanged tree reproduces the file byte-for-byte
+[verified: test_doc_coverage::test_update_baseline_is_byte_idempotent].
+
+**Advisory floor.** An optional `doc_coverage.module_min_percent` sets a soft
+per-module target: a module whose live documented-unit ratio is below that
+percentage emits a `::warning` (surfaced inline on the PR) and is tallied in the
+summary line, but the advisory never fails the build — it is strictly additive to
+the binary gate and the ratchet
+[verified: test_doc_coverage::test_advisory_below_floor_warns_but_exit_stays_zero].
+A module exactly at the floor is not flagged
+[verified: test_doc_coverage::test_advisory_at_floor_not_flagged], and when the
+field is unset the summary line is byte-identical to before, with no advisory
+clause and no warnings
+[verified: test_doc_coverage::test_advisory_unset_adds_no_clause_and_no_warning].
+
 Escape hatch: a `# doc-coverage-ok: <reason>` marker in the file's leading comment
 block (before the first code) waives the whole module in place
 [verified: test_doc_coverage::test_escape_hatch_waives_module]; a shebang above

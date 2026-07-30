@@ -7,11 +7,14 @@ hatch — plus the negative surface: unparseable files, binary bytes in a doc
 scope, a missing drift map, a non-directory source root, and private units.
 """
 
+import json
 from pathlib import Path
+
+import pytest
 
 from jk_standards.checks import doc_coverage
 from jk_standards.checks.doc_coverage import DocUnit
-from jk_standards.config import Config, SourceRoot
+from jk_standards.config import Config, ConfigError, SourceRoot
 
 
 def write(root: Path, rel: str, text: str) -> Path:
@@ -269,3 +272,141 @@ def test_clean_run_summary_reports_unit_and_module_counts(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "public unit(s)" in out
     assert "0 fully-undocumented module(s)" in out
+
+
+# --- per-module baseline ratchet: aggregation -------------------------------
+
+
+def write_baseline(root: Path, modules: dict[str, tuple[int, int]]) -> Path:
+    """Write a floor map in the loader's schema (fraction, not float ratio)."""
+    payload = {"modules": {m: {"documented": d, "total": t} for m, (d, t) in modules.items()}}
+    return write(root, doc_coverage.BASELINE_PATH, json.dumps(payload, indent=2) + "\n")
+
+
+def test_per_module_counts_aggregates_documented_and_total(tmp_path):
+    # One documented function, one bare function → module unit(no doc) + 2 fns.
+    write(
+        tmp_path,
+        "src/mixed.py",
+        "def a():\n"
+        '    """doc."""\n\n\n'
+        "def b():\n"
+        "    pass\n",
+    )
+    units = doc_coverage.enumerate_units(tmp_path, cfg())
+    counts = doc_coverage.per_module_counts(units)
+    # module unit (no docstring), a (documented), b (bare) → 1 of 3 documented.
+    assert counts == {"src/mixed.py": (1, 3)}
+
+
+# --- baseline loader (_load_baseline) ---------------------------------------
+
+
+def test_load_baseline_missing_file_is_first_run_none(tmp_path):
+    assert doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH) is None
+
+
+def test_load_baseline_valid_returns_fraction_map(tmp_path):
+    write_baseline(tmp_path, {"src/x.py": (3, 6)})
+    floors = doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH)
+    assert floors == {"src/x.py": (3, 6)}
+
+
+def test_load_baseline_malformed_json_raises_config_error(tmp_path):
+    write(tmp_path, doc_coverage.BASELINE_PATH, "{not: valid json,,,}")
+    with pytest.raises(ConfigError):
+        doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH)
+
+
+def test_load_baseline_wrong_shape_raises_config_error(tmp_path):
+    # A JSON list, or a dict without a "modules" object, is a config error.
+    write(tmp_path, doc_coverage.BASELINE_PATH, "[1, 2, 3]")
+    with pytest.raises(ConfigError):
+        doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH)
+
+
+def test_load_baseline_bad_module_entry_raises_config_error(tmp_path):
+    write(
+        tmp_path,
+        doc_coverage.BASELINE_PATH,
+        json.dumps({"modules": {"src/x.py": {"documented": "three", "total": 6}}}),
+    )
+    with pytest.raises(ConfigError):
+        doc_coverage._load_baseline(tmp_path / doc_coverage.BASELINE_PATH)
+
+
+# --- ratchet compare/fail wired into run() ----------------------------------
+
+
+def test_ratchet_no_baseline_passes_and_reports_first_run(tmp_path, capsys):
+    write(tmp_path, "src/m.py", '"""Documented."""\n')
+    assert doc_coverage.run(tmp_path, cfg()) == 0
+    assert "no committed baseline" in capsys.readouterr().out
+
+
+def test_ratchet_holding_at_floor_passes(tmp_path, capsys):
+    # Module documents module-unit + fn (2/2 today); floor recorded at 1/2.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    """d."""\n')
+    write_baseline(tmp_path, {"src/m.py": (1, 2)})
+    assert doc_coverage.run(tmp_path, cfg()) == 0
+    assert "1 module(s) evaluated against baseline, 0 ratchet failure(s)" in capsys.readouterr().out
+
+
+def test_ratchet_regression_below_floor_fails_naming_module_and_ratio(tmp_path, capsys):
+    # Live is 1/2 (only module docstring), floor demands 2/2 → regression.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    pass\n')
+    write_baseline(tmp_path, {"src/m.py": (2, 2)})
+    assert doc_coverage.run(tmp_path, cfg()) == 1
+    err = capsys.readouterr().err
+    assert "::error file=src/m.py,line=1::" in err
+    assert "regressed below its baseline floor" in err
+    assert "was 2/2" in err
+    assert "now 1/2" in err
+
+
+def test_ratchet_improvement_above_floor_passes(tmp_path):
+    # Live 2/2 exceeds a 1/2 floor — ratchet never punishes an improvement.
+    write(tmp_path, "src/m.py", '"""Doc."""\n\n\ndef f():\n    """d."""\n')
+    write_baseline(tmp_path, {"src/m.py": (1, 2)})
+    assert doc_coverage.run(tmp_path, cfg()) == 0
+
+
+def test_ratchet_new_module_not_in_baseline_passes(tmp_path, capsys):
+    # `src/new.py` is in the tree but absent from the floor map → first-seen,
+    # not evaluated, passes. Only the baselined module is evaluated.
+    write(tmp_path, "src/known.py", '"""Doc."""\n')
+    write(tmp_path, "src/new.py", '"""Also doc."""\n')
+    write_baseline(tmp_path, {"src/known.py": (1, 1)})
+    assert doc_coverage.run(tmp_path, cfg()) == 0
+    assert "1 module(s) evaluated against baseline" in capsys.readouterr().out
+
+
+def test_ratchet_deleted_module_in_baseline_not_evaluated(tmp_path):
+    # `src/gone.py` is in the floor map but not on disk → not evaluated, no
+    # error (a deleted module cannot regress).
+    write(tmp_path, "src/present.py", '"""Doc."""\n')
+    write_baseline(tmp_path, {"src/present.py": (1, 1), "src/gone.py": (5, 5)})
+    assert doc_coverage.run(tmp_path, cfg()) == 0
+
+
+def test_ratchet_composes_with_binary_gate(tmp_path, capsys):
+    # One fully-bare module (binary gate) AND one regressed module (ratchet):
+    # both fire, and the return value sums both classes of failure.
+    write(tmp_path, "src/bare.py", "x = 1\n")
+    write(tmp_path, "src/reg.py", '"""Doc."""\n\n\ndef f():\n    pass\n')
+    write_baseline(tmp_path, {"src/reg.py": (2, 2)})
+    assert doc_coverage.run(tmp_path, cfg()) == 2
+    err = capsys.readouterr().err
+    assert "file=src/bare.py" in err  # binary gate finding
+    assert "file=src/reg.py" in err  # ratchet finding
+    assert "fully undocumented" in err
+    assert "regressed below its baseline floor" in err
+
+
+def test_ratchet_malformed_baseline_raises_config_error_from_run(tmp_path):
+    # A malformed baseline surfaces as ConfigError (CLI maps it to exit 2),
+    # not a traceback.
+    write(tmp_path, "src/m.py", '"""Doc."""\n')
+    write(tmp_path, doc_coverage.BASELINE_PATH, "{bad json")
+    with pytest.raises(ConfigError):
+        doc_coverage.run(tmp_path, cfg())

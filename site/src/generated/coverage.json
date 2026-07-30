@@ -93,7 +93,7 @@
       "percent_covered": 71.05
     }
   },
-  "toolkit_version": "0.5.0",
+  "toolkit_version": "0.6.0",
   "totals": {
     "covered_lines": 1435,
     "missing_lines": 121,

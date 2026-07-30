@@ -54,7 +54,7 @@ _DRIFT_MAP = (
 
 
 def test_docunit_documented_is_disjunction():
-    base = dict(file="src/x.py", kind="module", name="x", lineno=1)
+    base = {"file": "src/x.py", "kind": "module", "name": "x", "lineno": 1}
     assert not DocUnit(**base, has_docstring=False, drift_match=False, mention=False).documented
     assert DocUnit(**base, has_docstring=True, drift_match=False, mention=False).documented
     assert DocUnit(**base, has_docstring=False, drift_match=True, mention=False).documented

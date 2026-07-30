@@ -45,10 +45,10 @@ _DOC_COMMENT_PREFIXES = ("///", "//!", "/**", "/*!")
 
 # Cached lazily-built parser. ``False`` is the "not yet attempted" sentinel;
 # ``None`` records a prior failed import so we never re-try (and never re-warn).
-_PARSER: "Parser | None | bool" = False
+_PARSER: Parser | None | bool = False
 
 
-def _get_cpp_parser() -> "Parser | None":
+def _get_cpp_parser() -> Parser | None:
     """Return a cached tree-sitter C++ parser, or ``None`` if unavailable.
 
     Mirrors nfr-review's ``_get_parser()`` fallback: the native grammar lives
@@ -69,11 +69,11 @@ def _get_cpp_parser() -> "Parser | None":
     return _PARSER  # type: ignore[return-value]
 
 
-def _text(node: "Node", source: bytes) -> str:
+def _text(node: Node, source: bytes) -> str:
     return source[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
 
 
-def _name_of(node: "Node | None") -> str | None:
+def _name_of(node: Node | None) -> str | None:
     """Extract the bare name a (possibly nested) declarator introduces.
 
     Unwraps pointer/reference/parenthesised declarators and qualified names so a
@@ -104,7 +104,7 @@ def _name_of(node: "Node | None") -> str | None:
     return None
 
 
-def _find_function_declarator(node: "Node") -> "Node | None":
+def _find_function_declarator(node: Node) -> Node | None:
     """Return the (first) ``function_declarator`` under *node*, if any.
 
     Skips the parameter list so a function-typed parameter never masquerades as
@@ -121,7 +121,7 @@ def _find_function_declarator(node: "Node") -> "Node | None":
     return None
 
 
-def _function_name(node: "Node") -> str | None:
+def _function_name(node: Node) -> str | None:
     """The name of the function a declaration/definition introduces, or ``None``."""
     func_decl = _find_function_declarator(node)
     if func_decl is None:
@@ -129,7 +129,7 @@ def _function_name(node: "Node") -> str | None:
     return _name_of(func_decl.child_by_field_name("declarator"))
 
 
-def _is_doc_comment(node: "Node | None", target_row: int, source: bytes) -> bool:
+def _is_doc_comment(node: Node | None, target_row: int, source: bytes) -> bool:
     """True if *node* is a Doxygen doc comment sitting just above *target_row*.
 
     "Just above" means the comment ends on the line immediately preceding the
@@ -145,10 +145,10 @@ def _is_doc_comment(node: "Node | None", target_row: int, source: bytes) -> bool
 
 
 def _class_units(
-    spec: "Node",
-    node_for_comment: "Node",
+    spec: Node,
+    node_for_comment: Node,
     kind: str,
-    prev: "Node | None",
+    prev: Node | None,
     rel: str,
     source: bytes,
     drift: bool,
@@ -189,7 +189,7 @@ def _class_units(
         return units
 
     access = "public" if kind == "struct" else "private"
-    member_prev: "Node | None" = None
+    member_prev: Node | None = None
     for child in body.named_children:
         if child.type == "access_specifier":
             label = _text(child, source).strip().rstrip(":").strip()
@@ -212,7 +212,7 @@ def _class_units(
 
 
 def _walk_container(
-    container: "Node",
+    container: Node,
     rel: str,
     source: bytes,
     drift: bool,
@@ -236,7 +236,7 @@ def _walk_container(
         )
 
     units: list[DocUnit] = []
-    prev: "Node | None" = None
+    prev: Node | None = None
     for child in container.named_children:
         if child.type in ("namespace_definition", "linkage_specification"):
             body = child.child_by_field_name("body")

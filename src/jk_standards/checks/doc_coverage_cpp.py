@@ -33,9 +33,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from jk_standards.checks.doc_coverage import DocUnit
-
 if TYPE_CHECKING:
+    from jk_standards.checks.doc_coverage import DocUnit
     from tree_sitter import Node, Parser
 
 # The Doxygen doc-comment openers. A plain ``//`` line comment or ``/* */`` block

@@ -95,6 +95,16 @@ check in; with no bibliography the check is skipped. Everything else
 defaults. See the
 [checks reference](/reference/checks/#research-provenance) for the rule
 these fields tune.
+
+The `import_cycle_packages` field is read from an `import_cycle:` section
+(a `packages:` list) and tunes the `import-cycle` check, which flags
+module-level import cycles inside a package. Each entry is a Python package
+directory (relative to the root) whose module-level import graph is scanned;
+an absent or empty list yields no packages, so the check skips (passes with 0
+packages), mirroring `boundaries`' skip-when-unconfigured contract. A malformed
+section raises a config error surfaced as exit 2 rather than a check failure.
+See the [checks reference](/reference/checks/#import-cycle) for the rule this
+field tunes.
 ## Example — this repo's own config
 
 jk-standards dogfoods itself, so its own `jk-standards.yaml` is a live

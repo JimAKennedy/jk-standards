@@ -363,6 +363,78 @@
     },
     {
       "documented": true,
+      "file": "src/jk_standards/checks/import_cycle.py",
+      "kind": "class",
+      "lineno": 335,
+      "name": "AnalysisResult",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/import_cycle.py",
+      "kind": "class",
+      "lineno": 314,
+      "name": "Cycle",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/import_cycle.py",
+      "kind": "class",
+      "lineno": 47,
+      "name": "ImportEdge",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/import_cycle.py",
+      "kind": "function",
+      "lineno": 182,
+      "name": "extract_edges",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/import_cycle.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "import_cycle",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/import_cycle.py",
+      "kind": "function",
+      "lineno": 470,
+      "name": "run",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
       "file": "src/jk_standards/checks/research_provenance.py",
       "kind": "module",
       "lineno": 1,
@@ -581,7 +653,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 306,
+      "lineno": 341,
       "name": "iter_docs",
       "signals": {
         "docstring": true,
@@ -593,7 +665,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 152,
+      "lineno": 158,
       "name": "load_config",
       "signals": {
         "docstring": false,

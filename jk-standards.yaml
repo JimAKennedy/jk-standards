@@ -116,4 +116,17 @@ doc_coverage:
       extensions: [".py"]
   doc_scopes: [docs, site/src/content/docs, conventions]
 # endregion:doc-coverage-config
+
+# import-cycle builds the module-level import graph for each listed package,
+# finds every strongly-connected component of >1 module (a runtime import
+# cycle), and reports it at file:line. Skip-when-unconfigured like boundaries:
+# with no packages listed the check is a no-op. The toolkit gates its own
+# source tree; its one real cycle (the checks re-export hub) is waived in place
+# with `# import-cycle-ok:` at src/jk_standards/checks/__init__.py, so a NEW
+# cycle is what turns this red.
+# region:import-cycle-config
+import_cycle:
+  packages:
+    - src/jk_standards
+# endregion:import-cycle-config
 # endregion:full-config

@@ -115,6 +115,29 @@ Add above the local hooks:
     - id: snippet-regions
 ```
 
+## Newly adoptable — import-cycle (config-only)
+
+The `import-cycle` check ships from this version onward and is adoptable by
+nfr-review with **no downstream code** — it is a pure config-only opt-in, the
+portable-check propagation pattern. It is not one of the two `lint_docs.py`
+replacements above; it is a net-new static check that scans a Python package's
+module-level import graph for cycles. nfr-review adopts it by adding an
+`import_cycle` stanza that lists the package dirs to scan:
+
+```yaml
+import_cycle:
+  packages:
+    - src/nfr_review   # adjust to nfr-review's package dir(s)
+```
+
+An absent or empty `packages` list means no packages to scan, so the check
+skips (passes with 0 packages) — the same skip-when-unconfigured contract as
+`boundaries`. No new CI step, hook edit, or downstream code is required beyond
+this stanza (add `import-cycle` to the pre-commit `hooks:` list from section 5
+if per-hook granularity is wanted). See the
+[configuration reference](docs/configuration.md) and
+[checks reference](docs/checks.md) for the field and rule details.
+
 ## 1:1 invariant
 
 Every claim in this guide maps to a shipped toolkit check, per the README

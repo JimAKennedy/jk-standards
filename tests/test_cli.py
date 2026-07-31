@@ -9,6 +9,8 @@ from jk_standards.checks import CHECKS, STATIC_CHECKS
 from jk_standards.cli import main
 from jk_standards.gitutil import GitError
 
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def write(root: Path, rel: str, text: str) -> Path:
     path = root / rel
@@ -239,3 +241,85 @@ def test_module_min_percent_below_floor_module_still_exits_0(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "::warning file=src/mod.py,line=1::" in out
     assert "advisory: 1 module(s) below 80% floor" in out
+
+
+# --- import-cycle: registration, CLI exit codes, skip, escape hatch, exit-2 (S02) --
+#
+# The detector core is proven in tests/test_import_cycle.py; these tests prove the
+# CLI wiring — registry membership (so `jk-standards import-cycle` and
+# `jk-standards all` come free), the exit-code contract through main(), the
+# skip-when-unconfigured path, the escape-hatch suppression + live count, and the
+# out-of-shape config → exit 2 mapping — plus that the live repo self-hosts green.
+
+
+def _cycle_repo(root: Path, *, marker: bool = False, configured: bool = True) -> None:
+    """A repo with a synthetic 2-module import cycle in package ``pkg``.
+
+    ``configured`` writes the ``import_cycle.packages: [pkg]`` config that selects
+    the package (omit it to exercise skip-when-unconfigured). ``marker`` places an
+    inline ``# import-cycle-ok:`` waiver on one of the two in-cycle imports.
+    """
+    if configured:
+        write(root, "jk-standards.yaml", "import_cycle:\n  packages:\n    - pkg\n")
+    write(root, "pkg/__init__.py", "")
+    a = "from pkg import b  # import-cycle-ok: intentional\n" if marker else "from pkg import b\n"
+    write(root, "pkg/a.py", a)
+    write(root, "pkg/b.py", "from pkg import a\n")
+
+
+def test_import_cycle_registered_in_checks_and_static_checks():
+    """Membership is what auto-exposes `jk-standards import-cycle` and `all`."""
+    assert "import-cycle" in CHECKS
+    assert "import-cycle" in STATIC_CHECKS
+
+
+def test_import_cycle_skips_and_exits_zero_when_unconfigured(tmp_path, capsys):
+    """No `import_cycle` config → skip summary, exit 0 (mirrors boundaries)."""
+    _cycle_repo(tmp_path, configured=False)  # cycle present but not selected
+    assert main(["import-cycle", "--root", str(tmp_path)]) == 0
+    assert "no packages configured" in capsys.readouterr().out
+
+
+def test_import_cycle_reports_unsuppressed_cycle_exit_1(tmp_path, capsys):
+    """A configured, unwaived cycle exits 1 and names both members."""
+    _cycle_repo(tmp_path)
+    assert main(["import-cycle", "--root", str(tmp_path)]) == 1
+    captured = capsys.readouterr()
+    assert "pkg.a" in captured.err and "pkg.b" in captured.err
+    assert "violation(s) found" in captured.err
+
+
+def test_import_cycle_escape_hatch_suppresses_and_counts(tmp_path, capsys):
+    """An `# import-cycle-ok:` marker suppresses the finding and bumps the count."""
+    _cycle_repo(tmp_path, marker=True)
+    assert main(["import-cycle", "--root", str(tmp_path)]) == 0
+    captured = capsys.readouterr()
+    assert "::error" not in captured.err
+    assert "1 suppression(s) via import-cycle-ok" in captured.out
+
+
+def test_import_cycle_out_of_shape_config_exits_2(tmp_path, capsys):
+    """An out-of-shape `import_cycle` value is a ConfigError → exit 2, not 1."""
+    write(tmp_path, "jk-standards.yaml", "import_cycle: 5\n")
+    assert main(["import-cycle", "--root", str(tmp_path)]) == 2
+    assert "config error:" in capsys.readouterr().err
+
+
+def test_import_cycle_non_string_package_entry_exits_2(tmp_path, capsys):
+    """A non-string `packages` entry is out of shape → exit 2."""
+    write(tmp_path, "jk-standards.yaml", "import_cycle:\n  packages:\n    - 5\n")
+    assert main(["import-cycle", "--root", str(tmp_path)]) == 2
+    assert "config error:" in capsys.readouterr().err
+
+
+def test_all_includes_import_cycle(tmp_path, monkeypatch, spy_checks):
+    """`jk-standards all` runs import-cycle exactly once (it is a static check)."""
+    monkeypatch.delenv("GITHUB_BASE_REF", raising=False)
+    assert main(["all", "--root", str(tmp_path)]) == 0
+    assert [c[0] for c in spy_checks].count("import-cycle") == 1
+
+
+def test_import_cycle_self_host_is_green(capsys):
+    """The live repo self-hosts green: its real self-cycle is waived in place."""
+    assert main(["import-cycle", "--root", str(_REPO_ROOT)]) == 0
+    assert "0 cycle(s)" in capsys.readouterr().out

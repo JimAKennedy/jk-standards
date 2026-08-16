@@ -4,6 +4,27 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **`deploy-site.yml` smoke concurrency scoping**
+  (`.github/workflows/deploy-site.yml`): the workflow grouped every caller as
+  `pages-deploy-${{ inputs.deploy }}`, so all build-only smokes — repo-wide, on
+  every ref — shared a single `pages-deploy-false` lock. Because
+  `cancel-in-progress: false` makes GitHub cancel the older *pending* entry once
+  a third contender queues, any moment with more than two PR runs in flight
+  cancelled a smoke and failed `ci-complete` on pull requests that contained no
+  defect. A build-only smoke holds no shared resource: `upload-pages-artifact`
+  and both the `deploy` and `verify-live` jobs are gated on `inputs.deploy`,
+  leaving checkout, `npm ci`, prebuild, and build. Real deploys keep the single
+  repo-wide `pages-deploy-true` lock they need; smokes are now scoped per-ref
+  and per-`working-directory`, the latter separating the two smoke callers that
+  share one CI run (`site` and the Node-only `tests/fixtures/deploy-site`
+  fixture). The caller-naming alternative, `github.job`, is unavailable here —
+  the runner sets it only inside job steps, not in workflow-level
+  `concurrency`, whereas `inputs` resolves.
+
 ## [0.7.0] - 2026-07-30
 
 ### Added

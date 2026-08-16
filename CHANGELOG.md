@@ -4,10 +4,25 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.0] - 2026-08-16
 
 ### Added
 
+- **`import-cycle` check**
+  (`src/jk_standards/checks/import_cycle.py`): module-level import-cycle
+  detection for configured Python packages. A per-language `extract_edges`
+  dispatch seam holds the Python extractor (C++-ready, Python-only here); an
+  iterative Tarjan pass turns the resulting edges into every strongly-connected
+  component of more than one module, reported at `file:line` with its full
+  member chain in deterministic order. Imports guarded by `TYPE_CHECKING` are
+  not runtime edges and do not form a cycle; a `try`/`except` import does.
+  Escape hatch: `# import-cycle-ok: <reason>` on an in-cycle import line waives
+  that cycle, and live suppressions are counted in the summary.
+- **`import_cycle` config section** (`src/jk_standards/config.py`): a
+  `packages` list of package directories to scan. An absent or empty list
+  yields nothing to scan, so the check skips — mirroring `boundaries`'
+  skip-when-unconfigured contract. A non-list `packages`, or a non-string
+  entry, raises a config error surfaced as exit 2 rather than coercing.
 - **`workflow-permissions` check**
   (`src/jk_standards/checks/workflow_permissions.py`): the mechanical gate for
   the reusable-workflow permission ceiling. For every job calling a local
@@ -34,11 +49,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   plus `global_locks` and `ref_tokens` for the latter. A non-list
   `global_locks`, or a non-string entry within it, raises a config error
   surfaced as exit 2 rather than coercing `[5]` into a lock nobody wrote.
-- **Self-host wiring**: both checks registered in `CHECKS`/`STATIC_CHECKS`,
-  invoked explicitly by the `dogfood` CI job and `scripts/verify.sh`, shipped
-  as pre-commit hooks, and documented in `docs/checks.md`, the site checks
-  reference, both configuration references, and the ARCHITECTURE.md invariant
-  table.
+- **Self-host wiring**: all three checks registered in `CHECKS`/`STATIC_CHECKS`
+  (`src/jk_standards/checks/__init__.py`), invoked explicitly by the `dogfood`
+  CI job (`.github/workflows/ci.yml`) and `scripts/verify.sh`, shipped as
+  pre-commit hooks (`.pre-commit-hooks.yaml`) and dogfooded through
+  `.pre-commit-config.local.yaml`, configured against this repo in
+  `jk-standards.yaml`, and documented in `docs/checks.md`,
+  `site/src/content/docs/reference/checks.mdx`, both configuration references,
+  and the `ARCHITECTURE.md` invariant table. `MIGRATION-nfr-review.md` carries
+  the config-only adoption note for `import-cycle`.
+
+### Changed
+
+- Package version bumped to `0.8.0` in the two source-of-truth files
+  (`pyproject.toml` and `src/jk_standards/__init__.py`); the deterministic
+  `site/src/generated/*.json` fixtures were regenerated to embed the new
+  `toolkit_version` (with `checks.json` gaining the three new checks and
+  `config-schema.json` their config fields), `site/src/generated/coverage.json`
+  was refreshed from a full run, and RELEASE.md pins moved to `v0.8.0`.
 
 ### Fixed
 

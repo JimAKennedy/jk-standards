@@ -106,6 +106,18 @@ research_provenance:          # summarised research declares its provenance
 import_cycle:                 # module-level import cycles inside a package
   packages:                   # package dirs (relative to root) to scan
     - src/jk_standards        # absent/empty packages ⇒ check skips (passes 0)
+
+workflow_permissions:         # reusable-workflow caller/callee token scopes
+  workflow_dir: .github/workflows   # tree scanned (default)
+  extensions: [".yml", ".yaml"]     # workflow filename suffixes (default)
+
+workflow_concurrency:         # concurrency groups are ref-scoped or declared
+  workflow_dir: .github/workflows   # tree scanned (default)
+  extensions: [".yml", ".yaml"]     # workflow filename suffixes (default)
+  global_locks:               # groups deliberately serialising the whole repo
+    - pages                   # absent ⇒ every group must scope itself by ref
+  ref_tokens:                 # expressions counting as per-ref scoping
+    - github.ref              # (default list covers ref/ref_name/head_ref/…)
 ```
 
 The `action_pinning` section tunes the `action-pinning` check: `workflow_dir`
@@ -180,6 +192,26 @@ no packages to scan, so the check skips (passes with 0 packages) — mirroring
 where a mapping is expected, a non-list `packages`, or a non-string entry)
 raises a config error surfaced as exit 2 rather than a check failure. See the
 [checks reference](checks.md#import-cycle) for the rule this field tunes.
+
+The `workflow_permissions` section tunes the `workflow-permissions` check with
+the same `workflow_dir` and `extensions` fields as `action_pinning`, kept
+separate so a repository can scope the two independently. Both default to
+`.github/workflows` and `.yml`/`.yaml`, so the section is optional.
+
+The `workflow_concurrency` section tunes the `workflow-concurrency` check.
+Alongside `workflow_dir` and `extensions`, `global_locks` names the groups that
+are *meant* to serialise the whole repository — a Pages deploy, a shared
+environment — so a deliberate global mutex is declared rather than
+indistinguishable from a forgotten `github.ref`. An absent list declares none,
+requiring every group to scope itself by ref. `ref_tokens` overrides what
+counts as ref-scoping; the default covers `github.ref`, `github.ref_name`,
+`github.head_ref`, the pull-request number contexts, `github.run_id`, and
+`github.sha`. A non-list `global_locks`, or a non-string entry within it,
+raises a config error surfaced as exit 2 — coercing `[5]` into `["5"]` would
+declare a lock nobody wrote. See the
+[checks reference](checks.md#workflow-concurrency) for the rule these fields
+tune.
+
 ## CLI
 
 ```

@@ -541,3 +541,118 @@ out-of-shape `import_cycle` config value fails loudly as a config error
 non-string entry in `packages` is rejected the same way
 [verified: test_cli::test_import_cycle_non_string_package_entry_exits_2].
 Packages to scan are declared in the `import_cycle` config section.
+
+## workflow-permissions
+
+A `workflow_call` producer can never exceed the token scope its caller was
+granted. When a caller grants less than a callee's `permissions:` block asks
+for, the run does not fail inside a job — it fails to compose, before any job
+starts, as a `startup_failure` carrying no annotation. Nothing points at the
+cause.
+
+This check reads that relationship statically. Every job calling a local
+reusable workflow (`uses: ./…`) has its effective grant compared against the
+union of the scopes the callee declares; a scope the callee asks for and the
+caller does not confer is flagged at the `uses:` line
+[verified: test_workflow_composition::test_permissions_caller_missing_scope_flagged],
+while a caller granting a superset passes
+[verified: test_workflow_composition::test_permissions_caller_superset_passes].
+The union spans the callee's job-level blocks as well as its top-level one,
+since the ceiling applies to the whole called workflow
+[verified: test_workflow_composition::test_permissions_callee_job_level_scope_counted].
+A `permissions:` block on the calling job takes precedence over the caller
+file's own
+[verified: test_workflow_composition::test_permissions_calling_job_block_overrides_workflow_level].
+The `write-all` shorthand satisfies every request
+[verified: test_workflow_composition::test_permissions_write_all_caller_satisfies_everything];
+`read-all` does not satisfy one for write
+[verified: test_workflow_composition::test_permissions_read_all_caller_fails_a_write_requirement];
+and an explicit `permissions: {}` grants nothing, which is a denial rather than
+an absent declaration
+[verified: test_workflow_composition::test_permissions_empty_caller_block_grants_nothing].
+Several missing scopes on one call are reported as a single reviewable finding
+[verified: test_workflow_composition::test_permissions_one_finding_per_edge_not_per_scope].
+
+Two silences keep the check honest rather than noisy. A caller declaring no
+`permissions:` block at all is skipped, because its effective grant comes from
+a repository-level default this check cannot see and any finding would be a
+guess
+[verified: test_workflow_composition::test_permissions_undeclared_caller_grant_skipped];
+a callee declaring none anywhere requests nothing to satisfy
+[verified: test_workflow_composition::test_permissions_callee_declaring_nothing_passes].
+Only local `./…` callees are resolved — a pinned `owner/repo@sha` reference
+lives outside the tree and cannot be read from disk
+[verified: test_workflow_composition::test_permissions_remote_callee_ignored] —
+and a `./…` ref to a file that is not there is left for GitHub to report
+[verified: test_workflow_composition::test_permissions_missing_callee_file_not_flagged].
+A workflow that does not parse is skipped rather than crashing the check
+[verified: test_workflow_composition::test_permissions_unparseable_workflow_skipped],
+and with no workflows directory the check skips cleanly
+[verified: test_workflow_composition::test_permissions_missing_workflows_dir_skipped].
+
+Escape hatch: a `# workflow-permissions-ok: <reason>` marker on the `uses:`
+line
+[verified: test_workflow_composition::test_permissions_marker_same_line_exempts]
+or the line immediately above it
+[verified: test_workflow_composition::test_permissions_marker_line_above_exempts]
+suppresses the finding. The scanned directory and extensions are configurable
+via the `workflow_permissions` config section
+[verified: test_workflow_composition::test_workflow_dirs_configurable].
+
+## workflow-concurrency
+
+A `concurrency:` group is a mutex whose name is a string. Two runs sharing a
+name queue, and with `cancel-in-progress: false` GitHub cancels the older
+*pending* entry once a third contender arrives. That is correct when the name
+stands for something genuinely shared — a Pages deployment, a staging
+environment — and a silent repository-wide serialiser when it does not.
+
+The failure mode does not look like a config bug. A group omitting `github.ref`
+funnels every branch and pull request into one lock, so unrelated pull requests
+cancel each other's jobs; the symptom is a cancelled job and a failing
+aggregate gate on a pull request containing no defect, which reads as CI flake.
+It also appears only under concurrent load, so a quiet repository looks fine
+until it is not.
+
+This check makes the distinction explicit: a group must either carry a
+ref-scoping expression
+[verified: test_workflow_composition::test_concurrency_ref_scoped_group_passes]
+or name a lock declared under `workflow_concurrency.global_locks`
+[verified: test_workflow_composition::test_concurrency_declared_global_lock_passes].
+Anything else is flagged at the `group:` line
+[verified: test_workflow_composition::test_concurrency_unscoped_group_flagged],
+and declaring one lock does not bless every other unscoped group
+[verified: test_workflow_composition::test_concurrency_undeclared_lock_still_flagged].
+The group that serialised this repository's own pull requests —
+`pages-deploy-${{ inputs.deploy }}`, carrying no ref token — is exactly what
+the check rejects
+[verified: test_workflow_composition::test_concurrency_catches_the_deploy_site_regression].
+Job-level `concurrency:` blocks are covered alongside workflow-level ones
+[verified: test_workflow_composition::test_concurrency_job_level_group_flagged],
+as is the `concurrency: <name>` string shorthand
+[verified: test_workflow_composition::test_concurrency_shorthand_string_form_flagged].
+A block with no `group:` key has nothing to scope and is left alone
+[verified: test_workflow_composition::test_concurrency_block_without_group_ignored],
+and an unparseable workflow is skipped rather than crashing the check
+[verified: test_workflow_composition::test_concurrency_unparseable_workflow_skipped].
+With no workflows directory the check skips cleanly
+[verified: test_workflow_composition::test_concurrency_missing_workflows_dir_skipped].
+
+A group built from an expression that *contains* a ref token passes even when
+one branch of that expression is a literal — a ternary yielding a global lock
+for a real deploy and a ref-scoped name for a build-only smoke is the intended
+shape
+[verified: test_workflow_composition::test_concurrency_expression_containing_ref_passes].
+This is the check's known limit: it reads the group as text and cannot tell
+which branch of an expression applies, so a genuinely global branch hidden
+inside an otherwise ref-scoped expression is accepted. What counts as
+ref-scoping is configurable via `workflow_concurrency.ref_tokens`
+[verified: test_workflow_composition::test_concurrency_custom_ref_tokens_respected],
+and the scanned directory via `workflow_concurrency.workflow_dir`
+[verified: test_workflow_composition::test_workflow_dirs_configurable].
+
+Escape hatch: a `# concurrency-scope-ok: <reason>` marker on the `group:` line
+[verified: test_workflow_composition::test_concurrency_marker_same_line_exempts]
+or the line immediately above it
+[verified: test_workflow_composition::test_concurrency_marker_line_above_exempts]
+suppresses the finding.

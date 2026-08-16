@@ -105,6 +105,27 @@ packages), mirroring `boundaries`' skip-when-unconfigured contract. A malformed
 section raises a config error surfaced as exit 2 rather than a check failure.
 See the [checks reference](/reference/checks/#import-cycle) for the rule this
 field tunes.
+
+The `workflow_perm_dir` and `workflow_perm_extensions` fields are read from a
+`workflow_permissions:` section and tune the `workflow-permissions` check,
+which compares a reusable-workflow caller's token grant against the scopes its
+callee declares. They mirror `action_pinning`'s fields and are kept separate so
+a repository can scope the two independently; both default to
+`.github/workflows` and `.yml`/`.yaml`.
+
+The `workflow_concurrency_*` fields are read from a `workflow_concurrency:`
+section and tune the `workflow-concurrency` check. `global_locks` names the
+groups that are *meant* to serialise the whole repository, so a deliberate
+global mutex is declared rather than indistinguishable from a forgotten
+`github.ref`; an absent list declares none. `ref_tokens` overrides what counts
+as ref-scoping, defaulting to `github.ref`, `github.ref_name`,
+`github.head_ref`, the pull-request number contexts, `github.run_id`, and
+`github.sha`. A non-list `global_locks`, or a non-string entry within it,
+raises a config error surfaced as exit 2 rather than silently declaring a lock
+nobody wrote. See the
+[checks reference](/reference/checks/#workflow-concurrency) for the rules these
+fields tune.
+
 ## Example — this repo's own config
 
 jk-standards dogfoods itself, so its own `jk-standards.yaml` is a live

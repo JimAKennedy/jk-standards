@@ -83,6 +83,18 @@
       "name": "status-prose",
       "source_file": "src/jk_standards/checks/status_prose.py",
       "summary": "status-prose: ban stale progress-tracking prose in gated docs."
+    },
+    {
+      "is_static": true,
+      "name": "workflow-concurrency",
+      "source_file": "src/jk_standards/checks/workflow_concurrency.py",
+      "summary": "workflow-concurrency: a concurrency group is either ref-scoped or a declared lock."
+    },
+    {
+      "is_static": true,
+      "name": "workflow-permissions",
+      "source_file": "src/jk_standards/checks/workflow_permissions.py",
+      "summary": "workflow-permissions: a reusable-workflow caller grants what its callee needs."
     }
   ],
   "toolkit_version": "0.7.0"

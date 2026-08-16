@@ -187,6 +187,56 @@
       "has_default_factory": true,
       "name": "taxonomy_extra_files",
       "type": "list[str]"
+    },
+    {
+      "default": ".github/workflows",
+      "has_default_factory": false,
+      "name": "workflow_concurrency_dir",
+      "type": "str"
+    },
+    {
+      "default": [
+        ".yml",
+        ".yaml"
+      ],
+      "has_default_factory": true,
+      "name": "workflow_concurrency_extensions",
+      "type": "list[str]"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "workflow_concurrency_global_locks",
+      "type": "list[str]"
+    },
+    {
+      "default": [
+        "github.ref",
+        "github.ref_name",
+        "github.head_ref",
+        "github.event.number",
+        "github.event.pull_request.number",
+        "github.run_id",
+        "github.sha"
+      ],
+      "has_default_factory": true,
+      "name": "workflow_concurrency_ref_tokens",
+      "type": "list[str]"
+    },
+    {
+      "default": ".github/workflows",
+      "has_default_factory": false,
+      "name": "workflow_perm_dir",
+      "type": "str"
+    },
+    {
+      "default": [
+        ".yml",
+        ".yaml"
+      ],
+      "has_default_factory": true,
+      "name": "workflow_perm_extensions",
+      "type": "list[str]"
     }
   ],
   "toolkit_version": "0.7.0"

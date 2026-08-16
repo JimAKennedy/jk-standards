@@ -6,6 +6,40 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`workflow-permissions` check**
+  (`src/jk_standards/checks/workflow_permissions.py`): the mechanical gate for
+  the reusable-workflow permission ceiling. For every job calling a local
+  reusable workflow (`uses: ./…`) it resolves the caller's effective grant —
+  the calling job's `permissions:` block, else the workflow's — and compares it
+  against the union of the scopes the callee declares at both workflow and job
+  level, reporting any shortfall at the `uses:` line. A caller declaring no
+  block is skipped, since its grant comes from a repository default no static
+  check can see. Escape hatch: `# workflow-permissions-ok: <reason>`.
+- **`workflow-concurrency` check**
+  (`src/jk_standards/checks/workflow_concurrency.py`): every `concurrency:`
+  group, at workflow and job level, must either carry a ref-scoping expression
+  or name a lock declared under `workflow_concurrency.global_locks`. This turns
+  the distinction between a deliberate repo-wide mutex and a forgotten
+  `github.ref` into a diff-time gate rather than a property that only surfaces
+  under concurrent load. Escape hatch: `# concurrency-scope-ok: <reason>`.
+- **Workflow parsing support module** (`src/jk_standards/workflows.py`):
+  composes workflow YAML into plain data alongside a node-path-to-line map, so
+  a composition finding can be reported at `file:line`; plus the permission
+  level algebra (`none` < `read` < `write`, `read-all`/`write-all` expansion,
+  and the distinction between an absent block and `permissions: {}`).
+- **`workflow_permissions` and `workflow_concurrency` config sections**
+  (`src/jk_standards/config.py`): `workflow_dir` and `extensions` for both,
+  plus `global_locks` and `ref_tokens` for the latter. A non-list
+  `global_locks`, or a non-string entry within it, raises a config error
+  surfaced as exit 2 rather than coercing `[5]` into a lock nobody wrote.
+- **Self-host wiring**: both checks registered in `CHECKS`/`STATIC_CHECKS`,
+  invoked explicitly by the `dogfood` CI job and `scripts/verify.sh`, shipped
+  as pre-commit hooks, and documented in `docs/checks.md`, the site checks
+  reference, both configuration references, and the ARCHITECTURE.md invariant
+  table.
+
 ### Fixed
 
 - **`deploy-site.yml` smoke concurrency scoping**

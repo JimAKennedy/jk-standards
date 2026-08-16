@@ -129,4 +129,16 @@ import_cycle:
   packages:
     - src/jk_standards
 # endregion:import-cycle-config
+
+# workflow-concurrency: a concurrency group must scope itself by ref, or be
+# named here as a lock that is deliberately repo-wide. `pages` is the only one:
+# publish-site.yml serialises real GitHub Pages deployments, which genuinely
+# contend for a single resource. deploy-site.yml is absent because its group
+# already carries `github.ref` for the build-only smoke path — the scoping that
+# stops concurrent pull requests from cancelling each other's jobs.
+# region:workflow-concurrency-config
+workflow_concurrency:
+  global_locks:
+    - pages
+# endregion:workflow-concurrency-config
 # endregion:full-config

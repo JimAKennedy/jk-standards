@@ -76,11 +76,24 @@ permissions:
   id-token: write
 
 # `cancel-in-progress: false` -- sequential deploys, not clobbering. A stuck
-# in-flight deploy queues rather than gets killed by a follow-up push. The group
-# is split by `deploy` so a build-only smoke never blocks a real deploy on the
-# shared `pages` lock.
+# in-flight deploy queues rather than gets killed by a follow-up push.
+#
+# A real deploy (`deploy: true`) contends for GitHub Pages, so it takes one
+# repo-wide lock. A build-only smoke (`deploy: false`) contends for nothing:
+# the `upload-pages-artifact` step and both the `deploy` and `verify-live` jobs
+# are gated off, leaving checkout/npm ci/prebuild/build. Splitting the group by
+# `deploy` alone still funnelled every smoke, on every ref, into one lock --
+# so concurrent PRs queued behind each other and GitHub cancelled the older
+# pending ones, failing `ci-complete` on PRs with nothing wrong in them.
+#
+# Scope smokes per-ref instead, and per-`working-directory` so that the two
+# smoke callers sharing a single CI run (`site` and the Node-only
+# `tests/fixtures/deploy-site` fixture) get distinct groups rather than
+# serialising against each other. `github.job` would name those callers more
+# directly, but the runner only sets it inside job steps -- it is not available
+# in workflow-level `concurrency`, whereas `inputs` is.
 concurrency:
-  group: pages-deploy-${{ inputs.deploy }}
+  group: ${{ inputs.deploy && 'pages-deploy-true' || format('pages-smoke-{0}-{1}', github.ref, inputs.working-directory) }}
   cancel-in-progress: false
 
 # region:deploy-site-jobs

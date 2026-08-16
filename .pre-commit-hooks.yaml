@@ -1,7 +1,7 @@
 # Hooks published by jk-standards. Consume from a pinned tag:
 #
 #   - repo: https://github.com/JimAKennedy/jk-standards
-#     rev: v0.1.0
+#     rev: v0.8.0
 #     hooks:
 #       - id: doc-taxonomy
 #       - id: status-prose

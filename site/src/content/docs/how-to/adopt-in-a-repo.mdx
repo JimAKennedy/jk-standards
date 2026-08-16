@@ -69,7 +69,7 @@ Enable the ones that fit your repo:
 
 ```yaml
 - repo: https://github.com/JimAKennedy/jk-standards
-  rev: v0.1.0
+  rev: v0.8.0
   hooks:
     - id: doc-taxonomy
     - id: status-prose
@@ -96,7 +96,7 @@ on: [pull_request, push]
 
 jobs:
   discipline:
-    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.1.0
+    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.8.0
     with:
       toolkit-ref: v0.1.0        # pin the same version you used above
       config: jk-standards.yaml  # path in your repo
@@ -119,7 +119,7 @@ on: [pull_request, push]
 
 jobs:
   pre-commit:
-    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.2.0
+    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.8.0
     with:
       config: .pre-commit-config.yaml         # path in your repo
       local-config: .pre-commit-config.local.yaml  # optional; empty = skip

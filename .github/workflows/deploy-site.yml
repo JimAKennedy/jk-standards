@@ -10,7 +10,7 @@
 #     id-token: write
 #   jobs:
 #     publish:
-#       uses: JimAKennedy/jk-standards/.github/workflows/deploy-site.yml@v0.4.0
+#       uses: JimAKennedy/jk-standards/.github/workflows/deploy-site.yml@v0.8.0
 #       with:
 #         prebuild: jk-standards emit all   # caller's content-generation command
 #         python-version: "3.12"            # empty ("") skips the Python leg entirely

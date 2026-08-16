@@ -75,7 +75,7 @@ tag:
 
 ```yaml
 - repo: https://github.com/JimAKennedy/jk-standards
-  rev: v0.1.0
+  rev: v0.8.0
   hooks:
     - id: doc-taxonomy
     - id: status-prose
@@ -99,7 +99,7 @@ name: docs
 on: [pull_request, push]
 jobs:
   discipline:
-    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.1.0
+    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.8.0
 ```
 
 A second reusable workflow, `pre-commit.yml`, runs your pre-commit hooks in
@@ -112,7 +112,7 @@ name: pre-commit
 on: [pull_request, push]
 jobs:
   pre-commit:
-    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.2.0
+    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.8.0
 ```
 
 That's it. The rest of the discipline lands progressively: enable

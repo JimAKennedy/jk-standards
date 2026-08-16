@@ -235,11 +235,7 @@ def test_analyze_acyclic_graph_returns_no_cycle(tmp_path):
 
 
 def test_analyze_type_checking_guarded_import_forms_no_cycle(tmp_path):
-    guarded = (
-        "from typing import TYPE_CHECKING\n"
-        "if TYPE_CHECKING:\n"
-        "    from pkg import a\n"
-    )
+    guarded = "from typing import TYPE_CHECKING\nif TYPE_CHECKING:\n    from pkg import a\n"
     make_pkg(tmp_path, "pkg", {"a": "from pkg import b\n", "b": guarded})
     assert list(ic._analyze(tmp_path, ["pkg"])) == []
 

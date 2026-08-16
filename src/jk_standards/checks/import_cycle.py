@@ -220,11 +220,7 @@ def _build_graph(edges: list[ImportEdge], module_set: set[str]) -> dict[str, lis
     """
     adjacency: dict[str, set[str]] = {m: set() for m in module_set}
     for edge in edges:
-        if (
-            edge.source in module_set
-            and edge.target in module_set
-            and edge.source != edge.target
-        ):
+        if edge.source in module_set and edge.target in module_set and edge.source != edge.target:
             adjacency[edge.source].add(edge.target)
     return {module: sorted(targets) for module, targets in adjacency.items()}
 

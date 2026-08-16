@@ -311,9 +311,7 @@ def _import_cycle_packages(value: object) -> list[str]:
     out: list[str] = []
     for entry in packages:
         if not isinstance(entry, str):
-            raise ConfigError(
-                f"import_cycle.packages entries must be strings, got {entry!r}"
-            )
+            raise ConfigError(f"import_cycle.packages entries must be strings, got {entry!r}")
         out.append(entry)
     return out
 

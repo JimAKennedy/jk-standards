@@ -365,7 +365,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/import_cycle.py",
       "kind": "class",
-      "lineno": 335,
+      "lineno": 331,
       "name": "AnalysisResult",
       "signals": {
         "docstring": true,
@@ -377,7 +377,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/import_cycle.py",
       "kind": "class",
-      "lineno": 314,
+      "lineno": 310,
       "name": "Cycle",
       "signals": {
         "docstring": true,
@@ -425,7 +425,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/import_cycle.py",
       "kind": "function",
-      "lineno": 470,
+      "lineno": 466,
       "name": "run",
       "signals": {
         "docstring": true,
@@ -653,7 +653,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 341,
+      "lineno": 339,
       "name": "iter_docs",
       "signals": {
         "docstring": true,

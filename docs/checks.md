@@ -654,13 +654,24 @@ satisfied when the tag is present
 `[Unreleased]` heading never requires one — holding unshipped work is that
 section's purpose
 [verified: test_release_pins::test_unreleased_heading_never_requires_a_tag].
+The *newest* release section is also exempt: it is the release in flight
+[verified: test_release_pins::test_newest_release_section_may_await_its_tag].
+A release commit dates its changelog section before the tag is pushed — the tag
+is cut from the merged result — so requiring one there would fail the release
+pull request on a required check, leaving it unmergeable and the tag uncuttable.
+The check would block the process it exists to protect. That costs one release
+of detection latency and no more: skip the tag and the next release pushes the
+section down, where it is judged like any other
+[verified: test_release_pins::test_skipped_tag_is_caught_once_the_next_release_lands].
+An `[Unreleased]` heading is not a release section and shields nothing beneath it
+[verified: test_release_pins::test_unreleased_heading_does_not_consume_the_in_flight_exemption].
 Versions released before this check existed are recorded under
 `untagged_versions`, so it ratchets on future releases instead of relitigating
 history [verified: test_release_pins::test_declared_untagged_version_exempted];
 declaring one version exempts only that one
 [verified: test_release_pins::test_declaring_one_version_does_not_exempt_another],
-and the count of declared exemptions is reported in the summary line so the
-debt stays visible rather than fading into config.
+and both the declared-exemption and awaiting-tag counts are reported in the
+summary line so neither state fades into silence.
 
 Second, every pin naming this repository must resolve to a real tag. A `uses:`
 reference to a missing tag is flagged

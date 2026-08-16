@@ -449,7 +449,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/release_pins.py",
       "kind": "function",
-      "lineno": 113,
+      "lineno": 119,
       "name": "run",
       "signals": {
         "docstring": false,

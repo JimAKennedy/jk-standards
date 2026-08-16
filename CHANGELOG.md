@@ -27,6 +27,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ratchets forward; the count is reported on every run. A non-list
   `untagged_versions`, or a non-string entry, raises a config error surfaced as
   exit 2.
+- **Release-in-flight exemption** (`src/jk_standards/checks/release_pins.py`):
+  the newest changelog section is exempt from the tag rule. A release commit
+  dates its section before the tag is pushed, so requiring one there would fail
+  the release pull request on a required check — leaving it unmergeable and the
+  tag uncuttable, with the check blocking the process it exists to protect. The
+  exemption costs one release of detection latency and no more, and is reported
+  as `N awaiting its tag` so the pending state stays visible.
 - **`gitutil.list_tags`** (`src/jk_standards/gitutil.py`): the tag list, with
   `None` distinguishing "unreadable" from "none present" so a caller can skip
   rather than misreport.

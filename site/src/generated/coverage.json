@@ -29,12 +29,12 @@
       "percent_covered": 100.0
     },
     "src/jk_standards/checks/doc_coverage.py": {
-      "missing_lines": 1,
-      "percent_covered": 98.68
+      "missing_lines": 6,
+      "percent_covered": 95.71
     },
     "src/jk_standards/checks/doc_coverage_cpp.py": {
-      "missing_lines": 18,
-      "percent_covered": 79.78
+      "missing_lines": 97,
+      "percent_covered": 11.8
     },
     "src/jk_standards/checks/doc_drift.py": {
       "missing_lines": 7,
@@ -68,13 +68,21 @@
       "missing_lines": 0,
       "percent_covered": 100.0
     },
+    "src/jk_standards/checks/workflow_concurrency.py": {
+      "missing_lines": 2,
+      "percent_covered": 94.85
+    },
+    "src/jk_standards/checks/workflow_permissions.py": {
+      "missing_lines": 4,
+      "percent_covered": 91.2
+    },
     "src/jk_standards/cli.py": {
       "missing_lines": 4,
       "percent_covered": 94.96
     },
     "src/jk_standards/config.py": {
-      "missing_lines": 2,
-      "percent_covered": 97.96
+      "missing_lines": 5,
+      "percent_covered": 95.8
     },
     "src/jk_standards/emit.py": {
       "missing_lines": 35,
@@ -99,13 +107,17 @@
     "src/jk_standards/testindex.py": {
       "missing_lines": 12,
       "percent_covered": 71.05
+    },
+    "src/jk_standards/workflows.py": {
+      "missing_lines": 3,
+      "percent_covered": 91.3
     }
   },
-  "toolkit_version": "0.7.0",
+  "toolkit_version": "0.8.0",
   "totals": {
-    "covered_lines": 1743,
-    "missing_lines": 130,
-    "num_statements": 1873,
-    "percent_covered": 91.56
+    "covered_lines": 1868,
+    "missing_lines": 226,
+    "num_statements": 2094,
+    "percent_covered": 87.22
   }
 }

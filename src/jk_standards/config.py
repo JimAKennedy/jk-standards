@@ -147,6 +147,31 @@ class Config:
     # skip-when-unconfigured contract; an out-of-shape value raises ConfigError
     # so the CLI surfaces it as exit 2 (D010) rather than a check failure.
     import_cycle_packages: list[str] = field(default_factory=list)
+    # workflow-permissions: where the workflows live and which extensions count.
+    # Both checks below default to the same place as action-pinning but keep
+    # their own fields so a repo can scope them independently.
+    workflow_perm_dir: str = ".github/workflows"
+    workflow_perm_extensions: list[str] = field(default_factory=lambda: [".yml", ".yaml"])
+    # workflow-concurrency: `global_locks` names the groups that are *meant* to
+    # serialise the whole repository (a Pages deploy, a shared environment), so
+    # a deliberate global mutex is declared rather than indistinguishable from
+    # a forgotten `github.ref`. `ref_tokens` are the expressions that count as
+    # per-ref scoping; the default list is every context GitHub exposes that
+    # varies per branch, tag, or pull request.
+    workflow_concurrency_dir: str = ".github/workflows"
+    workflow_concurrency_extensions: list[str] = field(default_factory=lambda: [".yml", ".yaml"])
+    workflow_concurrency_global_locks: list[str] = field(default_factory=list)
+    workflow_concurrency_ref_tokens: list[str] = field(
+        default_factory=lambda: [
+            "github.ref",
+            "github.ref_name",
+            "github.head_ref",
+            "github.event.number",
+            "github.event.pull_request.number",
+            "github.run_id",
+            "github.sha",
+        ]
+    )
 
 
 def _require(mapping: dict, key: str, context: str) -> object:
@@ -226,6 +251,21 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
     if "extensions" in action_pinning:
         cfg.action_pin_extensions = [str(e) for e in action_pinning["extensions"]]
 
+    workflow_permissions = data.get("workflow_permissions", {})
+    cfg.workflow_perm_dir = str(workflow_permissions.get("workflow_dir", cfg.workflow_perm_dir))
+    if "extensions" in workflow_permissions:
+        cfg.workflow_perm_extensions = [str(e) for e in workflow_permissions["extensions"]]
+
+    workflow_concurrency = data.get("workflow_concurrency", {})
+    cfg.workflow_concurrency_dir = str(
+        workflow_concurrency.get("workflow_dir", cfg.workflow_concurrency_dir)
+    )
+    if "extensions" in workflow_concurrency:
+        cfg.workflow_concurrency_extensions = [str(e) for e in workflow_concurrency["extensions"]]
+    cfg.workflow_concurrency_global_locks = _global_locks(workflow_concurrency.get("global_locks"))
+    if "ref_tokens" in workflow_concurrency:
+        cfg.workflow_concurrency_ref_tokens = [str(t) for t in workflow_concurrency["ref_tokens"]]
+
     snippet = data.get("snippet_regions", {})
     cfg.snippet_doc_roots = [
         DocRoot(
@@ -289,6 +329,29 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
 
     cfg.import_cycle_packages = _import_cycle_packages(data.get("import_cycle"))
     return cfg
+
+
+def _global_locks(value: object) -> list[str]:
+    """Validate ``workflow_concurrency.global_locks`` into a list of group names.
+
+    An unset section yields ``[]`` — no group is declared repo-wide, so every
+    group must scope itself by ref. Out-of-shape input raises
+    :class:`ConfigError` rather than coercing: silently reading ``[5]`` as
+    ``["5"]`` would declare a lock nobody wrote, which is precisely the kind of
+    invisible grant this check exists to surface.
+    """
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise ConfigError(f"workflow_concurrency.global_locks must be a list, got {value!r}")
+    out: list[str] = []
+    for entry in value:
+        if not isinstance(entry, str):
+            raise ConfigError(
+                f"workflow_concurrency.global_locks entries must be strings, got {entry!r}"
+            )
+        out.append(entry)
+    return out
 
 
 def _import_cycle_packages(value: object) -> list[str]:

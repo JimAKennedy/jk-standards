@@ -28,6 +28,8 @@ from jk_standards.checks import (
     research_provenance,
     snippet_regions,
     status_prose,
+    workflow_concurrency,
+    workflow_permissions,
 )
 
 CHECKS = {
@@ -45,6 +47,8 @@ CHECKS = {
     "research-provenance": research_provenance.run,
     "doc-drift": doc_drift.run,
     "import-cycle": import_cycle.run,
+    "workflow-permissions": workflow_permissions.run,
+    "workflow-concurrency": workflow_concurrency.run,
 }
 
 # Checks that need only the working tree; `all` runs these unconditionally.

@@ -95,3 +95,19 @@
   language: golang
   pass_filenames: false
 # endregion:hook-secrets-scan
+
+# region:hook-workflow-permissions
+- id: workflow-permissions
+  name: reusable-workflow callers grant what their callees declare
+  entry: jk-standards workflow-permissions
+  language: python
+  pass_filenames: false
+# endregion:hook-workflow-permissions
+
+# region:hook-workflow-concurrency
+- id: workflow-concurrency
+  name: concurrency groups are ref-scoped or declared global locks
+  entry: jk-standards workflow-concurrency
+  language: python
+  pass_filenames: false
+# endregion:hook-workflow-concurrency

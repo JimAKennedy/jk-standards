@@ -134,6 +134,12 @@ jobs:
       # coverage auditable — every configured package is acyclic (or
       # `import-cycle-ok`-suppressed).
       - run: jk-standards import-cycle
+      # The two composition checks also run under `jk-standards all`. Calling
+      # them explicitly keeps this repo's own workflow graph auditable in the
+      # log: every `uses: ./…` edge is within its caller's grant, and every
+      # concurrency group is ref-scoped or a declared global lock.
+      - run: jk-standards workflow-permissions
+      - run: jk-standards workflow-concurrency
 
   # Real-world dogfood of the M010 C++ enumerator. This repo has no C++ tree, so
   # the tree-sitter-cpp path is otherwise exercised only by the three synthetic

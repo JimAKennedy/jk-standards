@@ -22,3 +22,5 @@ repos:
       - id: status-prose
       - id: file-line-refs
       - id: import-cycle
+      - id: workflow-permissions
+      - id: workflow-concurrency

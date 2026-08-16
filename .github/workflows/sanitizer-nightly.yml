@@ -5,7 +5,7 @@
 #       - cron: "0 5 * * *"   # nightly, after the day's merges settle
 #   jobs:
 #     sanitizers:
-#       uses: JimAKennedy/jk-standards/.github/workflows/sanitizer-nightly.yml@v0.3.0
+#       uses: JimAKennedy/jk-standards/.github/workflows/sanitizer-nightly.yml@v0.8.0
 #       with:
 #         test-filter: "concurrency|memory"   # ctest -R regex for the hot suites
 #         integration-legs: true               # also instrument the host/plugin boundary

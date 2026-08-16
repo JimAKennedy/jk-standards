@@ -249,7 +249,7 @@ Pre-commit (pin to a release tag):
 
 ```yaml
 - repo: https://github.com/JimAKennedy/jk-standards
-  rev: v0.1.0
+  rev: v0.8.0
   hooks:
     - id: doc-taxonomy
     - id: status-prose
@@ -261,5 +261,5 @@ CI (the reusable workflow supplies checkout depth and base-ref wiring):
 ```yaml
 jobs:
   doc-discipline:
-    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.1.0
+    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.8.0
 ```

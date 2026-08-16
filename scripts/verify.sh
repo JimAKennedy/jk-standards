@@ -82,6 +82,7 @@ run "jk-standards boundaries"      jk-standards boundaries
 run "jk-standards import-cycle"    jk-standards import-cycle
 run "jk-standards workflow-permissions" jk-standards workflow-permissions
 run "jk-standards workflow-concurrency" jk-standards workflow-concurrency
+run "jk-standards release-pins"      jk-standards release-pins
 
 # doc-drift is base-gated: it needs a git base ref to diff against (CI supplies
 # GITHUB_BASE_REF). Run it explicitly here against $BASE_REF when that ref exists.

@@ -140,6 +140,12 @@ jobs:
       # concurrency group is ref-scoped or a declared global lock.
       - run: jk-standards workflow-permissions
       - run: jk-standards workflow-concurrency
+      # release-pins needs tags, which actions/checkout does not fetch
+      # unless fetch-depth: 0 — already set on this job for doc-drift's
+      # merge-base. Without them the check skips rather than reporting
+      # every pin as dangling, so the explicit call also proves the tags
+      # are actually present here.
+      - run: jk-standards release-pins
 
   # Real-world dogfood of the M010 C++ enumerator. This repo has no C++ tree, so
   # the tree-sitter-cpp path is otherwise exercised only by the three synthetic

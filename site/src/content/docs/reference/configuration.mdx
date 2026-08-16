@@ -126,6 +126,22 @@ nobody wrote. See the
 [checks reference](/reference/checks/#workflow-concurrency) for the rules these
 fields tune.
 
+The `release_pin_*` fields are read from a `release_pins:` section and tune the
+`release-pins` check, which asserts that every released version is tagged and
+that every pin naming this repository resolves. `repo` (an `owner/name` slug)
+opts the check in — without it there is nothing to recognise a pin to this
+project by — and `repo_url` defaults to the GitHub URL derived from it.
+`changelog` names the file whose `## [X.Y.Z]` headings are checked,
+`extensions` the files scanned for pins, and `exclude` the path prefixes never
+scanned (historical migration notes must keep the pins those projects actually
+used). `untagged_versions` records releases that shipped a changelog section
+but never got a tag, keeping the check a ratchet on future releases; the count
+is reported on every run so the debt stays visible. A non-list
+`untagged_versions`, or a non-string entry, raises a config error surfaced as
+exit 2 rather than exempting a version string no heading ever produces. See the
+[checks reference](/reference/checks/#release-pins) for the rules these fields
+tune.
+
 ## Example — this repo's own config
 
 jk-standards dogfoods itself, so its own `jk-standards.yaml` is a live

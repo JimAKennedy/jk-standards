@@ -68,6 +68,12 @@
     },
     {
       "is_static": true,
+      "name": "release-pins",
+      "source_file": "src/jk_standards/checks/release_pins.py",
+      "summary": "release-pins: released versions are tagged, and every pin to this repo resolves."
+    },
+    {
+      "is_static": true,
       "name": "research-provenance",
       "source_file": "src/jk_standards/checks/research_provenance.py",
       "summary": "research-provenance: summarised research never reads as original research."

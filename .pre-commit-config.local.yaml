@@ -24,3 +24,4 @@ repos:
       - id: import-cycle
       - id: workflow-permissions
       - id: workflow-concurrency
+      - id: release-pins

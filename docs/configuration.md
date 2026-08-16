@@ -118,6 +118,16 @@ workflow_concurrency:         # concurrency groups are ref-scoped or declared
     - pages                   # absent ⇒ every group must scope itself by ref
   ref_tokens:                 # expressions counting as per-ref scoping
     - github.ref              # (default list covers ref/ref_name/head_ref/…)
+
+release_pins:                 # released versions tagged; pins resolve
+  repo: OWNER/PROJ            # opts the check in; absent ⇒ check skips
+  repo_url: https://github.com/OWNER/PROJ   # default: derived from repo
+  changelog: CHANGELOG.md     # file whose ## [X.Y.Z] headings are checked
+  extensions: [".md", ".mdx", ".yml", ".yaml"]   # files scanned for pins
+  exclude:                    # path prefixes never scanned
+    - MIGRATION-              # historical records keep their original pins
+  untagged_versions:          # released without a tag; declared, not fixed
+    - "0.2.0"                 # keeps the check a ratchet on future releases
 ```
 
 The `action_pinning` section tunes the `action-pinning` check: `workflow_dir`
@@ -211,6 +221,22 @@ raises a config error surfaced as exit 2 — coercing `[5]` into `["5"]` would
 declare a lock nobody wrote. See the
 [checks reference](checks.md#workflow-concurrency) for the rule these fields
 tune.
+
+The `release_pins` section tunes the `release-pins` check. `repo` (an
+`owner/name` slug) is what opts the check in — without it there is nothing to
+recognise a pin to this project by, so the check skips; `repo_url` defaults to
+the GitHub URL derived from it. `changelog` names the file whose `## [X.Y.Z]`
+headings must each have a matching tag, and `extensions` the files scanned for
+pins. `exclude` is a list of path prefixes never scanned, for historical
+records — a migration note describing what a project actually adopted must keep
+its original pin, and rewriting it would falsify the record.
+`untagged_versions` records releases that shipped a changelog section but never
+got a tag, so the check ratchets on future releases rather than relitigating
+history; the count is reported on every run so the debt stays visible. A
+non-list `untagged_versions`, or a non-string entry within it, raises a config
+error surfaced as exit 2 — coercing `[0.7]` into `["0.7"]` would exempt a
+string no changelog heading ever produces, leaving the real gap unguarded. See
+the [checks reference](checks.md#release-pins) for the rules these fields tune.
 
 ## CLI
 

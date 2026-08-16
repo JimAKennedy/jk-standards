@@ -161,6 +161,19 @@ class Config:
     workflow_concurrency_dir: str = ".github/workflows"
     workflow_concurrency_extensions: list[str] = field(default_factory=lambda: [".yml", ".yaml"])
     workflow_concurrency_global_locks: list[str] = field(default_factory=list)
+    # release-pins: `repo` (owner/name) opts the check in — with none set there
+    # is nothing to recognise a pin to *this* project by, so the check skips.
+    # `untagged_versions` records releases that shipped a changelog section but
+    # never got a tag, keeping the check a ratchet on future releases rather
+    # than an argument with history; the count is always reported.
+    release_pin_repo: str = ""
+    release_pin_repo_url: str = ""
+    release_pin_changelog: str = "CHANGELOG.md"
+    release_pin_extensions: list[str] = field(
+        default_factory=lambda: [".md", ".mdx", ".yml", ".yaml"]
+    )
+    release_pin_exclude: list[str] = field(default_factory=list)
+    release_pin_untagged_versions: list[str] = field(default_factory=list)
     workflow_concurrency_ref_tokens: list[str] = field(
         default_factory=lambda: [
             "github.ref",
@@ -328,7 +341,41 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
     )
 
     cfg.import_cycle_packages = _import_cycle_packages(data.get("import_cycle"))
+
+    release_pins = data.get("release_pins", {})
+    cfg.release_pin_repo = str(release_pins.get("repo", cfg.release_pin_repo))
+    cfg.release_pin_repo_url = str(
+        release_pins.get("repo_url")
+        or (f"https://github.com/{cfg.release_pin_repo}" if cfg.release_pin_repo else "")
+    )
+    cfg.release_pin_changelog = str(release_pins.get("changelog", cfg.release_pin_changelog))
+    if "extensions" in release_pins:
+        cfg.release_pin_extensions = [str(e) for e in release_pins["extensions"]]
+    cfg.release_pin_exclude = [str(e) for e in release_pins.get("exclude", [])]
+    cfg.release_pin_untagged_versions = _untagged_versions(release_pins.get("untagged_versions"))
     return cfg
+
+
+def _untagged_versions(value: object) -> list[str]:
+    """Validate ``release_pins.untagged_versions`` into a list of versions.
+
+    Out-of-shape input raises :class:`ConfigError` rather than coercing:
+    turning ``[0.7]`` into ``["0.7"]`` would declare an exemption for a version
+    string that never appears in any changelog heading, silently leaving the
+    real gap unguarded.
+    """
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise ConfigError(f"release_pins.untagged_versions must be a list, got {value!r}")
+    out: list[str] = []
+    for entry in value:
+        if not isinstance(entry, str):
+            raise ConfigError(
+                f"release_pins.untagged_versions entries must be strings, got {entry!r}"
+            )
+        out.append(entry)
+    return out
 
 
 def _global_locks(value: object) -> list[str]:

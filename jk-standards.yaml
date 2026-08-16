@@ -141,4 +141,20 @@ workflow_concurrency:
   global_locks:
     - pages
 # endregion:workflow-concurrency-config
+
+# release-pins: every released version is tagged, and every pin naming this
+# repo resolves to a real tag. `untagged_versions` records the three releases
+# that shipped a changelog section but never got a tag — recovering those tags
+# retroactively would date them wrong, so they are declared instead and the
+# check ratchets on every release after them. The MIGRATION notes are excluded
+# because their pins record what those projects actually adopted at the time;
+# rewriting them would falsify the record.
+# region:release-pins-config
+release_pins:
+  repo: JimAKennedy/jk-standards
+  untagged_versions: ["0.2.0", "0.4.0", "0.7.0"]
+  exclude:
+    - MIGRATION-poly.md
+    - MIGRATION-nfr-review.md
+# endregion:release-pins-config
 # endregion:full-config

@@ -479,3 +479,65 @@ outside the project's bibliography — the same two-line window used by
 action-pinning, count-drift, and snippet-regions. The page-level
 requirements have no marker hatch: a page that shouldn't carry them
 shouldn't declare `provenance: research`.
+
+## import-cycle
+
+A circular module-level import between two files of the same package is a
+latent crash — one import-order change away from an `ImportError` — and it
+couples the files so tightly that neither can be read, or moved, alone. This
+check builds the runtime import graph from each package's own module-level
+imports, finds every strongly-connected component of more than one module (a
+cycle), and reports it. It is opted in by listing the packages to scan under
+`import_cycle.packages`; with none configured it emits a skip summary and
+passes
+[verified: test_import_cycle::test_run_skips_and_returns_zero_when_no_packages_configured].
+
+A detected cycle is emitted as one `::error` at the `file:line` of a real
+in-cycle import, naming the full member chain, and every unsuppressed cycle
+adds to the returned count
+[verified: test_import_cycle::test_run_emits_error_at_file_line_and_returns_cycle_count]
+— a transitive `A -> B -> C -> A` loop is caught as one cycle spanning all
+three modules
+[verified: test_import_cycle::test_analyze_detects_transitive_three_module_chain].
+An acyclic graph passes
+[verified: test_import_cycle::test_analyze_acyclic_graph_returns_no_cycle],
+and a module that imports itself is not a cycle between distinct modules
+[verified: test_import_cycle::test_analyze_self_importing_module_is_not_a_cycle].
+
+Only imports that actually run at import time form an edge. An import nested
+in a function or method body is deferred until the unit is called, so it can
+never close an import-time loop
+[verified: test_import_cycle::test_analyze_zero_when_the_cycle_import_is_function_local];
+an import guarded by `if TYPE_CHECKING:` never executes at runtime at all
+[verified: test_import_cycle::test_analyze_type_checking_guarded_import_forms_no_cycle];
+but a `try: import x except ImportError:` fallback is a real runtime edge and
+is counted
+[verified: test_import_cycle::test_try_except_import_is_a_real_runtime_edge].
+Breaking a cycle is exactly that move: push one of its imports inside the
+function that uses it. Output is deterministic across repeated runs
+[verified: test_import_cycle::test_run_output_is_deterministic_across_repeated_runs],
+and a file that does not parse is surfaced in a summary line rather than
+dropped silently
+[verified: test_import_cycle::test_run_surfaces_parse_failures_in_a_summary_line].
+
+Every run ends with a summary line —
+`import-cycle: N package(s), N cycle(s), N suppression(s) via import-cycle-ok, N unparseable file(s)`
+— so cycle, waiver, and parse-failure counts stay visible in CI logs even on
+an otherwise-green run.
+
+Escape hatch: an `# import-cycle-ok: <reason>` marker on an in-cycle import
+line
+[verified: test_import_cycle::test_run_waives_cycle_via_inline_import_cycle_ok_marker]
+or the line immediately above it
+[verified: test_import_cycle::test_run_honors_import_cycle_ok_marker_on_line_above]
+waives the whole cycle, honoring any language-appropriate comment opener
+(`#`, `//`, `/*`, `<!--`, `--`, `;`). Like `boundaries`, live suppressions
+are counted and reported in the summary line, so rising waiver usage stays
+visible rather than silent
+[verified: test_cli::test_import_cycle_escape_hatch_suppresses_and_counts]. An
+out-of-shape `import_cycle` config value fails loudly as a config error
+(exit 2) rather than a traceback
+[verified: test_cli::test_import_cycle_out_of_shape_config_exits_2], and a
+non-string entry in `packages` is rejected the same way
+[verified: test_cli::test_import_cycle_non_string_package_entry_exits_2].
+Packages to scan are declared in the `import_cycle` config section.

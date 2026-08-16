@@ -102,6 +102,10 @@ research_provenance:          # summarised research declares its provenance
   doc_roots:                  # docs scanned; default: top-level doc_roots
     - path: site/src/content/docs
       extensions: [".mdx"]
+
+import_cycle:                 # module-level import cycles inside a package
+  packages:                   # package dirs (relative to root) to scan
+    - src/jk_standards        # absent/empty packages ⇒ check skips (passes 0)
 ```
 
 The `action_pinning` section tunes the `action-pinning` check: `workflow_dir`
@@ -167,6 +171,15 @@ sentence must match, and `doc_roots` narrows which docs are scanned,
 defaulting to the top-level `doc_roots`. Everything but `bib_file`
 defaults. See the [checks reference](checks.md#research-provenance) for the
 rule these fields tune.
+
+The `import_cycle` section supplies the `import-cycle` check with `packages`,
+a list of Python package directories (relative to the root) whose module-level
+import graph is scanned for cycles. An absent or empty `packages` list yields
+no packages to scan, so the check skips (passes with 0 packages) — mirroring
+`boundaries`' skip-when-unconfigured contract. A malformed section (a scalar
+where a mapping is expected, a non-list `packages`, or a non-string entry)
+raises a config error surfaced as exit 2 rather than a check failure. See the
+[checks reference](checks.md#import-cycle) for the rule this field tunes.
 ## CLI
 
 ```

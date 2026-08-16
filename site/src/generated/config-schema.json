@@ -119,6 +119,12 @@
       "type": "list[GeneratedDoc]"
     },
     {
+      "default": [],
+      "has_default_factory": true,
+      "name": "import_cycle_packages",
+      "type": "list[str]"
+    },
+    {
       "default": "(ref|fr)-[A-Za-z0-9-]+",
       "has_default_factory": false,
       "name": "provenance_anchor_pattern",

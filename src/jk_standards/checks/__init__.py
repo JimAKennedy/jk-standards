@@ -6,6 +6,13 @@ number of errors found. `CHECKS` maps CLI/hook names to those callables.
 
 from __future__ import annotations
 
+# This package __init__ re-exports every check module, so it imports
+# doc_completeness/doc_coverage while those modules import `doc_drift` *through*
+# this package (`from jk_standards.checks import doc_drift`) — a real but benign
+# import-time SCC {checks, doc_completeness, doc_coverage}. The re-export hub is
+# the intended toplevel and cannot be broken without hiding the registry, so the
+# cycle is waived in place (mirrors the boundary-ok hatch on the line below):
+# import-cycle-ok: benign re-export SCC {checks, doc_completeness, doc_coverage}
 from jk_standards.checks import (
     action_pinning,
     behavioral_claims,
@@ -17,6 +24,7 @@ from jk_standards.checks import (
     doc_taxonomy,
     file_line_refs,
     generated_freshness,
+    import_cycle,
     research_provenance,
     snippet_regions,
     status_prose,
@@ -36,6 +44,7 @@ CHECKS = {
     "doc-coverage": doc_coverage.run,
     "research-provenance": research_provenance.run,
     "doc-drift": doc_drift.run,
+    "import-cycle": import_cycle.run,
 }
 
 # Checks that need only the working tree; `all` runs these unconditionally.

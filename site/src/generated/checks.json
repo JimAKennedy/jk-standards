@@ -62,6 +62,12 @@
     },
     {
       "is_static": true,
+      "name": "import-cycle",
+      "source_file": "src/jk_standards/checks/import_cycle.py",
+      "summary": "import-cycle: no module-level import cycle within a package."
+    },
+    {
+      "is_static": true,
       "name": "research-provenance",
       "source_file": "src/jk_standards/checks/research_provenance.py",
       "summary": "research-provenance: summarised research never reads as original research."

@@ -141,6 +141,12 @@ class Config:
     provenance_anchor_pattern: str = r"(ref|fr)-[A-Za-z0-9-]+"
     provenance_phrase: str = r"not original (research|theory)"
     provenance_doc_roots: list[DocRoot] = field(default_factory=list)
+    # import-cycle: Python package dirs (relative to root) whose module-level
+    # import graph is scanned for cycles. An absent/empty section yields empty
+    # packages, so the check skips (passes 0). Mirrors `boundaries`'
+    # skip-when-unconfigured contract; an out-of-shape value raises ConfigError
+    # so the CLI surfaces it as exit 2 (D010) rather than a check failure.
+    import_cycle_packages: list[str] = field(default_factory=list)
 
 
 def _require(mapping: dict, key: str, context: str) -> object:
@@ -280,7 +286,34 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
     cfg.doc_coverage_module_min_percent = _module_min_percent(
         doc_coverage.get("module_min_percent")
     )
+
+    cfg.import_cycle_packages = _import_cycle_packages(data.get("import_cycle"))
     return cfg
+
+
+def _import_cycle_packages(value: object) -> list[str]:
+    """Validate the optional ``import_cycle`` section into a list of package dirs.
+
+    An unset/``None`` section yields ``[]`` (check skips). Otherwise the section
+    must be a mapping with a ``packages`` list of strings. Anything out of shape
+    — a scalar section, a non-list ``packages``, or a non-string entry — is a
+    :class:`ConfigError` so the CLI surfaces it as exit 2 (D010) rather than
+    silently coercing (``[str(e) for e in ...]`` would mask ``[5]`` as ``["5"]``).
+    ``bool`` entries are rejected as non-strings, matching the intent.
+    """
+    if value is None:
+        return []
+    if not isinstance(value, dict):
+        raise ConfigError(f"import_cycle must be a mapping or unset, got {value!r}")
+    packages = value.get("packages", [])
+    if not isinstance(packages, list):
+        raise ConfigError(f"import_cycle.packages must be a list, got {packages!r}")
+    out: list[str] = []
+    for entry in packages:
+        if not isinstance(entry, str):
+            raise ConfigError(f"import_cycle.packages entries must be strings, got {entry!r}")
+        out.append(entry)
+    return out
 
 
 def _module_min_percent(value: object) -> int | None:

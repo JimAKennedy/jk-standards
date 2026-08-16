@@ -79,6 +79,7 @@ run "jk-standards all"            jk-standards all
 run "jk-standards action-pinning" jk-standards action-pinning
 run "jk-standards snippet-regions" jk-standards snippet-regions
 run "jk-standards boundaries"      jk-standards boundaries
+run "jk-standards import-cycle"    jk-standards import-cycle
 
 # doc-drift is base-gated: it needs a git base ref to diff against (CI supplies
 # GITHUB_BASE_REF). Run it explicitly here against $BASE_REF when that ref exists.

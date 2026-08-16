@@ -80,6 +80,14 @@
   pass_filenames: false
 # endregion:hook-research-provenance
 
+# region:hook-import-cycle
+- id: import-cycle
+  name: no new runtime import cycles in configured packages
+  entry: jk-standards import-cycle
+  language: python
+  pass_filenames: false
+# endregion:hook-import-cycle
+
 # region:hook-secrets-scan
 - id: secrets-scan
   name: no hardcoded secrets in staged changes

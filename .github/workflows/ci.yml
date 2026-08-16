@@ -129,6 +129,11 @@ jobs:
       # makes the dogfood's cross-directory isolation coverage auditable —
       # every forbidden import boundary is enforced (or `boundary-ok`-suppressed).
       - run: jk-standards boundaries
+      # Likewise import-cycle runs under `jk-standards all` (S02 registered it in
+      # STATIC_CHECKS); the explicit call makes the dogfood's cyclic-import
+      # coverage auditable — every configured package is acyclic (or
+      # `import-cycle-ok`-suppressed).
+      - run: jk-standards import-cycle
 
   # Real-world dogfood of the M010 C++ enumerator. This repo has no C++ tree, so
   # the tree-sitter-cpp path is otherwise exercised only by the three synthetic

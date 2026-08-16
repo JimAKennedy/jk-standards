@@ -149,6 +149,47 @@
       "type": "str"
     },
     {
+      "default": "CHANGELOG.md",
+      "has_default_factory": false,
+      "name": "release_pin_changelog",
+      "type": "str"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "release_pin_exclude",
+      "type": "list[str]"
+    },
+    {
+      "default": [
+        ".md",
+        ".mdx",
+        ".yml",
+        ".yaml"
+      ],
+      "has_default_factory": true,
+      "name": "release_pin_extensions",
+      "type": "list[str]"
+    },
+    {
+      "default": "",
+      "has_default_factory": false,
+      "name": "release_pin_repo",
+      "type": "str"
+    },
+    {
+      "default": "",
+      "has_default_factory": false,
+      "name": "release_pin_repo_url",
+      "type": "str"
+    },
+    {
+      "default": [],
+      "has_default_factory": true,
+      "name": "release_pin_untagged_versions",
+      "type": "list[str]"
+    },
+    {
       "default": [],
       "has_default_factory": true,
       "name": "snippet_doc_roots",

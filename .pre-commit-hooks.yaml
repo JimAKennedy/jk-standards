@@ -111,3 +111,11 @@
   language: python
   pass_filenames: false
 # endregion:hook-workflow-concurrency
+
+# region:hook-release-pins
+- id: release-pins
+  name: released versions are tagged and every pin to this repo resolves
+  entry: jk-standards release-pins
+  language: python
+  pass_filenames: false
+# endregion:hook-release-pins

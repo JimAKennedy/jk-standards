@@ -25,6 +25,7 @@ from jk_standards.checks import (
     file_line_refs,
     generated_freshness,
     import_cycle,
+    release_pins,
     research_provenance,
     snippet_regions,
     status_prose,
@@ -49,6 +50,7 @@ CHECKS = {
     "import-cycle": import_cycle.run,
     "workflow-permissions": workflow_permissions.run,
     "workflow-concurrency": workflow_concurrency.run,
+    "release-pins": release_pins.run,
 }
 
 # Checks that need only the working tree; `all` runs these unconditionally.

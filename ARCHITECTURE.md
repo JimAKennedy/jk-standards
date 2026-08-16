@@ -38,7 +38,7 @@ site under `site/`. The parts a reader reasons about in isolation:
 - **Test index** (`src/jk_standards/testindex.py`) — enumerates the test suite
   so the `behavioral-claims` check can bind doc claims to real tests.
 - **Support modules** — `output.py` (GitHub-Actions annotation formatting),
-  `frontmatter.py` (doc class parsing), `gitutil.py` (base-ref resolution),
+  `frontmatter.py` (doc class parsing), `gitutil.py` (base-ref resolution and the tag list),
   `workflows.py` (workflow YAML parsed with the line numbers findings are
   reported at).
 - **Site** (`site/`) — Astro Starlight docs that consume the generated JSON
@@ -105,10 +105,11 @@ listed as an invariant — those live in the prose above.
 | No configured package gains a module-level import cycle | `import-cycle` check |
 | A reusable-workflow caller grants every scope its callee declares | `workflow-permissions` check |
 | A concurrency group is ref-scoped or a declared global lock | `workflow-concurrency` check |
+| Every released version is tagged, and every pin to this repo resolves | `release-pins` check |
 | The test suite passes with coverage at or above the 80% floor | `test` + `coverage` CI jobs |
 | The whole conformance gate stays green on this repo | `dogfood` CI job (`jk-standards all`) / `scripts/verify.sh` |
 
-The first sixteen mechanisms are checks in this repository's own `CHECKS`
+The first seventeen mechanisms are checks in this repository's own `CHECKS`
 registry, run together by `jk-standards all` in the `dogfood` CI job and
 reproduced locally by `scripts/verify.sh`. The last two are CI jobs defined in
 `.github/workflows/ci.yml`. The two `boundaries` rules are configured in

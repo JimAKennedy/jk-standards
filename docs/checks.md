@@ -635,3 +635,86 @@ Escape hatch: a `# concurrency-scope-ok: <reason>` marker on the `group:` line
 or the line immediately above it
 [verified: test_workflow_composition::test_concurrency_marker_line_above_exempts]
 suppresses the finding.
+
+## release-pins
+
+Adoption instructions pin by tag, which makes the tag the load-bearing
+artefact: `rev: v1.2.0` in a consumer's `.pre-commit-config.yaml`, or
+`uses: OWNER/REPO/.github/workflows/x.yml@v1.2.0` in their CI, works only if
+that tag exists. When a release ships a changelog entry but the final
+`git tag && git push` is skipped, nothing notices — the tree is green, the
+changelog reads correctly, and the documented instructions become dangling refs
+that fail in *the consumer's* CI rather than this repo's.
+
+This check closes that loop with two rules. First, every `## [X.Y.Z]` heading
+in the changelog must have a matching `vX.Y.Z` tag
+[verified: test_release_pins::test_released_version_without_tag_flagged],
+satisfied when the tag is present
+[verified: test_release_pins::test_released_version_with_tag_passes]. An
+`[Unreleased]` heading never requires one — holding unshipped work is that
+section's purpose
+[verified: test_release_pins::test_unreleased_heading_never_requires_a_tag].
+Versions released before this check existed are recorded under
+`untagged_versions`, so it ratchets on future releases instead of relitigating
+history [verified: test_release_pins::test_declared_untagged_version_exempted];
+declaring one version exempts only that one
+[verified: test_release_pins::test_declaring_one_version_does_not_exempt_another],
+and the count of declared exemptions is reported in the summary line so the
+debt stays visible rather than fading into config.
+
+Second, every pin naming this repository must resolve to a real tag. A `uses:`
+reference to a missing tag is flagged
+[verified: test_release_pins::test_uses_pin_to_missing_tag_flagged] and one to
+an existing tag passes
+[verified: test_release_pins::test_uses_pin_to_existing_tag_passes]. The
+`pip install "git+…@ref"` form is checked too
+[verified: test_release_pins::test_pip_git_install_form_checked], as are the
+commented consume-from-a-pinned-tag examples in a reusable workflow's own
+header — a comment is still guidance
+[verified: test_release_pins::test_commented_pin_in_a_workflow_header_checked].
+
+A `rev:` names no repository itself, so it counts only when the nearest
+preceding `repo:` line names this one
+[verified: test_release_pins::test_rev_under_this_repo_checked]. A third
+party's `rev:` in the same file is left alone
+[verified: test_release_pins::test_rev_under_a_third_party_repo_ignored], and
+scanning resumes correctly at the next block naming this repository
+[verified: test_release_pins::test_rev_switches_back_to_this_repo_after_a_third_party_block].
+A `uses:` naming another owner is likewise ignored
+[verified: test_release_pins::test_uses_naming_another_owner_ignored]. Only
+release-shaped refs are judged: a commit SHA
+[verified: test_release_pins::test_sha_pin_is_not_a_release_pin] or a branch
+name [verified: test_release_pins::test_branch_pin_is_not_a_release_pin] is
+somebody else's rule to enforce. Vendored trees such as `node_modules` are
+never scanned [verified: test_release_pins::test_node_modules_not_scanned].
+
+Historical records belong in `exclude`
+[verified: test_release_pins::test_excluded_path_not_scanned] — a migration
+note describing what a project actually adopted at the time must keep its
+original pin, and without the exclusion it would be flagged like any other
+[verified: test_release_pins::test_excluded_path_still_flagged_when_not_excluded].
+
+Three skip contracts keep the check from inventing findings. With no
+`release_pins.repo` configured there is nothing to recognise a pin to this
+project by [verified: test_release_pins::test_unconfigured_repo_skips]. Outside
+a git checkout the tag list is unreadable
+[verified: test_release_pins::test_non_git_directory_skips]. And a repository
+reporting no tags at all is skipped rather than treated as one where every pin
+dangles [verified: test_release_pins::test_repo_without_tags_skips]: a shallow
+CI checkout — `actions/checkout` fetches no tags unless `fetch-depth: 0` — and
+a project before its first release are indistinguishable here, and reporting
+every pin as broken on the strength of an incomplete checkout would be worse
+than staying quiet. The `dogfood` CI job already sets `fetch-depth: 0`.
+
+Escape hatch: a `# release-pin-ok: <reason>` marker on the offending line
+[verified: test_release_pins::test_pin_marker_same_line_exempts] or the line
+immediately above it
+[verified: test_release_pins::test_pin_marker_line_above_exempts] suppresses
+the finding, honouring any language-appropriate comment opener (`#`, `//`,
+`/*`, `<!--`, `--`, `;`) — the HTML form matters most, since pins live in
+markdown [verified: test_release_pins::test_changelog_marker_above_heading_exempts].
+Repository identity and scanning scope are configured in the `release_pins`
+section; an out-of-shape `untagged_versions` fails as a config error (exit 2)
+[verified: test_release_pins::test_untagged_versions_non_list_raises], as does
+a non-string entry
+[verified: test_release_pins::test_untagged_versions_non_string_entry_raises].

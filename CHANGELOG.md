@@ -4,6 +4,39 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`release-pins` check** (`src/jk_standards/checks/release_pins.py`): asserts
+  that every `## [X.Y.Z]` changelog heading has a matching `vX.Y.Z` tag, and
+  that every pin naming this repository — `uses: <repo>/…@<ref>`, a `rev:`
+  under a `repo:` line naming it, or the `pip install "git+…@ref"` form —
+  resolves to a real tag. Pins belonging to other projects are never judged: a
+  `rev:` counts only when the nearest preceding `repo:` line names this
+  repository. Only release-shaped refs are checked, so a SHA or branch pin is
+  left alone. Skips cleanly when the repository is unconfigured, when tags are
+  unreadable, or when none are present — a shallow CI checkout and a project
+  before its first release are indistinguishable, and reporting every pin as
+  dangling on an incomplete checkout would be worse than silence. Escape
+  hatch: `# release-pin-ok: <reason>`.
+- **`release_pins` config section** (`src/jk_standards/config.py`): `repo` and
+  `repo_url` identify the project, `changelog` and `extensions` scope the scan,
+  `exclude` holds path prefixes whose pins are historical records, and
+  `untagged_versions` declares releases that shipped without a tag so the check
+  ratchets forward; the count is reported on every run. A non-list
+  `untagged_versions`, or a non-string entry, raises a config error surfaced as
+  exit 2.
+- **`gitutil.list_tags`** (`src/jk_standards/gitutil.py`): the tag list, with
+  `None` distinguishing "unreadable" from "none present" so a caller can skip
+  rather than misreport.
+- **Self-host wiring**: registered in `CHECKS`/`STATIC_CHECKS`, invoked by the
+  `dogfood` CI job (which already sets `fetch-depth: 0`, so tags are present)
+  and `scripts/verify.sh`, shipped as a pre-commit hook, configured in
+  `jk-standards.yaml`, and documented in `docs/checks.md`, the site checks
+  reference, both configuration references, and the ARCHITECTURE.md invariant
+  table.
+
 ## [0.8.0] - 2026-08-16
 
 ### Added

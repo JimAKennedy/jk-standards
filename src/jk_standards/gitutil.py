@@ -1,4 +1,4 @@
-"""Git helpers for the diff-scoped checks (doc-drift)."""
+"""Git helpers for the diff-scoped checks (doc-drift) and release-pins."""
 
 from __future__ import annotations
 
@@ -16,6 +16,22 @@ def _git(root: Path, *args: str) -> str:
     if result.returncode != 0:
         raise GitError(f"git {' '.join(args)}: {result.stderr.strip()}")
     return result.stdout
+
+
+def list_tags(root: Path) -> set[str] | None:
+    """Every tag name in the repository, or ``None`` when they cannot be read.
+
+    ``None`` is deliberately distinct from an empty set. A checkout with no
+    tags fetched (the default for `actions/checkout`, which fetches none unless
+    `fetch-depth: 0`) and a repository genuinely before its first release both
+    yield nothing, and a caller must be able to skip rather than report every
+    pin as dangling on the strength of an incomplete checkout.
+    """
+    try:
+        out = _git(root, "tag", "--list")
+    except (GitError, OSError):
+        return None
+    return {line.strip() for line in out.splitlines() if line.strip()}
 
 
 def resolve_base_ref(root: Path, base_override: str | None) -> str:

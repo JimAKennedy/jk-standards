@@ -435,6 +435,30 @@
     },
     {
       "documented": true,
+      "file": "src/jk_standards/checks/release_pins.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "release_pins",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/release_pins.py",
+      "kind": "function",
+      "lineno": 113,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
       "file": "src/jk_standards/checks/research_provenance.py",
       "kind": "module",
       "lineno": 1,
@@ -701,7 +725,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 402,
+      "lineno": 449,
       "name": "iter_docs",
       "signals": {
         "docstring": true,
@@ -713,7 +737,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 183,
+      "lineno": 196,
       "name": "load_config",
       "signals": {
         "docstring": false,
@@ -869,7 +893,7 @@
       "documented": false,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 45,
+      "lineno": 61,
       "name": "changed_files",
       "signals": {
         "docstring": false,
@@ -881,7 +905,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 56,
+      "lineno": 72,
       "name": "commit_trailers",
       "signals": {
         "docstring": true,
@@ -893,7 +917,7 @@
       "documented": false,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 51,
+      "lineno": 67,
       "name": "file_diff",
       "signals": {
         "docstring": false,
@@ -918,6 +942,18 @@
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
       "lineno": 21,
+      "name": "list_tags",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
+      "lineno": 37,
       "name": "resolve_base_ref",
       "signals": {
         "docstring": true,

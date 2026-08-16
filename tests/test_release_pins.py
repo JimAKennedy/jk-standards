@@ -56,8 +56,14 @@ def write(root: Path, rel: str, text: str) -> Path:
 
 
 def test_released_version_without_tag_flagged(tmp_path):
-    repo(tmp_path, ["v1.0.0"])
-    write(tmp_path, "CHANGELOG.md", "# C\n\n## [1.1.0] - 2026-01-01\n\n## [1.0.0] - 2025-01-01\n")
+    # 1.2.0 on top is tagged, so it does not consume the in-flight exemption
+    # and 1.1.0 below it is judged on its own merits.
+    repo(tmp_path, ["v1.0.0", "v1.2.0"])
+    write(
+        tmp_path,
+        "CHANGELOG.md",
+        "# C\n\n## [1.2.0] - 2026-02-01\n\n## [1.1.0] - 2026-01-01\n\n## [1.0.0] - 2025-01-01\n",
+    )
     assert release_pins.run(tmp_path, cfg()) == 1
 
 
@@ -74,28 +80,68 @@ def test_unreleased_heading_never_requires_a_tag(tmp_path):
     assert release_pins.run(tmp_path, cfg()) == 0
 
 
-def test_declared_untagged_version_exempted(tmp_path):
+def test_newest_release_section_may_await_its_tag(tmp_path):
+    """The release in flight: a release commit dates its section before tagging.
+
+    Requiring a tag here would fail the release pull request on a required
+    check, leaving it unmergeable and the tag uncuttable — the check would
+    block the process it protects.
+    """
     repo(tmp_path, ["v1.0.0"])
     write(tmp_path, "CHANGELOG.md", "# C\n\n## [1.1.0] - 2026-01-01\n\n## [1.0.0] - 2025-01-01\n")
-    assert release_pins.run(tmp_path, cfg(release_pin_untagged_versions=["1.1.0"])) == 0
+    assert release_pins.run(tmp_path, cfg()) == 0
 
 
-def test_declaring_one_version_does_not_exempt_another(tmp_path):
+def test_skipped_tag_is_caught_once_the_next_release_lands(tmp_path):
+    """The exemption costs one release of latency, not permanent blindness."""
     repo(tmp_path, ["v1.0.0"])
     write(
         tmp_path,
         "CHANGELOG.md",
         "# C\n\n## [1.2.0] - 2026-02-01\n\n## [1.1.0] - 2026-01-01\n\n## [1.0.0] - 2025-01-01\n",
     )
-    assert release_pins.run(tmp_path, cfg(release_pin_untagged_versions=["1.1.0"])) == 1
+    assert release_pins.run(tmp_path, cfg()) == 1
 
 
-def test_changelog_marker_above_heading_exempts(tmp_path):
+def test_unreleased_heading_does_not_consume_the_in_flight_exemption(tmp_path):
+    """`[Unreleased]` is not a release section, so it shields nothing below it."""
     repo(tmp_path, ["v1.0.0"])
     write(
         tmp_path,
         "CHANGELOG.md",
-        "# C\n\n<!-- release-pin-ok: yanked -->\n## [1.1.0] - 2026-01-01\n",
+        "# C\n\n## [Unreleased]\n\n## [1.2.0] - 2026-02-01\n\n## [1.1.0] - 2026-01-01\n",
+    )
+    # 1.2.0 is the newest release section and is exempt; 1.1.0 is not.
+    assert release_pins.run(tmp_path, cfg()) == 1
+
+
+def test_declared_untagged_version_exempted(tmp_path):
+    repo(tmp_path, ["v1.0.0", "v1.2.0"])
+    write(
+        tmp_path,
+        "CHANGELOG.md",
+        "# C\n\n## [1.2.0] - 2026-02-01\n\n## [1.1.0] - 2026-01-01\n\n## [1.0.0] - 2025-01-01\n",
+    )
+    assert release_pins.run(tmp_path, cfg(release_pin_untagged_versions=["1.1.0"])) == 0
+
+
+def test_declaring_one_version_does_not_exempt_another(tmp_path):
+    repo(tmp_path, ["v1.3.0"])
+    write(
+        tmp_path,
+        "CHANGELOG.md",
+        "# C\n\n## [1.3.0] - 2026-03-01\n\n## [1.2.0] - 2026-02-01\n\n## [1.1.0] - 2026-01-01\n",
+    )
+    assert release_pins.run(tmp_path, cfg(release_pin_untagged_versions=["1.1.0"])) == 1
+
+
+def test_changelog_marker_above_heading_exempts(tmp_path):
+    repo(tmp_path, ["v1.2.0"])
+    write(
+        tmp_path,
+        "CHANGELOG.md",
+        "# C\n\n## [1.2.0] - 2026-02-01\n\n<!-- release-pin-ok: yanked -->\n"
+        "## [1.1.0] - 2026-01-01\n",
     )
     assert release_pins.run(tmp_path, cfg()) == 0
 

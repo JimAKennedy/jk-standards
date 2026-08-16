@@ -12,10 +12,16 @@ This check closes that loop with two rules:
 
   1. **Every released version is tagged.** Each `## [X.Y.Z]` heading in the
      changelog must have a matching `vX.Y.Z` tag. `[Unreleased]` is skipped —
-     that is the section's whole purpose. Versions released before this check
-     existed can be recorded in `untagged_versions`, which keeps the check a
-     ratchet on future releases instead of an unwinnable argument with history;
-     the count is always reported so the debt stays visible.
+     that is the section's whole purpose — and so is the *newest* release
+     section, which is the release in flight: a release commit dates its
+     section before the tag is pushed, so requiring one there would make the
+     release pull request unmergeable and the tag uncuttable. That costs one
+     release of detection latency and no more, because the next release pushes
+     the section down to where it is judged like any other. Versions released
+     before this check existed can be recorded in `untagged_versions`, which
+     keeps the check a ratchet instead of an unwinnable argument with history.
+     Both the declared and awaiting-tag counts are reported so neither state
+     fades into silence.
 
   2. **Every pin to this repo resolves.** Any `uses: <repo>/…@<ref>`,
      `rev: <ref>` under a `repo:` line naming this repo, or
@@ -129,21 +135,37 @@ def run(root: Path, cfg: Config) -> int:
     errors = 0
     declared = set(cfg.release_pin_untagged_versions)
     used_declared = 0
+    pending = 0
 
     # Rule 1 — every released version is tagged.
     changelog = root / cfg.release_pin_changelog
     if changelog.is_file():
         lines = changelog.read_text(encoding="utf-8", errors="replace").splitlines()
         rel = changelog.relative_to(root).as_posix()
+        seen_release_heading = False
         for lineno, line in enumerate(lines, start=1):
             m = _HEADING_RE.match(line)
             if not m:
                 continue
             version = m.group("version")
+            topmost = not seen_release_heading
+            seen_release_heading = True
             if f"v{version}" in tags:
                 continue
             if version in declared:
                 used_declared += 1
+                continue
+            if topmost:
+                # The release in flight. A release commit necessarily dates its
+                # changelog section *before* the tag is pushed — the tag is cut
+                # from the merged result — so requiring one here would make the
+                # release pull request unmergeable and the tag uncuttable: the
+                # check would block the process it exists to protect. Exempting
+                # exactly the newest section costs one release of detection
+                # latency, no more: skip the tag and the next release pushes
+                # this section down, where it is judged like any other. The
+                # count is reported so the pending state stays visible.
+                pending += 1
                 continue
             if _suppressed(lines, lineno):
                 continue
@@ -181,6 +203,7 @@ def run(root: Path, cfg: Config) -> int:
 
     if errors == 0:
         output.summary(
-            f"release-pins: {pins} pin(s) resolve, {used_declared} release(s) declared untagged"
+            f"release-pins: {pins} pin(s) resolve, {used_declared} release(s) declared "
+            f"untagged, {pending} awaiting its tag"
         )
     return errors

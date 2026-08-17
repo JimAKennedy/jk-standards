@@ -136,14 +136,43 @@ The trailer is a range-level assertion: one trailer satisfies every
 triggered mapping in the PR.
 
 Manifests listed in `doc_drift.deps_only_manifests` are excluded from
-triggering mappings when their diff touches only version strings inside
-`dependencies`/`devDependencies`
-[verified: test_doc_drift::test_deps_only_bump_does_not_trigger] — a
-Dependabot bump is not a taxonomy change. A `scripts`-block edit in the
-same file still triggers
-[verified: test_doc_drift::test_scripts_block_change_still_triggers], and
-manifests not listed get no exemption
+triggering mappings when every changed line is a dependency pin — a
+`"name": "value"` entry whose *value* is version shaped, meaning an optional
+range operator followed by a digit-led version
+[verified: test_doc_drift::test_deps_only_bump_does_not_trigger] — because a
+Dependabot bump is not a taxonomy change. Position in the file is deliberately
+not consulted: a diff is a fragment, and a real bump's hunk usually opens
+*after* the `"dependencies": {` line, so any rule requiring that line in
+context rejects the very case the exemption exists to allow
+[verified: test_doc_drift::test_deps_only_accepts_mid_block_hunk]. Two blocks
+bumped in one diff, with neither opening line in context, are accepted for the
+same reason
+[verified: test_doc_drift::test_deps_only_accepts_both_blocks_without_either_opening_line],
+and diff metadata lines are not mistaken for changes
+[verified: test_doc_drift::test_deps_only_ignores_diff_metadata_lines].
+
+Judging the value's shape rather than the line's position is also what keeps
+the exemption narrow. A `scripts`-block edit still triggers
+[verified: test_doc_drift::test_scripts_block_change_still_triggers], including
+a single-token value such as `"test": "vitest"` that is entry-shaped but not
+version shaped
+[verified: test_doc_drift::test_deps_only_rejects_single_token_script_value];
+so does a package rename
+[verified: test_doc_drift::test_deps_only_rejects_package_rename], a multi-token
+script value
+[verified: test_doc_drift::test_deps_only_rejects_scripts_edit], and a bump
+mixed with a script edit in the same diff
+[verified: test_doc_drift::test_deps_only_rejects_mixed_bump_and_scripts_edit].
+An empty diff is not an exemption
+[verified: test_doc_drift::test_deps_only_rejects_empty_diff], and manifests not
+listed get none at all
 [verified: test_doc_drift::test_unlisted_manifest_still_triggers_on_deps_bump].
+
+A dependency pinned to something not version shaped — a git URL, an `npm:`
+alias, a `file:` path — is not recognised, so its bump still triggers the
+mapping. That is the same conservative direction the check already fails in,
+and it is preferred to widening the accept rule until a `scripts` edit slips
+through.
 
 The map also carries a `cannot_drift` registry: docs that legitimately have
 no touch-correlation source, each recording a required, non-empty `reason` so

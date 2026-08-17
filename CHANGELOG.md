@@ -6,6 +6,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`doc-drift` deps-only detection on mid-block hunks**
+  (`src/jk_standards/checks/doc_drift.py`, issue #43):
+  `is_deps_only_diff()` asked whether every changed line sat inside a
+  `dependencies`/`devDependencies` block, tracking membership by brace depth
+  across the diff's context lines. A diff is a fragment, so when the hunk
+  window opened after the block's `"dependencies": {` line — which is where a
+  real Dependabot bump usually lands — membership never became true and the
+  bump was rejected. The `deps_only_manifests` exemption therefore failed on
+  precisely the case it exists to allow, on every weekly bump, in any repo
+  using it. The rule is now the value's shape rather than the line's position:
+  a changed line must be a `"name": "value"` entry whose value is version
+  shaped (optional range operator, then a digit-led version). Requiring a
+  digit keeps the exemption narrower than a plain entry match would — a
+  package rename, a `"license"` change, or a single-token script value like
+  `"test": "vitest"` are all still taxonomy signals and still trigger.
+
 ### Added
 
 - **`release-pins` check** (`src/jk_standards/checks/release_pins.py`): asserts

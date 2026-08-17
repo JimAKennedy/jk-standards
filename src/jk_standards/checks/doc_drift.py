@@ -15,10 +15,10 @@ mapping — the trailer is a PR-level assertion, mirroring the original
 semantics this check was extracted from.
 
 Deps-only manifests: files listed in `doc_drift.deps_only_manifests` (e.g.
-`site/package.json`) are excluded from triggering mappings when their diff
-touches only version strings inside dependencies/devDependencies. A
-Dependabot bump is not a taxonomy change — the mapping's signal is a
-`scripts`-block or framework edit, not a version string on an existing dep.
+`site/package.json`) are excluded from triggering mappings when every changed
+line is a dependency pin — a `"name": "value"` entry whose value is version
+shaped. A Dependabot bump is not a taxonomy change; the mapping's signal is a
+`scripts`-block or framework edit, not a new version on an existing dep.
 """
 
 from __future__ import annotations
@@ -34,8 +34,14 @@ from jk_standards.config import Config, ConfigError
 
 TRAILER = "Docs-Not-Affected"
 
-_DEPS_BLOCK_RE = re.compile(r"\s*\"(dependencies|devDependencies)\"\s*:\s*\{")
-_VERSION_LINE_RE = re.compile(r"\s*\"[^\"]+\"\s*:\s*\"[^\"]+\",?\s*$")
+# A `"name": "value"` manifest entry, capturing the value so its shape can be
+# judged. Block-opening lines are deliberately not matched any more: see
+# is_deps_only_diff for why position-based membership cannot work on a diff.
+_VERSION_LINE_RE = re.compile(r"\s*\"[^\"]+\"\s*:\s*\"(?P<value>[^\"]+)\",?\s*$")
+# An npm version range as a resolver writes one: optional operator, then a
+# digit-led version. This is what separates a dependency pin from a `scripts`
+# entry, a package rename, or any other string-valued key.
+_VERSION_VALUE_RE = re.compile(r"^[\^~]?[<>=]*\s*v?\d")
 
 
 def _matches(pattern: str, changed: list[str], excluded: set[str]) -> list[str]:
@@ -47,27 +53,46 @@ def _matches(pattern: str, changed: list[str], excluded: set[str]) -> list[str]:
 
 
 def is_deps_only_diff(diff: str) -> bool:
-    """True if every +/- line in a package.json diff is a version string
-    inside a dependencies/devDependencies block. Context lines track block
-    membership by brace depth."""
-    in_deps = False
-    brace_depth = 0
+    """True when every changed line in a manifest diff is a dependency pin.
+
+    A dependency pin is a ``"name": "value"`` entry whose *value* is version
+    shaped — an optional range operator (``^``, ``~``, ``>=``…) followed by a
+    digit-led version. That is the whole rule. A `scripts` edit, a renamed
+    package, a new top-level key or a structural brace change all fail it, and
+    those are the taxonomy signals the drift map must still catch.
+
+    The earlier implementation asked a stricter question — "is every changed
+    line inside a `dependencies`/`devDependencies` block?" — and tracked block
+    membership by brace depth across the diff's context lines. It could not
+    answer that question reliably, because a diff is a *fragment*: when the
+    hunk window opens after the block's ``"dependencies": {`` line, that line
+    is never seen, membership never becomes true, and a routine Dependabot
+    bump is rejected. Real bumps land mid-block far more often than not, so
+    the check failed closed on precisely the case it existed to allow.
+
+    Matching on the value's shape rather than the line's position needs no
+    context at all, which is what makes it correct on a fragment. It is also
+    tighter than it may look: a value must lead with a digit (after an
+    optional operator), so ``"test": "vitest"``, ``"name": "site"`` and
+    ``"license": "Apache-2.0"`` are all rejected — each of which a
+    "any `"k": "v"` entry" rule would have waved through.
+
+    Residual limits, both failing in the safe direction. A dependency pinned
+    to something not version shaped — a git URL, ``npm:`` alias, ``file:``
+    path or bare ``*`` — is not recognised, so its bump still trips the
+    mapping, exactly as every bump does today. And a non-dependency key whose
+    value happens to be version shaped (``"engines": {"node": ">=20"}``) is
+    accepted; that is a dependency-adjacent fact, not a taxonomy change.
+    """
     saw_change = False
     for line in diff.splitlines():
         if line.startswith(("+++", "---", "@@", "diff ", "index ")):
             continue
         if not line.startswith(("+", "-")):
-            if _DEPS_BLOCK_RE.match(line):
-                in_deps = True
-                brace_depth = 1
-                continue
-            if in_deps:
-                brace_depth += line.count("{") - line.count("}")
-                if brace_depth <= 0:
-                    in_deps = False
             continue
         saw_change = True
-        if in_deps and _VERSION_LINE_RE.match(line[1:]):
+        entry = _VERSION_LINE_RE.match(line[1:])
+        if entry and _VERSION_VALUE_RE.match(entry.group("value")):
             continue
         return False
     return saw_change

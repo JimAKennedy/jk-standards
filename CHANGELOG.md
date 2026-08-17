@@ -37,6 +37,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`gitutil.list_tags`** (`src/jk_standards/gitutil.py`): the tag list, with
   `None` distinguishing "unreadable" from "none present" so a caller can skip
   rather than misreport.
+- **Stricter ruff rule set** (`pyproject.toml`): ruff was running its default
+  selection (`E4`/`E7`/`E9` + `F` — syntax errors and pyflakes, little more).
+  Now selects `E,W,F,I,B,UP,C4,SIM,RET,PTH`, with `E501` ignored under `tests/`
+  where fixture literals embed workflow YAML whose shape is the point. The
+  eight resulting findings are fixed, one of them a latent Windows bug:
+  `skills_install` derived a tar member prefix with `os.path.dirname`, so
+  `Path`-style separators would never have matched an archive entry on Windows
+  — it now uses `PurePosixPath`, which is what an archive path actually is.
+- **Coverage floor raised to 85%** (`pyproject.toml`): measured 88%, and the
+  floor's own comment had drifted — it listed the 71/72/79% modules while
+  omitting `checks/doc_coverage_cpp.py` at 12%, the weakest by a wide margin.
+  The comment now records that gap and why closing it needs unit tests around
+  the C++ enumerator rather than a floor change.
+- **Python 3.13 in the CI matrix and trove classifiers**
+  (`.github/workflows/ci.yml`, `pyproject.toml`): `requires-python = ">=3.11"`
+  admitted 3.13 while CI proved only 3.11 and 3.12, so support was a claim
+  rather than a fact. The package also carried no `classifiers`.
 - **README check tables completed and drift-mapped** (`README.md`,
   `.github/docs-drift-map.yml`): the front-door tables described ten of the
   seventeen registered checks, having stopped being maintained around v0.4.

@@ -19,16 +19,22 @@ from pathlib import Path
 from jk_standards import frontmatter, output
 from jk_standards.config import Config, iter_docs
 
+# Repeated verbatim by the two progress-claim patterns below; named once so the
+# wording cannot drift between them.
+_PROGRESS_CLAIM = (
+    "progress claim — describe the current contract or delete; state belongs in CHANGELOG/issues"
+)
+
 _DEFAULT_FORBIDDEN = [
     (
         re.compile(
             r"\bnot\s+yet\s+(implemented|applied|evaluated|resolved|wired)\b", re.IGNORECASE
         ),
-        "progress claim — describe the current contract or delete; state belongs in CHANGELOG/issues",
+        _PROGRESS_CLAIM,
     ),
     (
         re.compile(r"\bnot\s+implemented\s+yet\b", re.IGNORECASE),
-        "progress claim — describe the current contract or delete; state belongs in CHANGELOG/issues",
+        _PROGRESS_CLAIM,
     ),
     (
         re.compile(r"\bTODO\s+markers?\s+remain\b", re.IGNORECASE),

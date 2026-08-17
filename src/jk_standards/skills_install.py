@@ -37,7 +37,7 @@ import tarfile
 import urllib.error
 import urllib.request
 from collections import defaultdict
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from jk_standards import __version__
 
@@ -54,7 +54,7 @@ def load_lock(project_root: Path) -> dict:
     lock_path = project_root / LOCK_FILE
     if not lock_path.exists():
         raise LockError(f"{LOCK_FILE} not found in {project_root}")
-    with open(lock_path) as f:
+    with lock_path.open(encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -116,8 +116,7 @@ def extract_skill(
                 target.parent.mkdir(parents=True, exist_ok=True)
                 with tar.extractfile(member) as src:  # type: ignore[union-attr]
                     target.write_bytes(src.read())
-    count = sum(1 for _ in dest.rglob("*") if _.is_file()) if dest.exists() else 0
-    return count
+    return sum(1 for _ in dest.rglob("*") if _.is_file()) if dest.exists() else 0
 
 
 def install_skills(
@@ -148,8 +147,7 @@ def install_skills(
                     print(f"  {name}: up to date (skipped)")
                     skipped += 1
                     continue
-                else:
-                    print(f"  {name}: hash mismatch, reinstalling")
+                print(f"  {name}: hash mismatch, reinstalling")
             to_install.append((name, info))
 
         if not to_install:
@@ -164,7 +162,10 @@ def install_skills(
 
         for name, info in to_install:
             dest = project_root / skills_dir / name
-            skill_dir_in_repo = os.path.dirname(info["skillPath"])
+            # PurePosixPath, not Path: this value is interpolated into tar
+            # member names, which are always "/"-separated. Path().parent
+            # would emit backslashes on Windows and never match a member.
+            skill_dir_in_repo = str(PurePosixPath(info["skillPath"]).parent)
 
             if dest.exists():
                 shutil.rmtree(dest)
@@ -258,7 +259,7 @@ def update_lock(project_root: Path, skills_dir: Path = SKILLS_DIR) -> int:
 
     if updated or version_changed:
         lock_path = project_root / LOCK_FILE
-        with open(lock_path, "w") as f:
+        with lock_path.open("w", encoding="utf-8") as f:
             json.dump(lock, f, indent=2)
             f.write("\n")
         print(f"\nUpdated {updated} hashes in {LOCK_FILE} (jkStandardsVersion={__version__})")
@@ -316,10 +317,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.check:
             return check_skills(project_root, skills_dir=args.dest)
-        elif args.update_lock:
+        if args.update_lock:
             return update_lock(project_root, skills_dir=args.dest)
-        else:
-            return install_skills(project_root, force=args.force, skills_dir=args.dest)
+        return install_skills(project_root, force=args.force, skills_dir=args.dest)
     except LockError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 2

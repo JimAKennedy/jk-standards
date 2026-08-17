@@ -509,7 +509,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/status_prose.py",
       "kind": "function",
-      "lineno": 47,
+      "lineno": 53,
       "name": "run",
       "signals": {
         "docstring": false,
@@ -1025,7 +1025,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 200,
+      "lineno": 201,
       "name": "check_skills",
       "signals": {
         "docstring": false,
@@ -1073,7 +1073,7 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 270,
+      "lineno": 271,
       "name": "find_project_root",
       "signals": {
         "docstring": true,
@@ -1085,7 +1085,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 123,
+      "lineno": 122,
       "name": "install_skills",
       "signals": {
         "docstring": false,
@@ -1109,7 +1109,7 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 307,
+      "lineno": 308,
       "name": "main",
       "signals": {
         "docstring": true,
@@ -1133,7 +1133,7 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 229,
+      "lineno": 230,
       "name": "update_lock",
       "signals": {
         "docstring": true,

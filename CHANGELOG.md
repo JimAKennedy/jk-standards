@@ -37,6 +37,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`gitutil.list_tags`** (`src/jk_standards/gitutil.py`): the tag list, with
   `None` distinguishing "unreadable" from "none present" so a caller can skip
   rather than misreport.
+- **README check tables completed and drift-mapped** (`README.md`,
+  `.github/docs-drift-map.yml`): the front-door tables described ten of the
+  seventeen registered checks, having stopped being maintained around v0.4.
+  They now cover all of them, split into the documentation checks and the
+  engineering-discipline checks whose subject is the code and the CI graph.
+  `doc-drift` is named as itself rather than `doc-drift-map`. A drift-map entry
+  now pairs `src/jk_standards/checks/**` with `README.md`, so the tables cannot
+  silently rot again — the gap existed precisely because README was the one
+  per-check inventory no mapping covered.
 - **Self-host wiring**: registered in `CHECKS`/`STATIC_CHECKS`, invoked by the
   `dogfood` CI job (which already sets `fetch-depth: 0`, so tags are present)
   and `scripts/verify.sh`, shipped as a pre-commit hook, configured in

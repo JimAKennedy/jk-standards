@@ -29,7 +29,9 @@ A typed lifecycle for documentation, machine-enforced:
 | Check | Rule |
 |---|---|
 | doc-taxonomy | Every doc declares `class: generated \| gated \| archived` front-matter; each class carries different invariants |
-| doc-drift-map | A declarative map pairs source globs with the docs that describe them; a PR touching mapped sources must touch the doc, or carry a `Docs-Not-Affected: <reason>` git trailer |
+| doc-drift | A declarative map pairs source globs with the docs that describe them; a PR touching mapped sources must touch the doc, or carry a `Docs-Not-Affected: <reason>` git trailer |
+| doc-completeness | Every doc is either mapped by a drift rule or explicitly declared un-driftable with a recorded reason, so an unmapped doc is a documented exemption rather than an accidental omission |
+| doc-coverage | Every module has at least one public unit reached by a docstring, drift-map glob, or doc mention, so no code is wholly undescribed; a per-module baseline ratchets the percentage and an optional advisory floor warns without failing |
 | generated-freshness | Generated docs must diff clean against a fresh run of their generator |
 | behavioral-claims | Prose claims marked `[verified: Suite.Test]` must cite a test that actually exists (checked against a scraped test index); `[⚠ unverified]` markers are counted as an honest-state metric |
 | status-prose | Gated docs may not contain progress-tracking prose; `Status:` lines require a `(YYYY-MM-DD)` anchor |
@@ -38,6 +40,17 @@ A typed lifecycle for documentation, machine-enforced:
 | action-pinning | Every GitHub Actions `uses:` is pinned to a 40-char commit SHA; a floating ref (`@v6`, `@main`) is flagged with `file:line`, with a `# action-pin-ok: <reason>` escape hatch and local `./` refs accepted |
 | snippet-regions | Docs referencing a code region — MDX `<CodeSnippet region=…>` or prose `region:<name>` — must point at a real `region:<name>` marker in the source tree; a dangling reference is flagged with `file:line`, with a `# snippet-region-ok: <reason>` escape hatch and per-file-type marker syntax |
 | research-provenance | Docs summarising published research make provenance mechanically visible: citation links resolve to stable `id="…"` anchors in the bibliography (never duplicated, never renumbered), and pages opted in via `provenance: research` front-matter carry a provenance sentence plus an `**Attribution:**` note, with a `# provenance-ok: <reason>` escape hatch |
+
+The same registry ships engineering-discipline checks whose subject is the code
+and the CI graph rather than the prose:
+
+| Check | Rule |
+|---|---|
+| boundaries | Directed layering rules are grep-enforced: files under a `from` directory must not match a `forbid` regex naming a component they may not reference, with a `# boundary-ok: <reason>` escape hatch whose live use is counted |
+| import-cycle | The module-level import graph of each configured package is acyclic; every strongly-connected component of more than one module is reported at `file:line` with its member chain, with a `# import-cycle-ok: <reason>` escape hatch. `TYPE_CHECKING`-guarded imports are not runtime edges |
+| workflow-permissions | A job calling a local reusable workflow must grant every scope that callee declares, at workflow *and* job level — otherwise the run fails to compose before any job starts, as a `startup_failure` carrying no annotation |
+| workflow-concurrency | Every `concurrency:` group is either ref-scoped or named as a deliberate repo-wide lock; an unscoped group silently serialises the whole repository, so unrelated pull requests cancel each other's jobs |
+| release-pins | Every `## [X.Y.Z]` changelog heading has a matching tag, and every adoption pin naming this repo resolves — so documented install instructions cannot rot into dangling refs |
 
 ### 2. Pre-commit hooks (`.pre-commit-hooks.yaml`)
 

@@ -127,6 +127,113 @@ def test_scripts_block_change_still_triggers(manifest_repo):
     assert doc_drift.run(manifest_repo, deps_only_config(), base="main") == 1
 
 
+# --- is_deps_only_diff on raw diff fragments (issue #43) --------------------
+#
+# The fixtures above rewrite a whole small file, so every hunk happens to carry
+# the `"dependencies": {` opening line in its context window. Real Dependabot
+# diffs on a real manifest do not: the hunk opens mid-block, which is exactly
+# the case the old brace-tracking implementation rejected.
+
+# Verbatim from poly #236 — the diff reported in issue #43.
+POLY_236_DIFF = """@@ -20,11 +20,11 @@
+     "@fontsource-variable/inter": "^5.3.0",
+     "@fontsource-variable/jetbrains-mono": "^5.3.0",
+     "@fontsource-variable/source-serif-4": "^5.3.0",
+-    "astro": "^7.2.0",
++    "astro": "^7.2.2",
+     "sharp": "^0.35.3"
+   },
+   "devDependencies": {
+     "@playwright/test": "^1.62.1",
+-    "node-web-audio-api": "^2.1.0"
++    "node-web-audio-api": "^2.2.0"
+   }
+ }
+"""
+
+
+def test_deps_only_accepts_mid_block_hunk(manifest_repo):
+    """The regression: the block-opening line is outside the hunk window."""
+    assert doc_drift.is_deps_only_diff(POLY_236_DIFF) is True
+
+
+def test_deps_only_accepts_both_blocks_without_either_opening_line(manifest_repo):
+    diff = """@@ -21,7 +21,7 @@
+     "astro": "^7.2.0",
+-    "sharp": "^0.35.3",
++    "sharp": "^0.36.0",
+@@ -30,7 +30,7 @@
+     "@playwright/test": "^1.62.1",
+-    "vitest": "^2.0.0"
++    "vitest": "^2.1.0"
+"""
+    assert doc_drift.is_deps_only_diff(diff) is True
+
+
+def test_deps_only_rejects_scripts_edit(manifest_repo):
+    diff = """@@ -3,5 +3,5 @@
+   "scripts": {
+-    "build": "astro build"
++    "build": "astro check && astro build"
+   },
+"""
+    assert doc_drift.is_deps_only_diff(diff) is False
+
+
+def test_deps_only_rejects_mixed_bump_and_scripts_edit(manifest_repo):
+    diff = """@@ -3,9 +3,9 @@
+   "scripts": {
+-    "test": "vitest run"
++    "test": "vitest run --coverage"
+   },
+   "dependencies": {
+-    "astro": "^7.2.0",
++    "astro": "^7.2.2",
+"""
+    assert doc_drift.is_deps_only_diff(diff) is False
+
+
+def test_deps_only_rejects_single_token_script_value(manifest_repo):
+    """A `"k": "v"`-shaped scripts entry is not a dependency pin.
+
+    `"test": "vitest"` is the blind spot a "any string-valued entry" rule would
+    have had; requiring a digit-led value closes it.
+    """
+    diff = """@@ -3,4 +3,4 @@
+   "scripts": {
+-    "test": "jest"
++    "test": "vitest"
+"""
+    assert doc_drift.is_deps_only_diff(diff) is False
+
+
+def test_deps_only_rejects_package_rename(manifest_repo):
+    """Top-level string keys are entry-shaped too, and are taxonomy changes."""
+    diff = """@@ -1,4 +1,4 @@
+ {
+-  "name": "site",
++  "name": "docs-site",
+"""
+    assert doc_drift.is_deps_only_diff(diff) is False
+
+
+def test_deps_only_rejects_empty_diff(manifest_repo):
+    assert doc_drift.is_deps_only_diff("") is False
+
+
+def test_deps_only_ignores_diff_metadata_lines(manifest_repo):
+    """`---`/`+++` headers start with +/- but are not changed content."""
+    diff = """diff --git a/site/package.json b/site/package.json
+index 1234567..89abcde 100644
+--- a/site/package.json
++++ b/site/package.json
+@@ -21,7 +21,7 @@
+-    "astro": "^7.2.0",
++    "astro": "^7.2.2",
+"""
+    assert doc_drift.is_deps_only_diff(diff) is True
+
+
 def test_unlisted_manifest_still_triggers_on_deps_bump(manifest_repo):
     bumped = PACKAGE_JSON_V1.replace('"astro": "^5.1.0"', '"astro": "^5.2.1"')
     (manifest_repo / "site/package.json").write_text(bumped)

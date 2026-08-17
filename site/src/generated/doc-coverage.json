@@ -269,7 +269,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_drift.py",
       "kind": "function",
-      "lineno": 49,
+      "lineno": 55,
       "name": "is_deps_only_diff",
       "signals": {
         "docstring": true,
@@ -281,7 +281,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_drift.py",
       "kind": "function",
-      "lineno": 104,
+      "lineno": 129,
       "name": "run",
       "signals": {
         "docstring": false,

@@ -24,6 +24,11 @@ mappings:
     reason: "reference/checks.mdx is the public site's per-check reference. A source change without a site update ships a deployed site that lies to users."
 
   - sources:
+      - "src/jk_standards/checks/**"
+    doc: "README.md"
+    reason: "README's two check tables are the project's front door — the first description an adopter reads, and the only per-check inventory outside docs/checks.md. It went seven checks out of date before this mapping existed (boundaries, doc-completeness, doc-coverage, import-cycle, workflow-permissions, workflow-concurrency, release-pins), which is exactly the drift this toolkit exists to prevent. A registry change that genuinely leaves the tables correct carries a Docs-Not-Affected trailer."
+
+  - sources:
       - "src/jk_standards/config.py"
       - "src/jk_standards/cli.py"
     doc: "docs/configuration.md"

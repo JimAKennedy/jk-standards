@@ -4,6 +4,22 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Missing top-level `permissions:` on two published reusable workflows**
+  (`.github/workflows/doc-discipline.yml`, `.github/workflows/pre-commit.yml`):
+  both omitted a workflow-level `permissions:` block, so the `GITHUB_TOKEN`
+  scope they ran under was whatever the *calling* repository's default granted
+  — `write-all` in any repo that never narrowed it. Every other workflow here
+  declares one, and `ci.yml`'s own comment already asserted these two need
+  "none beyond `contents: read`"; the assertion just was not enforced where it
+  mattered. These two are consumed by other people's repositories, which is
+  precisely where an inherited default is invisible to the person affected.
+  Both now declare `contents: read`, which is the real ceiling: every step
+  only reads the checkout.
+
 ## [0.9.0] - 2026-08-17
 
 ### Fixed

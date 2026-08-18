@@ -25,6 +25,12 @@ on:
         type: string
         default: "3.12"
 
+# Declared at the workflow level so the grant does not depend on the caller's
+# repo default. `pre-commit run` only reads the checkout, so `contents: read`
+# is the whole ceiling — a caller granting more sees none of it used here.
+permissions:
+  contents: read
+
 # region:reusable-precommit-jobs
 jobs:
   pre-commit:

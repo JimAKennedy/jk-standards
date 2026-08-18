@@ -8,6 +8,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **C++ enumerator's exotic declarator forms were untested, and the coverage
+  comment asserted a stale figure** (`tests/test_doc_coverage_cpp.py`,
+  `pyproject.toml`, issue #49): the 18 uncovered statements in
+  `checks/doc_coverage_cpp.py` were, almost exactly, the destructor / operator /
+  qualified-name / pointer-declarator forms `_name_of` exists to normalise plus
+  the `_find_function_declarator` parameter-list-skip guard — a regression in any
+  of them passed the golden-count `cpp-dogfood` job unseen as long as the total
+  held. Added a table-driven test over each declaration form (asserting the
+  enumerated unit name, not the aggregate count) plus direct-node tests for the
+  defensive guards, lifting the module from 80% to 99%. The `[tool.coverage.report]`
+  comment no longer hardcodes a per-module percentage (it still claimed the
+  module was 12% and needed tests that already existed); it now names the
+  measurement command instead, so it cannot go stale by construction.
 - **Missing top-level `permissions:` on two published reusable workflows**
   (`.github/workflows/doc-discipline.yml`, `.github/workflows/pre-commit.yml`):
   both omitted a workflow-level `permissions:` block, so the `GITHUB_TOKEN`

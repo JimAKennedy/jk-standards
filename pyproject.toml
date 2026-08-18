@@ -80,13 +80,20 @@ source = ["jk_standards"]
 # sits just under it: close enough to catch a real regression, loose enough
 # that ordinary refactoring does not trip it.
 #
-# The weakest module by a wide margin is checks/doc_coverage_cpp.py (12%). It
-# is the tree-sitter C++ enumerator, exercised by three synthetic fixtures and
-# by the cpp-dogfood CI job, which asserts one golden count against a real
-# corpus (poly@v0.1.0-doccov-baseline) — a regression that preserves that count
-# passes unseen. Raising it needs unit tests around the enumerator itself, not
-# a floor change. Remaining gaps: testindex.py (71%), generated_freshness.py
-# (72%), emit.py (74%), file_line_refs.py (79%).
+# Do not hardcode a per-module weakest-link figure here: a pinned percentage
+# goes stale by construction (the same failure mode as the `Status: current
+# (YYYY-MM-DD)` doc anchors — see issue #49, which caught this comment still
+# asserting doc_coverage_cpp.py was 12% long after it reached 98%+). To find the
+# real gaps, measure — never quote from memory:
+#
+#   python -m pytest --cov=jk_standards --cov-report=term-missing
+#
+# Read the per-module rows to see which module is currently weakest and which
+# lines are uncovered, then decide whether it warrants tests. Note the
+# cpp-dogfood CI job asserts one golden enumeration count against a real corpus
+# (poly@v0.1.0-doccov-baseline): a C++ enumerator regression that preserves that
+# total passes the dogfood unseen, so the per-declaration-form unit tests in
+# tests/test_doc_coverage_cpp.py — not the golden count — are what guard it.
 fail_under = 85
 show_missing = true
 skip_covered = false

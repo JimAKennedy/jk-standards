@@ -267,3 +267,158 @@ def test_import_failure_degrades_parser_to_none(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake_import)
     monkeypatch.setattr(doc_coverage_cpp, "_PARSER", False)  # reset the cache
     assert doc_coverage_cpp._get_cpp_parser() is None
+
+
+# --- exotic declarator forms: the shapes _name_of exists to normalise --------
+#
+# The enumerator's raison d'être is turning a nested/qualified/operator/
+# pointer declarator back into the bare name a doc scope would mention. Issue
+# #49: the golden-count cpp-dogfood job asserts a single total against a real
+# corpus, so a regression that mangles ONE of these forms while preserving the
+# count passes unseen. Each row below pins a specific declaration form to the
+# unit(s) it must produce, so a mis-parse is caught at the name, not the total.
+#
+# `expected` is the sorted (kind, name) set enumerate_units must yield.
+
+
+@pytest.mark.parametrize(
+    ("label", "source", "expected"),
+    [
+        # _name_of: destructor_name — the trailing name of a `~Foo` definition.
+        ("destructor", "Foo::~Foo() {}\n", [("function", "~Foo")]),
+        # _name_of: operator_name — an out-of-line `operator==` definition.
+        (
+            "operator",
+            "bool operator==(const Foo& a, const Foo& b) { return true; }\n",
+            [("function", "operator==")],
+        ),
+        # _name_of: qualified_identifier — `ns::Foo::bar` yields the leaf `bar`.
+        ("qualified", "void ns::Foo::bar() {}\n", [("function", "bar")]),
+        # _name_of: pointer/parenthesised unwrap + named_children fallback — a
+        # function returning a pointer-to-function (`void (*signal(int))(int)`)
+        # nests the real name two declarators deep.
+        (
+            "func_returning_func_ptr",
+            "void (*signal(int sig))(int);\n",
+            [("function", "signal")],
+        ),
+        # _class_units: a bodyless forward declaration names the class but emits
+        # no members (there is no body to walk).
+        ("forward_class", "class Fwd;\n", [("class", "Fwd")]),
+        # _walk_container: a container-level function_definition (not wrapped in
+        # a `declaration`) still yields its name.
+        ("top_level_definition", "void top() {}\n", [("function", "top")]),
+        # _walk_container: a `declaration` that is neither class nor function
+        # (`extern int counter;`) contributes nothing — the 271->291 fall-through.
+        ("non_callable_declaration", "extern int counter;\n", []),
+        # _function_name: a declaration with no function_declarator at all
+        # (a type alias) returns None, so no unit is emitted.
+        ("type_alias", "using Alias = int;\n", []),
+    ],
+)
+def test_declarator_form_enumerates_expected_units(tmp_path, label, source, expected):
+    write(tmp_path, "src/decl.hpp", source)
+    units = doc_coverage.enumerate_units(tmp_path, cpp_cfg())
+    assert sorted((u.kind, u.name) for u in units) == expected
+
+
+# --- defensive guards reachable only via a constructed node ------------------
+#
+# Three branches guard structures tree-sitter never emits from valid top-level
+# source (the outer declarator always matches first, or the node is degenerate).
+# They are real correctness guards, so we exercise them against a directly
+# constructed node rather than leaving the claim untested.
+
+
+def _parse_root(src: bytes):
+    parser = doc_coverage_cpp._get_cpp_parser()
+    assert parser is not None
+    return parser.parse(src).root_node
+
+
+def _first_node_of_type(root, node_type: str):
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if node.type == node_type:
+            return node
+        stack.extend(node.named_children)
+    return None
+
+
+def test_find_function_declarator_skips_parameter_list():
+    # The docstring claims _find_function_declarator "skips the parameter list
+    # so a function-typed parameter never masquerades as the declaration's own
+    # name" (the `void install(int (*cb)(void))` hazard). A trailing-return
+    # function returning a function pointer is the one real form that nests an
+    # `abstract_function_declarator` — a param-list-bearing declarator with no
+    # nested function_declarator of its own. Fed directly, the guard must skip
+    # the parameter_list and return None rather than mistaking a parameter for
+    # the name.
+    root = _parse_root(b"auto f(int x) -> int (*)(int);")
+    abstract = _first_node_of_type(root, "abstract_function_declarator")
+    assert abstract is not None
+    assert doc_coverage_cpp._find_function_declarator(abstract) is None
+
+
+def test_walk_container_skips_bodyless_namespace(monkeypatch):
+    # _walk_container recurses into namespace/linkage bodies; a body-less node
+    # (child_by_field_name("body") is None) must be skipped, not crash. Valid
+    # C++ always gives a namespace a body, so drive the branch with a namespace
+    # whose body lookup is forced to None.
+    root = _parse_root(b"namespace geo { int area(); }\n")
+    ns = _first_node_of_type(root, "namespace_definition")
+    assert ns is not None
+
+    class _BodylessProxy:
+        # A namespace node that reports no body — every other attribute delegates
+        # to the real node so _walk_container sees a genuine namespace_definition.
+        type = "namespace_definition"
+        named_children = ()
+
+        def child_by_field_name(self, _field):
+            return None
+
+    class _RootProxy:
+        named_children = (_BodylessProxy(),)
+
+    units = doc_coverage_cpp._walk_container(_RootProxy(), "src/x.hpp", b"", False, set())
+    assert units == []
+
+
+def test_name_of_returns_none_when_no_child_resolves():
+    # _name_of's final fall-through: a node that is not an identifier/special
+    # form, has no "declarator" field, and whose named children yield no name
+    # (a struct's field_declaration_list) returns None rather than a bogus name.
+    root = _parse_root(b"struct X {};\n")
+    field_list = _first_node_of_type(root, "field_declaration_list")
+    assert field_list is not None
+    assert doc_coverage_cpp._name_of(field_list) is None
+
+
+def test_walk_container_skips_unnamed_top_level_definition():
+    # A container-level function_definition whose declarator resolves to no name
+    # (_function_name is None) is skipped — the 282->291 fall-through — rather
+    # than emitting an unnamed unit.
+    root = _parse_root(b"struct X {};\nvoid X::() {}\n")
+    bad_def = _first_node_of_type(root, "function_definition")
+    assert bad_def is not None
+    assert doc_coverage_cpp._function_name(bad_def) is None
+    units = doc_coverage_cpp._walk_container(root, "src/x.hpp", b"", False, set())
+    # Only the struct is enumerated; the nameless definition contributes nothing.
+    assert [(u.kind, u.name) for u in units] == [("struct", "X")]
+
+
+def test_cpp_units_for_file_returns_empty_when_root_is_none(monkeypatch):
+    # cpp_units_for_file guards against a parse whose root_node is None — a
+    # defensive path that a healthy grammar never hits. Force it by handing back
+    # a tree whose root_node is None.
+    class _NoRootTree:
+        root_node = None
+
+    class _NoRootParser:
+        def parse(self, _source):
+            return _NoRootTree()
+
+    monkeypatch.setattr(doc_coverage_cpp, "_get_cpp_parser", lambda: _NoRootParser())
+    assert doc_coverage_cpp.cpp_units_for_file("src/x.hpp", b"int f();\n", False, set()) == []

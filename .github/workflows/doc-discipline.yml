@@ -2,7 +2,7 @@
 #
 #   jobs:
 #     doc-discipline:
-#       uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.8.0
+#       uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.9.0
 #
 # Runs every static check plus doc-drift (the caller's pull_request context
 # supplies GITHUB_BASE_REF). fetch-depth: 0 because doc-drift needs the

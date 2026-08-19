@@ -13,7 +13,16 @@ from pathlib import Path
 
 import yaml
 
+from jk_standards import output
+
 DEFAULT_CONFIG_NAME = "jk-standards.yaml"
+
+# Roots for which iter_docs has already reported a fail-open degradation this
+# process. iter_docs is called once per consuming check (six of them), so a
+# single non-repo / unreadable-git run would otherwise print the same line six
+# times; deduping by root keeps it to one line per run while still emitting for
+# every distinct root (each test's tmp_path is unique, so tests see the line).
+_fail_open_reported: set[str] = set()
 
 
 class ConfigError(Exception):
@@ -87,6 +96,12 @@ class Config:
     taxonomy_classes: list[str] = field(default_factory=lambda: ["generated", "gated", "archived"])
     taxonomy_extra_files: list[str] = field(default_factory=list)
     status_forbidden_extra: list[ForbiddenPhrase] = field(default_factory=list)
+    # status-prose accuracy arm: how many days a doc's last-touched commit may
+    # be newer than its `Status: ... (YYYY-MM-DD)` anchor before the anchor is
+    # flagged as stale. Default 0 = flag any commit strictly newer than the
+    # anchor (D021). The arm only runs diff-scoped when a base ref is available;
+    # a Status-line-only edit never counts as a substantive change.
+    status_date_tolerance_days: int = 0
     file_line_extensions: list[str] = field(
         default_factory=lambda: [
             "c",
@@ -133,6 +148,13 @@ class Config:
     # annotation that is counted in the summary but NEVER changes the exit code
     # on its own (D014/MEM061). Default None = advisory off.
     doc_coverage_module_min_percent: int | None = None
+    # doc-completeness: taxonomy classes whose docs are exempt from the
+    # mapped-or-declared membership test. Mirrors the status_prose precedent of
+    # keying off the front-matter class: an ``archived`` doc is deliberately
+    # frozen, so requiring it to be mapped or cannot_drift-declared is noise.
+    # Keys off the doc's own front-matter class (read at run time), NOT
+    # cfg.generated — a generated-config doc classed ``gated`` stays governed.
+    doc_completeness_exempt_classes: list[str] = field(default_factory=lambda: ["archived"])
     # research-provenance: bib_file opts the check in (empty = skipped);
     # anchor_pattern matches citation-anchor ids; phrase is the regex a
     # research-derived page's provenance sentence must match; doc_roots
@@ -225,6 +247,7 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
         )
         for p in status.get("forbidden_extra", [])
     ]
+    cfg.status_date_tolerance_days = _date_tolerance_days(status.get("date_tolerance_days"))
 
     flr = data.get("file_line_refs", {})
     if "extensions" in flr:
@@ -340,6 +363,10 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
         doc_coverage.get("module_min_percent")
     )
 
+    doc_completeness = data.get("doc_completeness", {})
+    if "exempt_classes" in doc_completeness:
+        cfg.doc_completeness_exempt_classes = [str(c) for c in doc_completeness["exempt_classes"]]
+
     cfg.import_cycle_packages = _import_cycle_packages(data.get("import_cycle"))
 
     release_pins = data.get("release_pins", {})
@@ -376,6 +403,28 @@ def _untagged_versions(value: object) -> list[str]:
             )
         out.append(entry)
     return out
+
+
+def _date_tolerance_days(value: object) -> int:
+    """Validate ``status_prose.date_tolerance_days`` into a non-negative int.
+
+    An unset/``None`` section yields ``0`` — flag any commit strictly newer than
+    the Status anchor (D021). Out-of-shape input raises :class:`ConfigError`
+    rather than coercing so the CLI surfaces it as exit 2 (D010): ``bool`` is
+    rejected explicitly (it is an ``int`` subclass, so ``True``/``False`` would
+    otherwise slip through as 1/0), and floats/strings fail the int check. A
+    negative window is nonsensical (it would flag on the anchor's own day) and
+    is rejected too.
+    """
+    if value is None:
+        return 0
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ConfigError(
+            f"status_prose.date_tolerance_days must be a non-negative int or unset, got {value!r}"
+        )
+    if value < 0:
+        raise ConfigError(f"status_prose.date_tolerance_days must be >= 0, got {value}")
+    return value
 
 
 def _global_locks(value: object) -> list[str]:
@@ -447,7 +496,22 @@ def _module_min_percent(value: object) -> int | None:
 
 
 def iter_docs(root: Path, cfg: Config) -> list[Path]:
-    """All doc files under the configured doc roots, exempt dirs removed."""
+    """All git-tracked doc files under the configured doc roots, exempt dirs removed.
+
+    After the extension/exempt-dir filtering, the enumeration is intersected with
+    git's tracked working-tree paths so a gitignored or untracked doc under a
+    doc_root is not governed — this is what keeps a local run (which sees such
+    files) in agreement with CI (whose checkout does not). When tracking cannot
+    be determined — ``root`` is not a git repo, or git is unreadable —
+    :func:`gitutil.tracked_paths` returns ``None`` and this *fails open*: every
+    enumerated doc is returned unfiltered, exactly as before this filter existed,
+    and a single summary line names the degradation so a non-repo run is
+    diagnosable rather than silently governing nothing.
+    """
+    # Lazy import keeps config free of a hard dependency on the git seam and
+    # sidesteps any import-cycle risk on the zero-dependency load path.
+    from jk_standards import gitutil
+
     out: list[Path] = []
     for doc_root in cfg.doc_roots:
         base = root / doc_root.path
@@ -462,4 +526,27 @@ def iter_docs(root: Path, cfg: Config) -> list[Path]:
             if any(rel.startswith(d) for d in cfg.exempt_dirs):
                 continue
             out.append(path)
-    return out
+
+    tracked = gitutil.tracked_paths(root)
+    if tracked is None:
+        _report_fail_open(root)
+        return out
+    return [p for p in out if p.relative_to(root).as_posix() in tracked]
+
+
+def _report_fail_open(root: Path) -> None:
+    """Emit the iter_docs fail-open degradation line at most once per root.
+
+    Mirrors the ``[cpp]``-absent and ``list_tags``-``None`` precedents: a
+    degradation that silently governs nothing is a landmine, so name it. Deduped
+    by root because iter_docs runs once per consuming check within a single
+    ``jk-standards all`` invocation.
+    """
+    key = str(root)
+    if key in _fail_open_reported:
+        return
+    _fail_open_reported.add(key)
+    output.summary(
+        f"iter_docs: git tracking unreadable under {root} — enumerating all "
+        "doc(s) without a tracked-status filter (fail-open)"
+    )

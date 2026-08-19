@@ -21,7 +21,7 @@ from pathlib import Path
 
 import yaml
 
-from jk_standards import output
+from jk_standards import frontmatter, output
 from jk_standards.checks import doc_drift
 from jk_standards.config import Config, ConfigError, iter_docs
 
@@ -45,9 +45,22 @@ def run(root: Path, cfg: Config) -> int:
         accounted.add(mapping["doc"])
 
     docs = iter_docs(root, cfg)
+    # An ``archived`` (or otherwise exempt-classed) doc is deliberately frozen,
+    # so requiring it to be mapped or cannot_drift-declared is noise. The
+    # exemption keys off the doc's own front-matter class read here, NOT
+    # cfg.generated — a generated-config doc classed ``gated`` stays governed.
+    exempt_classes = set(cfg.doc_completeness_exempt_classes)
     errors = 0
+    checked = 0
+    exempted = 0
     for path in docs:
         rel = path.relative_to(root).as_posix()
+        if exempt_classes:
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if frontmatter.read_class(text) in exempt_classes:
+                exempted += 1
+                continue
+        checked += 1
         if rel in accounted:
             continue
         output.error(
@@ -60,5 +73,8 @@ def run(root: Path, cfg: Config) -> int:
         errors += 1
 
     if errors == 0:
-        output.summary(f"doc-completeness: all {len(docs)} doc(s) mapped or declared")
+        summary = f"doc-completeness: all {checked} doc(s) mapped or declared"
+        if exempted:
+            summary += f" ({exempted} exempt by class)"
+        output.summary(summary)
     return errors

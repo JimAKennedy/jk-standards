@@ -4,6 +4,10 @@
       "missing_lines": 0,
       "percent_covered": 100.0
     },
+    "src/jk_standards/__main__.py": {
+      "missing_lines": 3,
+      "percent_covered": 0.0
+    },
     "src/jk_standards/checks/__init__.py": {
       "missing_lines": 0,
       "percent_covered": 100.0
@@ -26,15 +30,15 @@
     },
     "src/jk_standards/checks/doc_completeness.py": {
       "missing_lines": 0,
-      "percent_covered": 100.0
+      "percent_covered": 98.31
     },
     "src/jk_standards/checks/doc_coverage.py": {
-      "missing_lines": 1,
-      "percent_covered": 98.68
+      "missing_lines": 6,
+      "percent_covered": 95.71
     },
     "src/jk_standards/checks/doc_coverage_cpp.py": {
-      "missing_lines": 18,
-      "percent_covered": 79.78
+      "missing_lines": 97,
+      "percent_covered": 11.8
     },
     "src/jk_standards/checks/doc_drift.py": {
       "missing_lines": 7,
@@ -69,8 +73,8 @@
       "percent_covered": 91.41
     },
     "src/jk_standards/checks/status_prose.py": {
-      "missing_lines": 0,
-      "percent_covered": 100.0
+      "missing_lines": 9,
+      "percent_covered": 90.23
     },
     "src/jk_standards/checks/workflow_concurrency.py": {
       "missing_lines": 2,
@@ -81,12 +85,12 @@
       "percent_covered": 91.2
     },
     "src/jk_standards/cli.py": {
-      "missing_lines": 4,
-      "percent_covered": 94.96
+      "missing_lines": 5,
+      "percent_covered": 93.5
     },
     "src/jk_standards/config.py": {
-      "missing_lines": 6,
-      "percent_covered": 95.6
+      "missing_lines": 7,
+      "percent_covered": 95.51
     },
     "src/jk_standards/emit.py": {
       "missing_lines": 35,
@@ -119,9 +123,9 @@
   },
   "toolkit_version": "0.9.0",
   "totals": {
-    "covered_lines": 2075,
-    "missing_lines": 144,
-    "num_statements": 2219,
-    "percent_covered": 91.93
+    "covered_lines": 2099,
+    "missing_lines": 242,
+    "num_statements": 2341,
+    "percent_covered": 87.82
   }
 }

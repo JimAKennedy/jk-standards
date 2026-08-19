@@ -4,7 +4,7 @@ class: gated
 
 # Checks reference
 
-Status: current (2026-07-30)
+Status: current (2026-08-18)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit
@@ -36,6 +36,27 @@ tracking, TODO-count claims) are rejected outright
 [verified: test_checks::test_forbidden_phrase_flagged]. That state belongs
 in the changelog, issues, or generated dashboards. Extra project-specific
 phrases can be added via `status_prose.forbidden_extra`.
+
+Rule 3 — the accuracy arm. Rule 1 proves a `Status:` anchor is *present*;
+this arm proves it is not *stale*. Diff-scoped like doc-drift, it runs only
+when a git base ref resolves (`--base`, or `GITHUB_BASE_REF` in CI). For each
+gated doc in the change range it compares the anchor date against the doc's
+last-touched commit date in that range and flags the doc when the commit is
+newer than the anchor beyond a tolerance window
+[verified: test_checks::test_status_prose_accuracy_flags_stale_anchor_in_range].
+A doc whose only change since the anchor is the `Status:` line itself is never
+flagged — re-stamping the date is not a substantive edit, and treating it as
+one would make the re-stamp immediately re-trip the check
+[verified: test_checks::test_status_prose_accuracy_ignores_status_only_edit].
+The window is `status_prose.date_tolerance_days` (default 0 — flag any commit
+strictly newer than the anchor); a wider window forgives edits within N days
+[verified: test_checks::test_status_prose_accuracy_within_tolerance_not_flagged].
+When no base ref resolves — a local run with no `--base` and no
+`GITHUB_BASE_REF` — the accuracy arm skips cleanly and never fails, while the
+presence arm still runs
+[verified: test_checks::test_status_prose_accuracy_skips_without_base_ref_presence_green].
+A summary line records whether the arm ran (naming the base ref and
+changed-file count) or skipped, so CI-vs-local behaviour is legible.
 
 ## file-line-refs
 
@@ -189,6 +210,19 @@ remediation names both escape routes — add a mappings entry or a cannot_drift
 entry — and deliberately does not name the docs already accounted for. On
 success it prints `doc-completeness: all N doc(s) mapped or declared`
 [verified: test_doc_completeness::test_success_emits_summary].
+
+A doc whose front-matter `class` is in `doc_completeness.exempt_classes`
+(default `archived`) is skipped before the mapped/declared test — an archived
+page is deliberately frozen, so requiring it to be mapped or declared is noise,
+and it passes even when it is neither
+[verified: test_doc_completeness::test_unmapped_archived_doc_passes]. The
+exemption keys off the doc's own front-matter class, not `cfg.generated`: a
+`gated` orphan in the same tree still fails
+[verified: test_doc_completeness::test_unmapped_gated_doc_still_fails_alongside_archived],
+and pointing `exempt_classes` at a different class exempts only that one
+[verified: test_doc_completeness::test_custom_exempt_classes_exempts_named_class].
+The success summary notes how many docs were exempted by class
+[verified: test_doc_completeness::test_summary_notes_exempt_count].
 
 Unlike doc-drift it needs no git base ref: the working tree and the map are
 its only inputs, so it runs unconditionally as a static check under

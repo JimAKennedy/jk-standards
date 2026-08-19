@@ -34,6 +34,24 @@ def list_tags(root: Path) -> set[str] | None:
     return {line.strip() for line in out.splitlines() if line.strip()}
 
 
+def tracked_paths(root: Path) -> set[str] | None:
+    """Every git-tracked working-tree path (repo-relative, posix), or ``None``.
+
+    Returns the set produced by ``git ls-files`` — paths are already relative to
+    the repository root and slash-separated on every platform. ``None`` is
+    deliberately distinct from an empty set, mirroring :func:`list_tags`: it
+    signals that tracking cannot be determined (``root`` is not a git repo, or
+    git is unreadable) so a caller must *fail open* rather than treat every file
+    as untracked. An empty set means a real repository that happens to track no
+    files.
+    """
+    try:
+        out = _git(root, "ls-files")
+    except (GitError, OSError):
+        return None
+    return {line.strip() for line in out.splitlines() if line.strip()}
+
+
 def resolve_base_ref(root: Path, base_override: str | None) -> str:
     """--base flag, then GITHUB_BASE_REF (GitHub Actions), then origin/main.
 
@@ -67,6 +85,35 @@ def changed_files(root: Path, base: str) -> list[str]:
 def file_diff(root: Path, base: str, path: str) -> str:
     merge_base = _git(root, "merge-base", base, "HEAD").strip()
     return _git(root, "diff", f"{merge_base}...HEAD", "--", path)
+
+
+def last_touched_date(root: Path, base: str, path: str) -> str | None:
+    """Author date (YYYY-MM-DD) of the last commit touching ``path`` in the diff range.
+
+    Scoped to the ``merge-base(base, HEAD)..HEAD`` range so it answers "when was
+    this doc last changed *on this branch*", matching the diff-scope of
+    :func:`changed_files` — it never re-dates the whole history. Returns ``None``
+    when the date cannot be determined: the range cannot be resolved (git
+    unreadable, bad base), or ``path`` has no commit in the range (untouched, or
+    changed only in the working tree). ``None`` is the None-sentinel signal for
+    the caller to skip this doc's accuracy check rather than treat it as stale.
+    """
+    try:
+        merge_base = _git(root, "merge-base", base, "HEAD").strip()
+        out = _git(
+            root,
+            "log",
+            "-1",
+            "--format=%ad",
+            "--date=short",
+            f"{merge_base}..HEAD",
+            "--",
+            path,
+        )
+    except (GitError, OSError):
+        return None
+    date = out.strip()
+    return date or None
 
 
 def commit_trailers(root: Path, base: str, trailer: str) -> list[str]:

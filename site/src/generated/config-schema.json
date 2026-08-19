@@ -41,6 +41,14 @@
       "type": "list[str]"
     },
     {
+      "default": [
+        "archived"
+      ],
+      "has_default_factory": true,
+      "name": "doc_completeness_exempt_classes",
+      "type": "list[str]"
+    },
+    {
       "default": [],
       "has_default_factory": true,
       "name": "doc_coverage_doc_scopes",
@@ -206,6 +214,12 @@
       "has_default_factory": true,
       "name": "snippet_source_roots",
       "type": "list[SourceRoot]"
+    },
+    {
+      "default": 0,
+      "has_default_factory": false,
+      "name": "status_date_tolerance_days",
+      "type": "int"
     },
     {
       "default": [],

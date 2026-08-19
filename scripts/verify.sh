@@ -15,7 +15,7 @@
 #   - sanitizer-nightly-smoke  (smoke-tests sanitizer-nightly.yml's shape in Actions)
 #
 # Usage:
-#   scripts/verify.sh              # full gate (installs nothing; assumes deps present)
+#   scripts/verify.sh              # full gate (installs nothing; prefers ./.venv if present)
 #   scripts/verify.sh --no-site    # skip the Node/site-build step
 #   scripts/verify.sh --base REF   # run doc-drift against REF (default: main)
 #
@@ -27,6 +27,18 @@ set -uo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT" || { echo "cannot cd to repo root $REPO_ROOT" >&2; exit 1; }
+
+# --- prefer the repo's virtualenv, if present --------------------------------
+# Every Python step below (python, pytest, ruff, coverage, jk-standards, twine)
+# is invoked bare, so it resolves through PATH. CI activates the project venv;
+# a local run — or a harness that spawns this script under a different
+# interpreter (e.g. macOS system python3, which has no editable install and
+# fails `python -m jk_standards` with "No module named jk_standards") — may
+# not. If a project .venv exists, put its bin dir first so every tool resolves
+# to the project's installed copy instead of whatever happens to be on PATH.
+if [[ -x "$REPO_ROOT/.venv/bin/python" ]]; then
+  PATH="$REPO_ROOT/.venv/bin:$PATH"
+fi
 
 # --- args --------------------------------------------------------------------
 RUN_SITE=1

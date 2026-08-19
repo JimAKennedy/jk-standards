@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -13,7 +14,9 @@ from jk_standards.gitutil import (
     changed_files,
     commit_trailers,
     file_diff,
+    last_touched_date,
     resolve_base_ref,
+    tracked_paths,
 )
 
 
@@ -145,6 +148,53 @@ def test_resolve_base_ref_override_without_origin_prefix(tmp_path, monkeypatch):
     assert ("fetch", "origin", "release/1.2", "--depth=100") in calls
 
 
+# --- tracked_paths ----------------------------------------------------------
+
+
+def test_tracked_paths_lists_committed_files(repo):
+    _commit(repo, "docs/a.md", "a\n", "add a")
+    result = tracked_paths(repo)
+    assert result == {"seed.txt", "docs/a.md"}
+
+
+def test_tracked_paths_excludes_untracked_and_ignored(repo):
+    _commit(repo, ".gitignore", "ignored.txt\n", "add gitignore")
+    (repo / "untracked.txt").write_text("u\n", encoding="utf-8")
+    (repo / "ignored.txt").write_text("i\n", encoding="utf-8")
+    result = tracked_paths(repo)
+    assert result == {"seed.txt", ".gitignore"}
+    assert "untracked.txt" not in result
+    assert "ignored.txt" not in result
+
+
+def test_tracked_paths_uses_posix_separators(repo):
+    _commit(repo, "docs/nested/deep.md", "d\n", "add nested")
+    result = tracked_paths(repo)
+    assert "docs/nested/deep.md" in result
+    assert not any("\\" in p for p in result)
+
+
+def test_tracked_paths_none_when_not_a_repo(tmp_path):
+    # A bare tmp dir is not a git repo → git ls-files exits non-zero → None (fail open).
+    assert tracked_paths(tmp_path) is None
+
+
+def test_tracked_paths_none_when_git_unreadable(tmp_path, monkeypatch):
+    def fake_git(root, *args):
+        raise GitError("git unreadable")
+
+    monkeypatch.setattr(gitutil, "_git", fake_git)
+    assert tracked_paths(tmp_path) is None
+
+
+def test_tracked_paths_none_on_oserror(tmp_path, monkeypatch):
+    def fake_git(root, *args):
+        raise OSError("git binary missing")
+
+    monkeypatch.setattr(gitutil, "_git", fake_git)
+    assert tracked_paths(tmp_path) is None
+
+
 # --- changed_files ----------------------------------------------------------
 
 
@@ -201,3 +251,66 @@ def test_commit_trailers_returns_empty_when_absent(repo):
     _run(repo, "checkout", "-q", "-b", "feature")
     _commit(repo, "docs/a.md", "x\n", "add a with no trailer")
     assert commit_trailers(repo, "main", "Docs-Not-Affected") == []
+
+
+# --- last_touched_date ------------------------------------------------------
+
+
+def _commit_dated(root: Path, path: str, content: str, msg: str, date: str) -> None:
+    """Commit `path` with a fixed author+committer date (YYYY-MM-DD)."""
+    (root / path).parent.mkdir(parents=True, exist_ok=True)
+    (root / path).write_text(content, encoding="utf-8")
+    subprocess.run(["git", "add", path], cwd=root, check=True, capture_output=True)
+    stamp = f"{date}T12:00:00"
+    env = {"GIT_AUTHOR_DATE": stamp, "GIT_COMMITTER_DATE": stamp}
+    subprocess.run(
+        ["git", "commit", "-q", "-m", msg],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        env={**os.environ, **env},
+    )
+
+
+def test_last_touched_date_returns_last_commit_date(repo):
+    _run(repo, "checkout", "-q", "-b", "feature")
+    _commit_dated(repo, "docs/a.md", "v1\n", "add a", "2024-01-10")
+    assert last_touched_date(repo, "main", "docs/a.md") == "2024-01-10"
+
+
+def test_last_touched_date_picks_most_recent_of_several(repo):
+    _run(repo, "checkout", "-q", "-b", "feature")
+    _commit_dated(repo, "docs/a.md", "v1\n", "first", "2024-01-10")
+    _commit_dated(repo, "docs/a.md", "v2\n", "second", "2024-03-20")
+    assert last_touched_date(repo, "main", "docs/a.md") == "2024-03-20"
+
+
+def test_last_touched_date_none_when_path_untouched_in_range(repo):
+    _run(repo, "checkout", "-q", "-b", "feature")
+    _commit(repo, "docs/other.md", "x\n", "touch other")
+    # docs/a.md was never committed on this branch → no commit in range → None.
+    assert last_touched_date(repo, "main", "docs/a.md") is None
+
+
+def test_last_touched_date_none_when_only_in_working_tree(repo):
+    _run(repo, "checkout", "-q", "-b", "feature")
+    (repo / "docs" / "a.md").parent.mkdir(parents=True, exist_ok=True)
+    (repo / "docs" / "a.md").write_text("uncommitted\n", encoding="utf-8")
+    # Present but never committed → no commit touches it → None (skip accuracy check).
+    assert last_touched_date(repo, "main", "docs/a.md") is None
+
+
+def test_last_touched_date_none_when_range_unresolvable(tmp_path, monkeypatch):
+    def fake_git(root, *args):
+        raise GitError("bad base ref")
+
+    monkeypatch.setattr(gitutil, "_git", fake_git)
+    assert last_touched_date(tmp_path, "origin/main", "docs/a.md") is None
+
+
+def test_last_touched_date_none_on_oserror(tmp_path, monkeypatch):
+    def fake_git(root, *args):
+        raise OSError("git binary missing")
+
+    monkeypatch.setattr(gitutil, "_git", fake_git)
+    assert last_touched_date(tmp_path, "origin/main", "docs/a.md") is None

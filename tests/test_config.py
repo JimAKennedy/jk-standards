@@ -1,9 +1,11 @@
 """Config-loading tests: every YAML branch of load_config + iter_docs."""
 
+import subprocess
 from pathlib import Path
 
 import pytest
 
+from jk_standards import gitutil
 from jk_standards.config import (
     BoundaryRule,
     ClaimSource,
@@ -131,6 +133,29 @@ def test_status_prose_forbidden_extra_missing_pattern_raises(tmp_path):
         "status_prose:\n  forbidden_extra:\n    - hint: nope\n",
     )
     with pytest.raises(ConfigError, match="missing required key 'pattern'"):
+        load_config(tmp_path)
+
+
+def test_status_date_tolerance_days_defaults_to_zero(tmp_path):
+    cfg = load_config(tmp_path)
+    assert cfg.status_date_tolerance_days == 0
+
+
+def test_status_date_tolerance_days_parsed(tmp_path):
+    write(tmp_path, "jk-standards.yaml", "status_prose:\n  date_tolerance_days: 7\n")
+    cfg = load_config(tmp_path)
+    assert cfg.status_date_tolerance_days == 7
+
+
+def test_status_date_tolerance_days_rejects_bool(tmp_path):
+    write(tmp_path, "jk-standards.yaml", "status_prose:\n  date_tolerance_days: true\n")
+    with pytest.raises(ConfigError, match="must be a non-negative int"):
+        load_config(tmp_path)
+
+
+def test_status_date_tolerance_days_rejects_negative(tmp_path):
+    write(tmp_path, "jk-standards.yaml", "status_prose:\n  date_tolerance_days: -1\n")
+    with pytest.raises(ConfigError, match="must be >= 0"):
         load_config(tmp_path)
 
 
@@ -373,6 +398,26 @@ def test_module_min_percent_non_int_raises(tmp_path, literal):
         load_config(tmp_path)
 
 
+# --- doc_completeness.exempt_classes ----------------------------------------
+
+
+def test_doc_completeness_exempt_classes_default(tmp_path):
+    # Absent section (and absent config) defaults to exempting archived docs.
+    assert load_config(tmp_path).doc_completeness_exempt_classes == ["archived"]
+    write(tmp_path, "jk-standards.yaml", "doc_completeness:\n  exempt_classes: []\n")
+    assert load_config(tmp_path).doc_completeness_exempt_classes == []
+
+
+def test_doc_completeness_exempt_classes_override(tmp_path):
+    write(
+        tmp_path,
+        "jk-standards.yaml",
+        "doc_completeness:\n  exempt_classes: ['archived', 'legacy']\n",
+    )
+    cfg = load_config(tmp_path)
+    assert cfg.doc_completeness_exempt_classes == ["archived", "legacy"]
+
+
 # --- iter_docs --------------------------------------------------------------
 
 
@@ -405,3 +450,65 @@ def test_iter_docs_skips_non_files(tmp_path):
     cfg = Config(doc_roots=[DocRoot("docs", [".md"])])
     result = [p.name for p in iter_docs(tmp_path, cfg)]
     assert result == ["a.md"]
+
+
+# --- iter_docs: git-tracked filtering (T02) ---------------------------------
+
+
+def _git(root: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
+
+
+def _init_repo(root: Path) -> None:
+    _git(root, "init", "-b", "main")
+    _git(root, "config", "user.email", "test@example.invalid")
+    _git(root, "config", "user.name", "Test")
+
+
+def test_iter_docs_excludes_untracked_and_gitignored_in_repo(tmp_path):
+    # Only the tracked sibling is governed; a gitignored doc and an
+    # untracked-but-not-ignored doc under the same doc_root are dropped.
+    _init_repo(tmp_path)
+    write(tmp_path, "docs/tracked.md", "x")
+    write(tmp_path, "docs/ignored.md", "x")
+    write(tmp_path, "docs/untracked.md", "x")
+    write(tmp_path, ".gitignore", "docs/ignored.md\n")
+    _git(tmp_path, "add", "docs/tracked.md", ".gitignore")
+    _git(tmp_path, "commit", "-m", "base")
+
+    cfg = Config(doc_roots=[DocRoot("docs", [".md"])])
+    result = [p.relative_to(tmp_path).as_posix() for p in iter_docs(tmp_path, cfg)]
+    assert result == ["docs/tracked.md"]
+
+
+def test_iter_docs_fails_open_and_reports_outside_repo(tmp_path, capsys):
+    # A non-repo root cannot determine tracking → enumerate everything (fail
+    # open) and name the degradation on a single summary line.
+    write(tmp_path, "docs/a.md", "x")
+    write(tmp_path, "docs/b.md", "x")
+    cfg = Config(doc_roots=[DocRoot("docs", [".md"])])
+    result = [p.name for p in iter_docs(tmp_path, cfg)]
+    assert result == ["a.md", "b.md"]
+    out = capsys.readouterr().out
+    assert "iter_docs: git tracking unreadable" in out
+    assert "fail-open" in out
+
+
+def test_iter_docs_fails_open_and_reports_on_git_error(tmp_path, capsys, monkeypatch):
+    # Distinct from the non-repo path: here git itself is unreadable (the runner
+    # raises), so tracked_paths returns None and iter_docs must still enumerate
+    # everything and name the degradation — a repo whose git errors is not a
+    # licence to silently govern nothing.
+    write(tmp_path, "docs/a.md", "x")
+    write(tmp_path, "docs/b.md", "x")
+
+    def boom(root, *args):
+        raise gitutil.GitError("git unreadable")
+
+    monkeypatch.setattr(gitutil, "_git", boom)
+    cfg = Config(doc_roots=[DocRoot("docs", [".md"])])
+    result = [p.name for p in iter_docs(tmp_path, cfg)]
+    assert result == ["a.md", "b.md"]
+    out = capsys.readouterr().out
+    assert "iter_docs: git tracking unreadable" in out
+    assert "fail-open" in out

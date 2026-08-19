@@ -15,6 +15,18 @@
     },
     {
       "documented": true,
+      "file": "src/jk_standards/__main__.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "__main__",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
       "file": "src/jk_standards/checks/__init__.py",
       "kind": "module",
       "lineno": 1,
@@ -130,7 +142,7 @@
       "signals": {
         "docstring": true,
         "drift": true,
-        "mention": false
+        "mention": true
       }
     },
     {
@@ -509,7 +521,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/status_prose.py",
       "kind": "function",
-      "lineno": 53,
+      "lineno": 58,
       "name": "run",
       "signals": {
         "docstring": false,
@@ -605,7 +617,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "class",
-      "lineno": 54,
+      "lineno": 63,
       "name": "BoundaryRule",
       "signals": {
         "docstring": true,
@@ -617,7 +629,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "class",
-      "lineno": 48,
+      "lineno": 57,
       "name": "ClaimSource",
       "signals": {
         "docstring": false,
@@ -629,7 +641,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "class",
-      "lineno": 84,
+      "lineno": 93,
       "name": "Config",
       "signals": {
         "docstring": false,
@@ -641,7 +653,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "class",
-      "lineno": 19,
+      "lineno": 28,
       "name": "ConfigError",
       "signals": {
         "docstring": false,
@@ -653,7 +665,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "class",
-      "lineno": 24,
+      "lineno": 33,
       "name": "DocRoot",
       "signals": {
         "docstring": false,
@@ -665,7 +677,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "class",
-      "lineno": 42,
+      "lineno": 51,
       "name": "ForbiddenPhrase",
       "signals": {
         "docstring": false,
@@ -677,7 +689,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "class",
-      "lineno": 36,
+      "lineno": 45,
       "name": "GeneratedDoc",
       "signals": {
         "docstring": false,
@@ -689,7 +701,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "class",
-      "lineno": 71,
+      "lineno": 80,
       "name": "SnippetMarkerSyntax",
       "signals": {
         "docstring": true,
@@ -701,7 +713,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "class",
-      "lineno": 30,
+      "lineno": 39,
       "name": "SourceRoot",
       "signals": {
         "docstring": false,
@@ -725,7 +737,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 449,
+      "lineno": 500,
       "name": "iter_docs",
       "signals": {
         "docstring": true,
@@ -737,7 +749,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 196,
+      "lineno": 218,
       "name": "load_config",
       "signals": {
         "docstring": false,
@@ -893,7 +905,7 @@
       "documented": false,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 61,
+      "lineno": 79,
       "name": "changed_files",
       "signals": {
         "docstring": false,
@@ -905,7 +917,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 72,
+      "lineno": 119,
       "name": "commit_trailers",
       "signals": {
         "docstring": true,
@@ -917,7 +929,7 @@
       "documented": false,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 67,
+      "lineno": 85,
       "name": "file_diff",
       "signals": {
         "docstring": false,
@@ -941,6 +953,18 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
+      "lineno": 90,
+      "name": "last_touched_date",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
       "lineno": 21,
       "name": "list_tags",
       "signals": {
@@ -953,8 +977,20 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 37,
+      "lineno": 55,
       "name": "resolve_base_ref",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
+      "lineno": 37,
+      "name": "tracked_paths",
       "signals": {
         "docstring": true,
         "drift": false,

@@ -117,13 +117,23 @@ def main(argv: list[str] | None = None) -> int:
                 return 2
             errors = doc_coverage.update_baseline(root, cfg, allow_regression=args.allow_regression)
         elif args.check == "all":
-            errors = sum(CHECKS[name](root, cfg) for name in STATIC_CHECKS)
+            # status-prose always runs (presence arm); its accuracy arm is
+            # diff-scoped and self-skips when no base ref is available, so base
+            # is threaded through unconditionally and the check decides.
+            errors = sum(
+                CHECKS[name](root, cfg, base=args.base)
+                if name == "status-prose"
+                else CHECKS[name](root, cfg)
+                for name in STATIC_CHECKS
+            )
             if args.base or os.environ.get("GITHUB_BASE_REF"):
                 errors += CHECKS["doc-drift"](root, cfg, base=args.base)
             else:
                 print("doc-drift: no --base or GITHUB_BASE_REF — skipped")
         elif args.check == "doc-drift":
             errors = CHECKS["doc-drift"](root, cfg, base=args.base)
+        elif args.check == "status-prose":
+            errors = CHECKS["status-prose"](root, cfg, base=args.base)
         else:
             errors = CHECKS[args.check](root, cfg)
     except ConfigError as e:

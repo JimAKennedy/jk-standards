@@ -1,5 +1,7 @@
 """Fixture-repo tests for the static checks."""
 
+import os
+import subprocess
 from pathlib import Path
 
 from jk_standards.checks import (
@@ -72,6 +74,134 @@ def test_forbidden_phrase_flagged(tmp_path):
 def test_archived_docs_exempt_from_status_prose(tmp_path):
     write(tmp_path, "docs/a.md", "---\nclass: archived\n---\nStatus: proposed\n")
     assert status_prose.run(tmp_path, Config()) == 0
+
+
+def test_status_prose_accuracy_arm_skips_without_base(tmp_path, monkeypatch, capsys):
+    # No --base and no GITHUB_BASE_REF: the accuracy arm must skip cleanly while
+    # the presence arm still passes a well-formed dated Status line (D020).
+    monkeypatch.delenv("GITHUB_BASE_REF", raising=False)
+    write(tmp_path, "docs/a.md", "---\nclass: gated\n---\nStatus: adopted (2020-01-01)\n")
+    assert status_prose.run(tmp_path, Config(), base=None) == 0
+    out = capsys.readouterr().out
+    assert "accuracy arm skipped — no base ref" in out
+
+
+def test_status_prose_diff_is_status_only():
+    # Only the Status line changed → Status-only edit, never a substantive change.
+    status_only = (
+        "@@ -1,3 +1,3 @@\n"
+        "-Status: adopted (2020-01-01)\n"
+        "+Status: adopted (2026-08-18)\n"
+        " unchanged body\n"
+    )
+    assert status_prose._diff_is_status_only(status_only) is True
+    # A body line changed alongside the Status line → substantive.
+    mixed = status_only + "-old body\n+new body\n"
+    assert status_prose._diff_is_status_only(mixed) is False
+    # No changed lines at all → nothing to judge, not a Status-only edit.
+    assert status_prose._diff_is_status_only("@@ -1 +1 @@\n context\n") is False
+
+
+def test_status_prose_beyond_tolerance():
+    # Strictly newer than the anchor, default window 0 → beyond tolerance.
+    assert status_prose._beyond_tolerance("2026-01-01", "2026-01-02", 0) is True
+    # Same day → not beyond tolerance.
+    assert status_prose._beyond_tolerance("2026-01-01", "2026-01-01", 0) is False
+    # Within a 7-day window → tolerated.
+    assert status_prose._beyond_tolerance("2026-01-01", "2026-01-05", 7) is False
+    # Beyond the 7-day window → flagged.
+    assert status_prose._beyond_tolerance("2026-01-01", "2026-01-10", 7) is True
+    # Unparseable date → fail open (never flag).
+    assert status_prose._beyond_tolerance("not-a-date", "2026-01-10", 0) is False
+
+
+# --- status-prose accuracy arm: git-fixture integration ---------------------
+#
+# The unit tests above exercise the accuracy arm's pure helpers in isolation.
+# These drive status_prose.run end-to-end against a real git fixture repo so the
+# diff-scoped flow — resolve base ref, intersect with changed_files, read the
+# anchor, compare against last_touched_date, filter Status-only diffs — is proven
+# as a whole, matching the slice's four-scenario demo.
+
+
+def _git(root: Path, *args: str, date: str | None = None) -> None:
+    env = dict(os.environ)
+    if date is not None:
+        stamp = f"{date}T12:00:00"
+        env["GIT_AUTHOR_DATE"] = stamp
+        env["GIT_COMMITTER_DATE"] = stamp
+    subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, env=env)
+
+
+def _init_repo(root: Path) -> None:
+    _git(root, "init", "-q", "-b", "main")
+    _git(root, "config", "user.email", "test@example.com")
+    _git(root, "config", "user.name", "Test User")
+    _git(root, "config", "commit.gpgsign", "false")
+
+
+def _commit(root: Path, rel: str, text: str, msg: str, date: str | None = None) -> None:
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    _git(root, "add", rel)
+    _git(root, "commit", "-q", "-m", msg, date=date)
+
+
+def test_status_prose_accuracy_flags_stale_anchor_in_range(tmp_path, capsys):
+    # (a) A gated doc whose Status anchor (2020) predates the commit that added
+    # it (2024) — a substantive change in range after the anchor — is flagged,
+    # with the distinct anchor-vs-last-touched error and the arm-ran summary.
+    _init_repo(tmp_path)
+    _commit(tmp_path, "seed.txt", "seed\n", "init")
+    _git(tmp_path, "update-ref", "refs/heads/base", "HEAD")
+    doc = "---\nclass: gated\n---\nStatus: adopted (2020-01-01)\n\nSubstantive body.\n"
+    _commit(tmp_path, "docs/a.md", doc, "add doc", date="2024-05-01")
+    assert status_prose.run(tmp_path, Config(), base="base") == 1
+    captured = capsys.readouterr()
+    assert "predates the doc's last commit in range" in captured.err
+    assert "accuracy arm ran vs base" in captured.out
+
+
+def test_status_prose_accuracy_ignores_status_only_edit(tmp_path):
+    # (b) The only change since the anchor is the Status line itself (re-stamped
+    # to a still-stale date, committed later) — beyond tolerance, but a
+    # Status-only diff is never a substantive edit, so it is not flagged.
+    _init_repo(tmp_path)
+    v1 = "---\nclass: gated\n---\nStatus: adopted (2020-01-01)\n\nBody stays.\n"
+    _commit(tmp_path, "docs/a.md", v1, "add doc", date="2020-01-01")
+    _git(tmp_path, "update-ref", "refs/heads/base", "HEAD")
+    v2 = "---\nclass: gated\n---\nStatus: adopted (2023-06-01)\n\nBody stays.\n"
+    _commit(tmp_path, "docs/a.md", v2, "bump status only", date="2024-01-01")
+    assert status_prose.run(tmp_path, Config(), base="base") == 0
+
+
+def test_status_prose_accuracy_within_tolerance_not_flagged(tmp_path):
+    # (c) A substantive body edit four days after the anchor: flagged under the
+    # default zero window, tolerated under a 7-day window — the config knob is
+    # what suppresses it, not the diff.
+    _init_repo(tmp_path)
+    v1 = "---\nclass: gated\n---\nStatus: adopted (2024-01-01)\n\nOriginal body.\n"
+    _commit(tmp_path, "docs/a.md", v1, "add doc", date="2024-01-01")
+    _git(tmp_path, "update-ref", "refs/heads/base", "HEAD")
+    v2 = "---\nclass: gated\n---\nStatus: adopted (2024-01-01)\n\nEdited body, more words.\n"
+    _commit(tmp_path, "docs/a.md", v2, "edit body", date="2024-01-05")
+    assert status_prose.run(tmp_path, Config(), base="base") == 1
+    assert status_prose.run(tmp_path, Config(status_date_tolerance_days=7), base="base") == 0
+
+
+def test_status_prose_accuracy_skips_without_base_ref_presence_green(
+    tmp_path, monkeypatch, capsys
+):
+    # (d) The same stale-anchor doc that (a) flags: with no --base and no
+    # GITHUB_BASE_REF the accuracy arm skips cleanly (never fails) while the
+    # presence arm still passes the well-formed dated Status line.
+    monkeypatch.delenv("GITHUB_BASE_REF", raising=False)
+    _init_repo(tmp_path)
+    doc = "---\nclass: gated\n---\nStatus: adopted (2020-01-01)\n\nSubstantive body.\n"
+    _commit(tmp_path, "docs/a.md", doc, "add doc", date="2024-05-01")
+    assert status_prose.run(tmp_path, Config(), base=None) == 0
+    assert "accuracy arm skipped — no base ref" in capsys.readouterr().out
 
 
 # --- file-line-refs ---------------------------------------------------------

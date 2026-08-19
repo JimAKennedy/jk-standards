@@ -190,9 +190,7 @@ def test_status_prose_accuracy_within_tolerance_not_flagged(tmp_path):
     assert status_prose.run(tmp_path, Config(status_date_tolerance_days=7), base="base") == 0
 
 
-def test_status_prose_accuracy_skips_without_base_ref_presence_green(
-    tmp_path, monkeypatch, capsys
-):
+def test_status_prose_accuracy_skips_without_base_ref_presence_green(tmp_path, monkeypatch, capsys):
     # (d) The same stale-anchor doc that (a) flags: with no --base and no
     # GITHUB_BASE_REF the accuracy arm skips cleanly (never fails) while the
     # presence arm still passes the well-formed dated Status line.

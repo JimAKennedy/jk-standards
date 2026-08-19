@@ -365,9 +365,7 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
 
     doc_completeness = data.get("doc_completeness", {})
     if "exempt_classes" in doc_completeness:
-        cfg.doc_completeness_exempt_classes = [
-            str(c) for c in doc_completeness["exempt_classes"]
-        ]
+        cfg.doc_completeness_exempt_classes = [str(c) for c in doc_completeness["exempt_classes"]]
 
     cfg.import_cycle_packages = _import_cycle_packages(data.get("import_cycle"))
 

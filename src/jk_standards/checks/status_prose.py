@@ -137,9 +137,7 @@ def _beyond_tolerance(anchor_date: str, last_date: str, tolerance_days: int) -> 
     return (last - anchor).days > tolerance_days
 
 
-def _accuracy_arm(
-    root: Path, cfg: Config, base: str | None, gated: list[tuple[str, str]]
-) -> int:
+def _accuracy_arm(root: Path, cfg: Config, base: str | None, gated: list[tuple[str, str]]) -> int:
     """Flag gated docs whose Status anchor predates their last commit in range.
 
     Diff-scoped like doc-drift (D019): only docs in ``changed_files`` are
@@ -189,7 +187,5 @@ def _accuracy_arm(
         )
         errors += 1
 
-    output.summary(
-        f"status-prose: accuracy arm ran vs {base_ref} — {len(changed)} changed file(s)"
-    )
+    output.summary(f"status-prose: accuracy arm ran vs {base_ref} — {len(changed)} changed file(s)")
     return errors

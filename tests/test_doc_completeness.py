@@ -255,6 +255,95 @@ def test_mapping_missing_doc_key_cli_exit_2(tmp_path, capsys):
     assert "doc" in err
 
 
+# --- reverse orphan-existence pass ------------------------------------------
+
+
+def test_cannot_drift_orphan_is_reported(tmp_path, capsys):
+    # A cannot_drift entry naming a path that no longer exists is an orphan:
+    # the reverse pass names it, its registry, and the silent-pre-exemption
+    # failure mode. No enumerated doc is needed — existence is a filesystem fact.
+    write_map(
+        tmp_path,
+        'version: 1\ncannot_drift:\n  - doc: "docs/ghost.md"\n    reason: "was prose, now deleted"\n',
+    )
+    assert doc_completeness.run(tmp_path, Config()) == 1
+    err = capsys.readouterr().err
+    assert "::error file=docs/ghost.md" in err
+    assert "cannot_drift entry 'docs/ghost.md'" in err
+    assert "pre-exempts any future doc created at that path" in err
+
+
+def test_mappings_orphan_is_reported_with_unsatisfiable_gate_framing(tmp_path, capsys):
+    # A mappings entry naming a nonexistent path is an orphan with the distinct
+    # unsatisfiable-gate framing, naming the Docs-Not-Affected escape hatch.
+    write_map(
+        tmp_path,
+        "version: 1\n"
+        "mappings:\n"
+        "  - sources:\n"
+        '      - "src/**"\n'
+        '    doc: "docs/ghost.md"\n'
+        '    reason: "spec that was removed"\n',
+    )
+    assert doc_completeness.run(tmp_path, Config()) == 1
+    err = capsys.readouterr().err
+    assert "::error file=docs/ghost.md" in err
+    assert "mappings entry 'docs/ghost.md'" in err
+    assert "unsatisfiable gate" in err
+    assert "Docs-Not-Affected" in err
+
+
+def test_all_entries_existing_reports_zero_orphans_and_names_checked_count(tmp_path, capsys):
+    # When every registry entry names a live path, the reverse pass finds no
+    # orphans and the success summary reports how many entries were
+    # existence-checked, proving the pass ran even on a green run.
+    write(tmp_path, "docs/spec.md", DOC)
+    write(tmp_path, "docs/guide.md", DOC)
+    write_map(
+        tmp_path,
+        "version: 1\n"
+        "cannot_drift:\n"
+        '  - doc: "docs/spec.md"\n'
+        '    reason: "prose"\n'
+        '  - doc: "docs/guide.md"\n'
+        '    reason: "prose"\n',
+    )
+    assert doc_completeness.run(tmp_path, Config()) == 0
+    out = capsys.readouterr().out
+    assert "2 registry entries existence-checked" in out
+
+
+def test_entry_naming_file_outside_doc_roots_is_tolerated(tmp_path, capsys):
+    # An entry may legitimately name a doc outside the enumerated doc_roots
+    # (e.g. a top-level README). The reverse pass tests plain filesystem
+    # existence, NOT iter_docs membership, so a live out-of-root path is no
+    # orphan and the run passes.
+    write(tmp_path, "README.md", DOC)  # exists at root, outside docs/ doc_root
+    write_map(
+        tmp_path,
+        'version: 1\ncannot_drift:\n  - doc: "README.md"\n    reason: "top-level readme"\n',
+    )
+    assert doc_completeness.run(tmp_path, Config()) == 0
+    captured = capsys.readouterr()
+    assert "README.md" not in captured.err
+    assert "1 registry entry existence-checked" in captured.out
+
+
+def test_orphan_reported_when_git_tracking_fails_open(tmp_path, capsys, monkeypatch):
+    # The reverse pass is a filesystem fact, independent of the #50 git
+    # fail-open branch inside iter_docs. Force tracked_paths to return None and
+    # the cannot_drift orphan is still reported.
+    monkeypatch.setattr("jk_standards.gitutil.tracked_paths", lambda root: None)
+    write_map(
+        tmp_path,
+        'version: 1\ncannot_drift:\n  - doc: "docs/ghost.md"\n    reason: "deleted prose"\n',
+    )
+    assert doc_completeness.run(tmp_path, Config()) == 1
+    err = capsys.readouterr().err
+    assert "::error file=docs/ghost.md" in err
+    assert "cannot_drift entry 'docs/ghost.md'" in err
+
+
 # --- integration: the git-aware iter_docs seam flows through ----------------
 
 

@@ -6,7 +6,7 @@ description: Every check the toolkit ships — rule, mechanism, and escape hatch
 
 import checksData from '../../../generated/checks.json';
 
-Status: current (2026-08-18)
+Status: current (2026-08-19)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit
@@ -232,6 +232,26 @@ remediation names both escape routes — add a mappings entry or a cannot_drift
 entry — and deliberately does not name the docs already accounted for. On
 success it prints `doc-completeness: all N doc(s) mapped or declared`
 [verified: test_doc_completeness::test_success_emits_summary].
+
+Beyond that forward pass the check also runs a reverse existence pass: every
+registered doc — whether a mapping's `doc:` target or a `cannot_drift` entry —
+must still exist on disk. A registry entry naming a path that no longer exists
+is an orphan, and the check names it and its registry, because the two registries
+go stale in distinct ways. A stale `cannot_drift` entry silently pre-exempts any
+future doc later created at that path from the completeness gate
+[verified: test_doc_completeness::test_cannot_drift_orphan_is_reported]; a stale
+mapping becomes an unsatisfiable gate — the doc can never be produced, so its only
+escape is a `Docs-Not-Affected` trailer on every affecting commit
+[verified: test_doc_completeness::test_mappings_orphan_is_reported_with_unsatisfiable_gate_framing].
+The pass tests plain filesystem existence, not `iter_docs` membership, so an entry
+legitimately naming a doc outside the configured `doc_roots` is tolerated
+[verified: test_doc_completeness::test_entry_naming_file_outside_doc_roots_is_tolerated],
+and it runs unconditionally — a fact about the filesystem, independent of the git
+fail-open branch
+[verified: test_doc_completeness::test_orphan_reported_when_git_tracking_fails_open].
+The success summary gains a count of how many registry entries were
+existence-checked, so a green run still proves the reverse pass ran
+[verified: test_doc_completeness::test_all_entries_existing_reports_zero_orphans_and_names_checked_count].
 
 A doc whose front-matter `class` is in `doc_completeness.exempt_classes`
 (default `archived`) is skipped before the mapped/declared test — an archived

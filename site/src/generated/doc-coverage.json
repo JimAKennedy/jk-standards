@@ -737,7 +737,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 500,
+      "lineno": 498,
       "name": "iter_docs",
       "signals": {
         "docstring": true,

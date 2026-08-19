@@ -7,7 +7,7 @@ description: Every field of jk-standards.yaml plus the CLI surface.
 import CodeSnippet from '../../../components/CodeSnippet.astro';
 import schema from '../../../generated/config-schema.json';
 
-Status: current (2026-07-30)
+Status: current (2026-08-18)
 
 All project-specific surface lives in one file, `{schema.config_file_name}`,
 at the consuming repo's root (override with `--config`). Every key is
@@ -59,6 +59,31 @@ and `action_pin_extensions` — from an `action_pinning:` section
 (`workflow_dir` and `extensions` keys); both default so the section is
 optional. See the [checks reference](/reference/checks/#action-pinning) for
 the rule those fields tune.
+
+The `status_date_tolerance_days` field is read from a `status_prose:` section
+(`date_tolerance_days` key, a non-negative int, default `0`) and tunes the
+accuracy arm of the `status-prose` check. The accuracy arm is diff-scoped like
+doc-drift: for each gated doc changed against the base ref it compares the doc's
+`Status:` anchor date against the doc's own last commit in range, flagging an
+anchor that lags by more than the tolerance. `0` flags any commit strictly newer
+than the anchor; raising it grants a grace window before a stale date fails the
+build. A doc whose only change since the anchor is the `Status:` line itself is
+never flagged, and with no base ref the arm skips cleanly. A value that is not a
+non-negative int (including a bool) raises a config error surfaced as exit 2.
+See the [checks reference](/reference/checks/#status-prose) for the rule this
+field tunes.
+
+The `doc_completeness_exempt_classes` field is read from a `doc_completeness:`
+section (`exempt_classes` key, a list of front-matter class names, default
+`["archived"]`) and tunes the `doc-completeness` check. A doc whose front-matter
+`class` is in this list is skipped rather than required to be a mapped `doc:`
+target or a `cannot_drift` entry — a deliberately frozen record should not have
+to be registered. The exemption keys off the doc's own front-matter class read
+at run time, not `cfg.generated`, so a generated-config doc classed `gated`
+stays governed. Setting the list to a different class exempts only that class;
+the success summary notes how many docs were exempted. See the
+[checks reference](/reference/checks/#doc-completeness) for the rule this field
+tunes.
 
 The `boundaries` field is a list of forbidden-reference rules read from a
 `boundaries:` section (a `rules:` list). Each rule names a `from` directory,

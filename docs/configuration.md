@@ -4,7 +4,7 @@ class: gated
 
 # Configuration reference
 
-Status: current (2026-07-30)
+Status: current (2026-08-18)
 
 All project-specific surface lives in one file, `jk-standards.yaml`, at the
 consuming repo's root (override with `--config`). Every key is optional; an
@@ -32,6 +32,8 @@ status_prose:
   forbidden_extra:            # project-specific banned phrases
     - pattern: 'Designed\s+For,\s+Not\s+Implemented'
       hint: forbidden section heading — describe current state or remove
+  date_tolerance_days: 0      # accuracy arm: days a Status anchor may lag
+                              # a doc's last commit before it is flagged
 
 file_line_refs:
   extensions: [cpp, h, hpp, py, mjs, ts, md]   # ref extensions to match
@@ -45,6 +47,9 @@ count_drift:
     - 'chapters?\s+in\s+total'
 
 drift_map: .github/docs-drift-map.yml
+
+doc_completeness:             # every doc_root doc mapped or declared
+  exempt_classes: [archived]  # front-matter classes skipped (default: archived)
 
 doc_drift:
   deps_only_manifests:        # package.json files whose deps-only version
@@ -129,6 +134,29 @@ release_pins:                 # released versions tagged; pins resolve
   untagged_versions:          # released without a tag; declared, not fixed
     - "0.2.0"                 # keeps the check a ratchet on future releases
 ```
+
+The `status_prose` section's `date_tolerance_days` tunes the accuracy arm of
+the `status-prose` check (a non-negative int, default `0`). The accuracy arm is
+diff-scoped like doc-drift: for each gated doc changed against the base ref, it
+compares the doc's `Status:` anchor date against the doc's own last commit in
+range and flags an anchor that lags by more than the tolerance. `0` flags any
+commit strictly newer than the anchor; raising it grants a grace window before a
+stale-date fails the build. A doc whose only change since the anchor is the
+`Status:` line itself is never flagged, and with no base ref the arm skips
+cleanly. A value that is not a non-negative int (including a bool) raises a
+config error surfaced as exit 2. See the
+[checks reference](checks.md#status-prose) for the rule this field tunes.
+
+The `doc_completeness` section's `exempt_classes` tunes the `doc-completeness`
+check (a list of front-matter class names, default `[archived]`). A doc whose
+front-matter `class` is in this list is skipped rather than required to be a
+mapped `doc:` target or a `cannot_drift` entry — a deliberately frozen record
+should not have to be registered. The exemption keys off the doc's own
+front-matter class read at run time, not `cfg.generated`, so a generated-config
+doc classed `gated` stays governed. Setting the list to a different class
+exempts only that class; the success summary notes how many docs were exempted.
+See the [checks reference](checks.md#doc-completeness) for the rule this field
+tunes.
 
 The `action_pinning` section tunes the `action-pinning` check: `workflow_dir`
 is the tree scanned recursively for workflow files (default

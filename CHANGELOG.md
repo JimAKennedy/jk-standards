@@ -6,8 +6,54 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-18
+
+### Added
+
+- **`status-prose` accuracy arm and `status_prose.date_tolerance_days`**
+  (`src/jk_standards/checks/status_prose.py`, `src/jk_standards/config.py`,
+  `src/jk_standards/cli.py`, `src/jk_standards/gitutil.py`,
+  `docs/checks.md`, `site/src/content/docs/reference/checks.mdx`,
+  `docs/configuration.md`, `site/src/content/docs/reference/configuration.mdx`,
+  issue #52): the presence arm only proved a `Status:` anchor exists; a doc
+  could carry a real date that silently predated its own last edit. The new
+  diff-scoped accuracy arm flags any gated doc whose `Status:` anchor is older
+  than the doc's most recent commit in the base range, so a stale "current
+  (YYYY-MM-DD)" cannot survive a content change. It self-skips when no base ref
+  is available (mirroring `doc-drift`), and a `Status:`-line-only edit never
+  counts as a substantive change. `status_prose.date_tolerance_days` (default
+  `0`) widens the window; a non-negative-int guard rejects anything else as a
+  config error.
+- **`doc_completeness.exempt_classes` config key**
+  (`src/jk_standards/checks/doc_completeness.py`, `src/jk_standards/config.py`,
+  `docs/checks.md`, `site/src/content/docs/reference/checks.mdx`,
+  `docs/configuration.md`, `site/src/content/docs/reference/configuration.mdx`):
+  a doc whose front-matter `class` is exempt (default `["archived"]`) is a
+  deliberately frozen record, so requiring it to be mapped or declared
+  un-driftable was noise. `doc-completeness` now skips exempt-class docs and
+  reports the count. The exemption keys off the doc's own front-matter class,
+  not `cfg.generated`, so a generated-config doc classed `gated` stays governed.
+- **`python -m jk_standards` module entry point**
+  (`src/jk_standards/__main__.py`): the console script depends on being on
+  `PATH`; the module form runs from any interpreter that can import the package.
+  Both dispatch to the same `cli.main`.
+
 ### Fixed
 
+- **`iter_docs` swept untracked and git-ignored files into governance**
+  (`src/jk_standards/config.py`, `src/jk_standards/gitutil.py`): the doc walk
+  enumerated every file under a `doc_root` on disk, so a scratch draft or a
+  build artifact an adopter never committed could fail `doc-taxonomy`,
+  `status-prose`, or `doc-completeness`. `iter_docs` now filters to
+  git-tracked files, and fails open — outside a git work tree, or if `git`
+  is unavailable, it falls back to the full on-disk walk rather than hiding
+  every doc.
+- **`scripts/verify.sh` assumed the active interpreter had the package
+  installed** (`scripts/verify.sh`): a harness that spawned the gate under a
+  different `python3` (e.g. macOS system Python, with no editable install)
+  failed `python -m jk_standards`. The script now prepends `./.venv/bin` to
+  `PATH` when a project virtualenv is present, so every bare Python tool
+  resolves to the project's installed copy.
 - **C++ enumerator's exotic declarator forms were untested, and the coverage
   comment asserted a stale figure** (`tests/test_doc_coverage_cpp.py`,
   `pyproject.toml`, issue #49): the 18 uncovered statements in

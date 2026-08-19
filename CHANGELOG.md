@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`doc-completeness` reverse orphan-existence pass**
+  (`src/jk_standards/checks/doc_completeness.py`, `tests/test_doc_completeness.py`,
+  `docs/checks.md`, `site/src/content/docs/reference/checks.mdx`, issue #57):
+  the check now also asserts that every registered doc — each mapping's `doc:`
+  target and each `cannot_drift` entry — still exists on disk, naming any
+  orphaned entry together with its registry. A stale `cannot_drift` entry
+  silently pre-exempts a future doc created at that path, and a stale mapping
+  becomes an unsatisfiable gate escapable only by a `Docs-Not-Affected` trailer,
+  so the two get distinct remediation. The pass uses plain filesystem existence
+  (tolerating entries outside the enumerated `doc_roots`) and runs
+  unconditionally, independent of the git fail-open branch. The success summary
+  gains a count of how many registry entries were existence-checked, so a green
+  run still proves the reverse pass ran.
+
 ## [0.10.0] - 2026-08-18
 
 ### Added

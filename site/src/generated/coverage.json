@@ -29,8 +29,8 @@
       "percent_covered": 85.71
     },
     "src/jk_standards/checks/doc_completeness.py": {
-      "missing_lines": 0,
-      "percent_covered": 98.31
+      "missing_lines": 21,
+      "percent_covered": 44.87
     },
     "src/jk_standards/checks/doc_coverage.py": {
       "missing_lines": 1,
@@ -123,9 +123,9 @@
   },
   "toolkit_version": "0.10.0",
   "totals": {
-    "covered_lines": 2201,
-    "missing_lines": 140,
-    "num_statements": 2341,
-    "percent_covered": 92.75
+    "covered_lines": 2191,
+    "missing_lines": 161,
+    "num_statements": 2352,
+    "percent_covered": 91.54
   }
 }

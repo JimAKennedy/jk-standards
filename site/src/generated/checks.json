@@ -103,5 +103,5 @@
       "summary": "workflow-permissions: a reusable-workflow caller grants what its callee needs."
     }
   ],
-  "toolkit_version": "0.10.0"
+  "toolkit_version": "0.11.0"
 }

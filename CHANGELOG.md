@@ -8,6 +8,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`release.yml` — the tag cuts the GitHub Release**
+  (`.github/workflows/release.yml`, `RELEASE.md`): pushing a `v*.*.*` tag now
+  publishes the Release instead of leaving it as an unwritten manual step.
+  `release-pins` gates the *tag* and nothing gated the *Release*, so `v0.10.0`
+  sat tagged with no Release and `v0.1.0`, `v0.3.0`, `v0.5.0` and `v0.6.0` have
+  tags and no Release at all — a gap invisible to every existing check. The
+  workflow re-proves the tagged tree first (tag, `pyproject.toml` version and
+  `__version__` must agree; `CHANGELOG.md` must carry a section for the version;
+  lint, tests, `jk-standards all` and `emit all --check` must pass), then builds
+  the sdist and wheel and creates the Release with that changelog section as its
+  body and the artifacts attached. The tag is immutable by then, so `verify`
+  cannot stop a bad tag — it decides whether a Release is published on top of
+  one, which is the half that is still worth gating. Publishes to GitHub only:
+  no package index, no registry.
+
 - **`doc-completeness` reverse orphan-existence pass**
   (`src/jk_standards/checks/doc_completeness.py`, `tests/test_doc_completeness.py`,
   `docs/checks.md`, `site/src/content/docs/reference/checks.mdx`, issue #57):

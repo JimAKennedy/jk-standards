@@ -1,21 +1,32 @@
 # Releasing jk-standards
 
 This project ships from a green `main`. Tagging is the only out-of-band step —
-CI proves the tree is release-ready; a human cuts the tag.
+CI proves the tree is release-ready, a human cuts the tag, and the tag cuts the
+GitHub Release.
 
 ## Pre-tag checklist (must all be green on `main`)
 
-Run these from the repo root; every one must exit 0:
+Run these from the repo root; every one must exit 0. Set `VERSION` once — the
+commands below read it rather than repeating a literal, which is how the
+literals in this file went a release out of date.
 
 ```bash
+VERSION=$(python -c "import jk_standards; print(jk_standards.__version__)")
+echo "releasing $VERSION"
+
 jk-standards all --root .        # dogfood: every registered check passes against this tree
 jk-standards emit all --check    # generated site fixtures are fresh (no drift)
 jk-standards release-pins        # every adoption pin resolves to a real tag
 ruff check .                     # lint
 ruff format --check .            # format
 pytest -q                        # full test suite
-python -c "import jk_standards; assert jk_standards.__version__ == '0.9.0'"
+grep -q "^version = \"$VERSION\"$" pyproject.toml   # the two version sites agree
 ```
+
+`release.yml` re-runs the equivalent of this checklist on the tagged tree
+before it publishes anything, so a slip here fails loudly rather than shipping.
+Running it first still matters: it fails on a branch you can amend, whereas the
+workflow fails after the tag is already immutable.
 
 `release-pins` runs under `jk-standards all` too; it is listed separately
 because it is the one check whose subject is the release itself. It needs tags
@@ -30,8 +41,11 @@ next release is dated — so skipping the tag below is caught, one release late.
 
 Version lives in exactly two source-of-truth sites and must agree:
 
-- `pyproject.toml` → `version = "0.9.0"`
-- `src/jk_standards/__init__.py` → `__version__ = "0.9.0"`
+- `pyproject.toml` → `version = "$VERSION"`
+- `src/jk_standards/__init__.py` → `__version__ = "$VERSION"`
+
+`release.yml`'s first step asserts both against the tag, so a disagreement
+blocks the Release rather than surfacing after it.
 
 `CHANGELOG.md` must carry a section for the version being tagged, with each
 present-tense entry mapping 1:1 to a shipped file (MEM001 invariant).
@@ -41,9 +55,9 @@ present-tense entry mapping 1:1 to a shipped file (MEM001 invariant).
 Once `main` is green and the checklist above passes:
 
 ```bash
-git tag v0.9.0
-git push origin v0.9.0
-git ls-remote --tags origin | grep v0.9.0    # confirm it landed
+git tag "v$VERSION"
+git push origin "v$VERSION"
+git ls-remote --tags origin | grep "v$VERSION"    # confirm it landed
 ```
 
 The confirmation matters: `0.2.0`, `0.4.0` and `0.7.0` each shipped a changelog
@@ -52,8 +66,37 @@ dangling refs. `release-pins` now catches that, but only from the release after
 the one being cut — so verify the push rather than assuming it.
 
 The tag is immutable release provenance. Consumers pin to it via the adoption
-`rev:` in their `.pre-commit-config.yaml` and the `@v0.9.0` references in the
+`rev:` in their `.pre-commit-config.yaml` and the `@v0.10.0` references in the
 quickstart and adopt-in-a-repo guides.
+
+## The tag cuts the Release automatically
+
+Pushing the tag triggers `.github/workflows/release.yml`, which publishes the
+GitHub Release. Nothing further is required by hand; watch the run rather than
+performing it.
+
+The workflow re-proves the tagged tree before publishing — the tag, the
+`pyproject.toml` version and `__version__` must agree, `CHANGELOG.md` must carry
+a section for the version, and lint, tests, `jk-standards all` and
+`emit all --check` must pass. It then builds the sdist and wheel, and creates
+the Release with that changelog section as its body and the artifacts attached.
+
+The tag is already immutable by the time the workflow runs, so `verify` cannot
+prevent a bad tag — it decides whether a Release is published on top of one. A
+tag cut from a tree whose version constants disagree fails red with no Release,
+which is recoverable; a published Release naming a version the code does not
+carry is not.
+
+This closes the gap that `release-pins` does not cover. That check gates the
+*tag*; nothing gated the *Release*, which is why `v0.10.0` sat tagged for a day
+with no Release, and why `v0.1.0`, `v0.3.0`, `v0.5.0` and `v0.6.0` have tags and
+no Release at all. Those four are left alone deliberately: backfilling them now
+would stamp today's date on releases that shipped months ago, which is worse
+provenance than their absence.
+
+If the workflow fails after the tag is pushed, fix `main`, then delete and
+re-push the tag to re-run it — the Release is created only on a green `verify`,
+so a failed run leaves nothing published to clean up.
 
 ## After the tag: bump the adoption pins
 

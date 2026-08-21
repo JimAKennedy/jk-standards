@@ -1,0 +1,157 @@
+# Cuts the GitHub Release for a pushed vX.Y.Z tag.
+#
+# The tag is the human step (RELEASE.md); everything after it is mechanical and
+# was, until now, also manual — which is how v0.10.0 sat tagged-but-unreleased,
+# and how v0.1.0/v0.3.0/v0.5.0/v0.6.0 never got a Release at all. `release-pins`
+# gates the *tag*; nothing gated the Release, so this workflow is that gate.
+#
+# The tag is immutable and already pushed by the time this runs, so `verify`
+# cannot prevent a bad tag — it decides whether the Release is published on top
+# of one. That is the useful half: a tag pointing at a tree whose version
+# constants disagree, or with no changelog section, produces a red run and no
+# Release rather than a published lie.
+#
+# Publishes to GitHub only: the Release, with the sdist and wheel attached. No
+# package index, no registry.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+# Ref-scoped so a re-pushed tag supersedes only its own run.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+# Read-only ceiling; the one job that needs to write escalates for itself.
+permissions:
+  contents: read
+
+jobs:
+  # Re-proves the tagged tree, rather than trusting that the tag landed on the
+  # commit CI went green on. Cheap, and the only thing standing between a
+  # mis-cut tag and a published Release.
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # release-pins reads tags, and actions/checkout fetches none without
+          # this — it would skip rather than verify, on the one run where the
+          # tag is the entire subject.
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+
+      # The three version sites RELEASE.md requires to agree, asserted rather
+      # than eyeballed. `python -c` on the installed package rather than a grep,
+      # so it reads the same constant an adopter's interpreter would.
+      - name: Tag, pyproject and __version__ agree
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Tag ${GITHUB_REF_NAME} claims version ${VERSION}"
+          python - "$VERSION" <<'PY'
+          import sys, tomllib, pathlib
+          import jk_standards
+
+          want = sys.argv[1]
+          pyproject = tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"]
+          dunder = jk_standards.__version__
+          problems = []
+          if pyproject != want:
+              problems.append(f"pyproject.toml version = {pyproject!r}")
+          if dunder != want:
+              problems.append(f"jk_standards.__version__ = {dunder!r}")
+          if problems:
+              print(f"::error::Tag claims {want!r} but " + "; ".join(problems))
+              raise SystemExit(1)
+          print(f"version agreement: pyproject={pyproject} __version__={dunder}")
+          PY
+
+      # A Release whose body would be empty is a release that was never written
+      # up. Fail here rather than publishing the fallback text.
+      - name: CHANGELOG carries a section for this version
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! grep -qE "^## \[?${VERSION}\]?" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## [${VERSION}]' section — write it, then re-push the tag."
+            exit 1
+          fi
+          echo "CHANGELOG section for ${VERSION} present."
+
+      - run: ruff check src/ tests/
+      - run: ruff format --check src/ tests/
+      - run: python -m pytest tests/
+
+      # The toolkit gates its own release with itself, exactly as the dogfood
+      # job does on every pull request.
+      - run: jk-standards all
+      - run: jk-standards emit all --check
+      # Explicit, so the log shows the tag rule was actually evaluated with
+      # tags present rather than silently skipped.
+      - run: jk-standards release-pins
+
+  # Built here rather than reused from the CI run: the artifacts attached to a
+  # Release must come from the tagged tree, and nothing else guarantees the
+  # workflow-run artifact did.
+  package:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  github-release:
+    needs: [verify, package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the Release and upload its assets
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: dist
+          path: dist
+
+      # The Release body is the CHANGELOG section, verbatim — the same text the
+      # v0.8.0-v0.10.0 Releases carry, so the two never diverge and there is no
+      # second place to write release notes. awk rather than sed because the
+      # section ends at the next `## ` heading, not a fixed offset.
+      - name: Extract the changelog section for this tag
+        id: changelog
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          SECTION=$(awk "/^## \\[?${VERSION}\\]?/{found=1;next} /^## /{if(found) exit} found{print}" CHANGELOG.md)
+          if [ -z "$SECTION" ]; then
+            echo "::error::No CHANGELOG body for ${VERSION} — verify should have caught this."
+            exit 1
+          fi
+          {
+            echo "body<<CHANGELOG_EOF"
+            echo "$SECTION"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
+        with:
+          name: ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.body }}
+          files: dist/*
+          fail_on_unmatched_files: true

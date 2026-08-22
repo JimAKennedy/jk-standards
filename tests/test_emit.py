@@ -253,18 +253,29 @@ def test_doc_coverage_is_not_marked_non_deterministic():
     assert "doc-coverage" not in emit.NON_DETERMINISTIC
 
 
-def test_non_deterministic_emitters_run_last():
+def test_coverage_runs_after_every_fixture_the_suite_asserts_on():
     """`emit all` walks EMITTERS in dict order, and emit_coverage shells out to
     the full pytest suite -- which itself asserts the *other* generated fixtures
     are fresh. Right after a version bump every `toolkit_version`-carrying
     fixture is stale, so a coverage run scheduled before the deterministic
     emitters dies inside the subprocess and surfaces as a CalledProcessError
-    naming pytest, never the actual staleness. Keep coverage (and any future
-    non-deterministic emitter) in the final slots."""
+    naming pytest (MEM003), never the actual staleness.
+
+    Derived from `emit.NON_DETERMINISTIC` rather than a hardcoded name list, so
+    the set of fixtures the suite asserts on is the same set
+    `test_generated_yaml_pairs_every_deterministic_emitter` pins.
+    """
     order = list(emit.EMITTERS)
     assert set(order) >= emit.NON_DETERMINISTIC, order
-    tail = order[len(order) - len(emit.NON_DETERMINISTIC) :]
-    assert set(tail) == set(emit.NON_DETERMINISTIC), order
+    asserted_on = [n for n in order if n not in emit.NON_DETERMINISTIC]
+    for shell_out in emit.NON_DETERMINISTIC:
+        late = [n for n in asserted_on if order.index(n) > order.index(shell_out)]
+        assert not late, (
+            f"emitter '{shell_out}' shells out to the pytest suite, but "
+            f"{late} write fixtures that suite asserts on and are scheduled "
+            f"after it; at a bumped version those fixtures are still stale when "
+            f"'{shell_out}' runs. EMITTERS order: {order}"
+        )
 
 
 def test_doc_coverage_top_level_shape():

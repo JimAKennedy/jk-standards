@@ -253,6 +253,20 @@ def test_doc_coverage_is_not_marked_non_deterministic():
     assert "doc-coverage" not in emit.NON_DETERMINISTIC
 
 
+def test_non_deterministic_emitters_run_last():
+    """`emit all` walks EMITTERS in dict order, and emit_coverage shells out to
+    the full pytest suite -- which itself asserts the *other* generated fixtures
+    are fresh. Right after a version bump every `toolkit_version`-carrying
+    fixture is stale, so a coverage run scheduled before the deterministic
+    emitters dies inside the subprocess and surfaces as a CalledProcessError
+    naming pytest, never the actual staleness. Keep coverage (and any future
+    non-deterministic emitter) in the final slots."""
+    order = list(emit.EMITTERS)
+    assert set(order) >= emit.NON_DETERMINISTIC, order
+    tail = order[len(order) - len(emit.NON_DETERMINISTIC) :]
+    assert set(tail) == set(emit.NON_DETERMINISTIC), order
+
+
 def test_doc_coverage_top_level_shape():
     data = _fresh_doc_coverage()
     assert set(data) == {"toolkit_version", "units"}

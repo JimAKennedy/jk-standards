@@ -290,12 +290,20 @@ def emit_doc_coverage(root: Path) -> bytes:
     return _serialize({"toolkit_version": __version__, "units": rows})
 
 
+# Order is load-bearing for `emit all`, which runs these in dict order.
+# `coverage` MUST stay last: emit_coverage shells out to the full pytest suite,
+# and that suite asserts the *other* generated fixtures are fresh. Immediately
+# after a version bump every `toolkit_version`-carrying fixture is stale, so a
+# coverage run scheduled before them fails inside the subprocess and surfaces as
+# a CalledProcessError naming pytest — never the actual staleness. Emitting the
+# deterministic fixtures first means the suite sees a fresh tree.
 EMITTERS: dict[str, tuple[Callable[[Path], bytes], str]] = {
     "checks": (emit_checks, "checks.json"),
     "config-schema": (emit_config_schema, "config-schema.json"),
     "skills": (emit_skills, "skills.json"),
-    "coverage": (emit_coverage, "coverage.json"),
     "doc-coverage": (emit_doc_coverage, "doc-coverage.json"),
+    # keep last — see note above
+    "coverage": (emit_coverage, "coverage.json"),
 }
 
 

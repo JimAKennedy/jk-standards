@@ -6,6 +6,13 @@ GitHub Release.
 
 ## Pre-tag checklist (must all be green on `main`)
 
+**Precondition — regenerate first.** A version bump stales every deterministic
+fixture, so run `jk-standards emit all` and commit the result *before* you work
+through this checklist. Skipping it makes the `emit all --check` line below fail
+by construction rather than by fault; see
+[Notes on generated fixtures](#notes-on-generated-fixtures) for why one `emit
+all` pass is now sufficient.
+
 Run these from the repo root; every one must exit 0. Set `VERSION` once — the
 commands below read it rather than repeating a literal, which is how the
 literals in this file went a release out of date.
@@ -118,9 +125,31 @@ would falsify the record. They are in `release_pins.exclude` for that reason.
 
 ## Notes on generated fixtures
 
-- `site/src/generated/{checks,config-schema,skills}.json` are deterministic and
-  gated by `emit all --check`; regenerate with `jk-standards emit all` and commit.
+- `site/src/generated/{checks,config-schema,skills,doc-coverage}.json` are the
+  four deterministic fixtures gated by `emit all --check`. They are the exact
+  set declared in `jk-standards.yaml` under `region:generated-fixtures` — if you
+  add or remove an entry there, update this list too.
 - `site/src/generated/coverage.json` is non-deterministic (it reflects a real
-  coverage run) and is therefore **not** gated by `--check`. Regenerate it with a
-  fresh full run — `rm -f .coverage && jk-standards emit coverage` — before a
-  release so the published numbers reflect the tagged tree.
+  coverage run) and is therefore **not** gated by `--check`. It still needs a
+  fresh full run before a release so the published numbers reflect the tagged
+  tree.
+- Regenerate everything with a single pass, from the repo root:
+
+  ```bash
+  rm -f .coverage && jk-standards emit all
+  ```
+
+  `rm -f .coverage` forces the coverage emitter to do a full run rather than
+  reuse a stale data file. One `emit all` covers both the deterministic
+  fixtures and `coverage.json`; do not split the coverage emitter out into a
+  separate command.
+- The order inside `emit all` is load-bearing: `coverage` runs **last** because
+  it shells out to the pytest suite, and that suite asserts the four
+  deterministic fixtures are already fresh. Run `emit coverage` on its own at a
+  bumped version and it dies inside the subprocess — its output is captured and
+  discarded, so all you see is a bare `CalledProcessError` naming `pytest`, with
+  no hint that fixture staleness is the cause. If you hit that, re-run
+  `pytest -q` directly against the same tree to see the real failures.
+- `--check` is only meaningful *after* regeneration. Between a version bump and
+  `emit all` it reports the fixtures as stale, which is correct and expected —
+  it is not a signal that anything is broken.

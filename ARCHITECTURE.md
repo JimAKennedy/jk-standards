@@ -81,6 +81,16 @@ those fixtures at render time. The `emit --check` path re-derives each fixture
 and diffs it against the tracked file instead of writing, so a source change
 without a regenerated fixture fails CI rather than shipping a stale site.
 
+Emitter **order** is load-bearing. Most emitters derive their fixture purely
+from Python truth, but `coverage` is different: it shells out to the pytest
+suite, and that suite asserts on the fixtures the other emitters produce. So
+`coverage` MUST run after every emitter whose fixture the suite reads —
+otherwise a run that changes those fixtures (a version bump is the usual
+trigger) executes the suite against stale bytes and fails inside the emitter.
+The dict order in `emit.py` is the mechanism, so the constraint is documented
+at the point of edit: a block comment above `EMITTERS` and a `# keep last`
+marker on the `coverage` entry.
+
 ## Invariants and enforcement
 
 Every property below MUST hold for the architecture to be sound, and each names
@@ -94,6 +104,7 @@ listed as an invariant — those live in the prose above.
 | Every doc under the doc roots, plus this file, declares a valid lifecycle class | `doc-taxonomy` check |
 | Every gated doc's `Status:` line carries a `(YYYY-MM-DD)` date anchor | `status-prose` check |
 | Site JSON fixtures stay in sync with their Python generators | `generated-freshness` check / `emit-check` CI job |
+| Emitters that run the pytest suite come after every emitter whose fixture that suite asserts on | `test_coverage_runs_after_every_fixture_the_suite_asserts_on` |
 | A source change that should update a mapped doc lands with that doc | `doc-drift` check / `doc-discipline` CI job |
 | `file:line` references in docs point at a real file and in-range line | `file-line-refs` check |
 | Every behavioral claim in a doc traces to a real test | `behavioral-claims` check |

@@ -845,7 +845,7 @@
       "documented": true,
       "file": "src/jk_standards/emit.py",
       "kind": "function",
-      "lineno": 302,
+      "lineno": 310,
       "name": "run",
       "signals": {
         "docstring": true,

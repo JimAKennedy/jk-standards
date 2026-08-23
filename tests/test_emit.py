@@ -253,6 +253,82 @@ def test_doc_coverage_is_not_marked_non_deterministic():
     assert "doc-coverage" not in emit.NON_DETERMINISTIC
 
 
+def test_coverage_runs_after_every_fixture_the_suite_asserts_on(tmp_path, monkeypatch):
+    """Behavioral regression for the version-bump path.
+
+    `emit all` walks EMITTERS in dict order, and emit_coverage shells out to
+    the full pytest suite -- which itself asserts the *other* generated
+    fixtures are fresh. Immediately after a version bump every
+    `toolkit_version`-carrying fixture on disk is stale, so a coverage run
+    scheduled before the deterministic emitters observes that stale tree, dies
+    inside `subprocess.run(..., capture_output=True)`, and surfaces only as a
+    CalledProcessError naming pytest (MEM003) -- never the actual staleness.
+
+    This reproduces that in-process and shells out to nothing. It seeds a tmp
+    tree with pre-bump fixture bytes, bumps `emit.__version__`, and substitutes
+    a spy into every `emit.NON_DETERMINISTIC` slot -- the same source
+    `test_generated_yaml_pairs_every_deterministic_emitter` pins, rather than a
+    hardcoded fixture-name list. Each spy runs at its real scheduled position
+    and records which fixtures were still stale on disk at that moment.
+    EMITTERS' own order is never rewritten here: it is the subject under test.
+    """
+    generated = tmp_path / emit.GENERATED_DIR
+    generated.mkdir(parents=True)
+
+    deterministic = {
+        name: (fn, filename)
+        for name, (fn, filename) in emit.EMITTERS.items()
+        if name not in emit.NON_DETERMINISTIC
+    }
+    assert deterministic, "no deterministic emitters to observe staleness against"
+
+    # Seed the tree the way a release commit leaves it: every deterministic
+    # fixture present and written at the pre-bump version.
+    for fn, filename in deterministic.values():
+        (generated / filename).write_bytes(fn(tmp_path))
+
+    monkeypatch.setattr(emit, "__version__", "999.0.0-bump")
+
+    stale_seen: dict[str, list[str]] = {}
+
+    def _make_spy(shell_out: str):
+        def _spy(root: Path) -> bytes:
+            # Stands in for emit_coverage, which shells out to `pytest tests/`.
+            # What that child suite sees is exactly this: fixture bytes on disk
+            # versus what the emitters produce at the current version.
+            stale_seen[shell_out] = [
+                filename
+                for fn, filename in deterministic.values()
+                if (root / emit.GENERATED_DIR / filename).read_bytes() != fn(root)
+            ]
+            return b"{}\n"
+
+        return _spy
+
+    spied = {
+        name: ((_make_spy(name), filename) if name in emit.NON_DETERMINISTIC else (fn, filename))
+        for name, (fn, filename) in emit.EMITTERS.items()
+    }
+    monkeypatch.setattr(emit, "EMITTERS", spied)
+
+    assert emit.run(tmp_path, "all", check_only=False) == 0
+    assert set(stale_seen) == set(emit.NON_DETERMINISTIC), (
+        f"every shell-out emitter must have run under `emit all`; "
+        f"observed {sorted(stale_seen)}, expected {sorted(emit.NON_DETERMINISTIC)}"
+    )
+
+    for shell_out, stale in stale_seen.items():
+        assert not stale, (
+            f"emitter '{shell_out}' shells out to the full pytest suite, but at "
+            f"the moment it ran these fixtures were still stale on disk: "
+            f"{stale}. That suite asserts those fixtures are fresh, so right "
+            f"after a version bump '{shell_out}' fails inside "
+            f"subprocess.run(..., capture_output=True) and `emit all` surfaces "
+            f"only a CalledProcessError naming pytest. Move '{shell_out}' after "
+            f"{stale} in EMITTERS. Current order: {list(spied)}"
+        )
+
+
 def test_doc_coverage_top_level_shape():
     data = _fresh_doc_coverage()
     assert set(data) == {"toolkit_version", "units"}

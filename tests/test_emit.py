@@ -329,7 +329,6 @@ def test_coverage_runs_after_every_fixture_the_suite_asserts_on(tmp_path, monkey
         )
 
 
-
 def test_doc_coverage_top_level_shape():
     data = _fresh_doc_coverage()
     assert set(data) == {"toolkit_version", "units"}

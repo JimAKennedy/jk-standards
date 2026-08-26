@@ -48,6 +48,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tree — read-only, reporting anything that would change state as something for
   the user to run.
 
+- **The workflow command set — `assess`, `plan`, `next`, `ship`, `close`**
+  (`commands/`, `docs/commands.md`): the delivery loop the ledger format
+  exists to serve. `assess` reconciles a free-form audit or vision document
+  against the codebase and refines a ledger with the user section by section,
+  turning every input item into exactly one row — including the ones
+  deliberately not actioned, which become `accepted` rows rather than silent
+  omissions. `plan` classifies one slice, writes an implementation plan beside
+  the ledger with the slice's definition of done copied verbatim, and
+  self-reviews it for DoD coverage, row coverage and placeholders. `next`
+  executes exactly one task and stops: it derives its position by re-reading
+  the files rather than remembering it, works test-first, runs the slice's full
+  validation set, appends terse evidence, and commits code, plan checkbox,
+  ledger row and evidence as one unit under `Plan`/`Slice`/`Rows` trailers — so
+  an interrupted session loses nothing and the next invocation resumes from
+  disk. `ship` refuses an unfinished milestone, re-runs every validation on the
+  current head rather than trusting that it passed when the slice landed, syncs
+  the changelog and roadmap before opening the pull request, and generates the
+  body from the ledger and `git log --grep` — listing any commit without a
+  `Slice:` trailer as untraced work instead of omitting it. `close` verifies
+  the merge landed, retires the milestone and its branch, and rebases or
+  creates the next milestone's branch on the updated base, refusing to rewrite
+  a branch that carries review comments. Each command uses the Superpowers
+  skills where they are installed and names the equivalent by hand where they
+  are not, so a project without them gets the same discipline.
+
 ## [0.11.0] - 2026-08-20
 
 ### Added

@@ -7,7 +7,7 @@ description: Every field of jk-standards.yaml plus the CLI surface.
 import CodeSnippet from '../../../components/CodeSnippet.astro';
 import schema from '../../../generated/config-schema.json';
 
-Status: current (2026-08-18)
+Status: current (2026-08-26)
 
 All project-specific surface lives in one file, `{schema.config_file_name}`,
 at the consuming repo's root (override with `--config`). Every key is
@@ -167,6 +167,18 @@ exit 2 rather than exempting a version string no heading ever produces. See the
 [checks reference](/reference/checks/#release-pins) for the rules these fields
 tune.
 
+The `ledger_*` fields are read from a `ledger:` section and tune the `ledger`
+check, which enforces the delivery-ledger format. `roots` lists the trees
+searched for `ledger.md` files (default `docs/plans`); a repo with no ledger
+under them reports itself skipped rather than failing. `validations` names the
+file declaring the validation tokens a slice may cite — a `token: command`
+mapping, default `.jk/validations.yml`. That indirection is what makes a ledger
+portable: the ledger says which class of assurance a slice owes, and the repo
+says how it is obtained, so the same token means one command in a native
+project and another in a site. When the validations file is absent the token
+arm skips and says so, rather than reporting every token as undeclared. See the
+[checks reference](/reference/checks/#ledger) for the rules these fields tune.
+
 ## Example — this repo's own config
 
 jk-standards dogfoods itself, so its own `jk-standards.yaml` is a live
@@ -195,6 +207,13 @@ jk-standards doc-coverage --update-baseline
 jk-standards doc-coverage --update-baseline --allow-regression
                             # with --update-baseline: permit a write that
                             # LOWERS an existing floor (refused otherwise)
+jk-standards install-skills [--dest DIR] [--force|--check|--update-lock]
+                            # vendor skills from skills-lock.json
+                            # (default dest .agents/skills)
+jk-standards install-commands [--dest DIR] [--force|--check]
+                            # vendor workflow commands from the same lock file
+                            # (default dest .claude/commands/jk, so a command
+                            # arrives namespaced as /jk:<name>)
 ```
 
 `--update-baseline` and `--allow-regression` are check flags, not emit verbs:

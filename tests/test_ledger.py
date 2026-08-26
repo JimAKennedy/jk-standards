@@ -1,0 +1,315 @@
+"""Unit tests for the ledger check.
+
+The check's only inputs are the working tree — the ledgers under the
+configured roots, the plan and evidence files they name, and the repo's
+validations file — so every test builds a complete little programme under
+``tmp_path`` rather than leaning on jk-standards' own docs.
+
+``ledger()`` composes a conforming ledger from parts; each test perturbs one
+part and asserts the single rule that governs it, so a failure names the rule
+that broke rather than "the fixture no longer parses".
+"""
+
+from pathlib import Path
+
+from jk_standards.checks import ledger
+from jk_standards.config import Config
+
+VALIDATIONS = "unit: pytest\ndoc-conformance: bash check-docs.sh\ngate: bash gate.sh\n"
+
+HEADER = """---
+class: gated
+---
+
+# Demo Ledger
+
+Status: current (2026-08-26)
+
+"""
+
+MILESTONE = """## Milestone M001 — Theory Corrections
+
+**Vision:** Every wrong claim is corrected and locked by a test.
+**Branch:** milestone/M001-theory-corrections
+**Status:** in-progress
+
+"""
+
+SLICE = """### Slice M001/S05 — Chapter 2 hedges
+
+**Status:** open
+**Validation:** doc-conformance, gate
+**Evidence:** evidence/M001-S05.md
+**Plan:** M001-S05-plan.md
+
+**Definition of Done**
+
+- [ ] The opening no longer asserts multi-century continuity
+
+| ID | Item | Verification | Status |
+|---|---|---|---|
+| F07 | Unsourced centuries claim | Case `S05-F07` | `open` |
+"""
+
+
+def write(root: Path, rel: str, text: str) -> Path:
+    path = root / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def programme(
+    root: Path,
+    body: str | None = None,
+    *,
+    validations: str | None = VALIDATIONS,
+    plan: bool = True,
+    evidence: bool = True,
+) -> Path:
+    """Build a complete programme under ``root`` and return the ledger path."""
+    if validations is not None:
+        write(root, ".jk/validations.yml", validations)
+    if plan:
+        write(root, "docs/plans/demo/M001-S05-plan.md", "# plan\n")
+    if evidence:
+        write(root, "docs/plans/demo/evidence/M001-S05.md", "# evidence\n")
+    text = HEADER + MILESTONE + (SLICE if body is None else body)
+    return write(root, "docs/plans/demo/ledger.md", text)
+
+
+def run(root: Path) -> int:
+    return ledger.run(root, Config())
+
+
+# --- a conforming ledger passes ---------------------------------------------
+
+
+def test_conforming_ledger_passes(tmp_path):
+    programme(tmp_path)
+    assert run(tmp_path) == 0
+
+
+def test_no_ledger_is_not_a_violation(tmp_path):
+    assert run(tmp_path) == 0
+
+
+def test_ledger_outside_configured_roots_is_ignored(tmp_path):
+    programme(tmp_path)
+    cfg = Config()
+    cfg.ledger_roots = ["docs/elsewhere"]
+    assert ledger.run(tmp_path, cfg) == 0
+
+
+# --- structure ---------------------------------------------------------------
+
+
+def test_ledger_with_no_milestones_flagged(tmp_path):
+    write(tmp_path, "docs/plans/demo/ledger.md", HEADER + "Nothing here.\n")
+    assert run(tmp_path) == 1
+
+
+def test_slice_before_any_milestone_flagged(tmp_path):
+    write(tmp_path, "docs/plans/demo/ledger.md", HEADER + SLICE)
+    assert run(tmp_path) >= 1
+
+
+def test_slice_naming_a_different_milestone_flagged(tmp_path):
+    programme(tmp_path, SLICE.replace("### Slice M001/S05", "### Slice M002/S05"))
+    assert run(tmp_path) >= 1
+
+
+def test_duplicate_slice_id_flagged(tmp_path):
+    programme(tmp_path, SLICE + "\n" + SLICE)
+    assert run(tmp_path) >= 1
+
+
+def test_milestone_missing_required_key_flagged(tmp_path):
+    write(tmp_path, ".jk/validations.yml", VALIDATIONS)
+    write(tmp_path, "docs/plans/demo/M001-S05-plan.md", "# plan\n")
+    write(tmp_path, "docs/plans/demo/evidence/M001-S05.md", "# evidence\n")
+    write(
+        tmp_path,
+        "docs/plans/demo/ledger.md",
+        HEADER + MILESTONE.replace("**Branch:** milestone/M001-theory-corrections\n", "") + SLICE,
+    )
+    assert run(tmp_path) == 1
+
+
+# --- status vocabulary -------------------------------------------------------
+
+
+def test_invalid_slice_status_flagged(tmp_path):
+    programme(tmp_path, SLICE.replace("**Status:** open", "**Status:** started"))
+    assert run(tmp_path) >= 1
+
+
+def test_invalid_row_status_flagged(tmp_path):
+    programme(tmp_path, SLICE.replace("| `open` |", "| `wip` |"))
+    assert run(tmp_path) == 1
+
+
+def test_accepted_is_a_valid_slice_status(tmp_path):
+    body = SLICE.replace("**Status:** open", "**Status:** accepted").replace(
+        "| `open` |", "| `accepted` |"
+    )
+    programme(tmp_path, body)
+    assert run(tmp_path) == 0
+
+
+# --- dependencies ------------------------------------------------------------
+
+
+def test_depends_on_unknown_slice_flagged(tmp_path):
+    programme(
+        tmp_path, SLICE.replace("**Status:** open", "**Depends:** M001/S09\n**Status:** open")
+    )
+    assert run(tmp_path) == 1
+
+
+def test_depends_on_declared_slice_passes(tmp_path):
+    programme(
+        tmp_path, SLICE.replace("**Status:** open", "**Depends:** M001/S05\n**Status:** open")
+    )
+    # Self-dependency is its own violation; the point here is that a declared
+    # ID resolves rather than being reported as unknown.
+    assert run(tmp_path) == 1
+
+
+# --- definition of done ------------------------------------------------------
+
+
+def test_slice_without_definition_of_done_flagged(tmp_path):
+    body = SLICE.replace(
+        "**Definition of Done**\n\n- [ ] The opening no longer asserts multi-century continuity\n",
+        "",
+    )
+    programme(tmp_path, body)
+    assert run(tmp_path) == 1
+
+
+def test_done_slice_with_unchecked_item_flagged(tmp_path):
+    programme(tmp_path, SLICE.replace("**Status:** open", "**Status:** done"))
+    # Unchecked DoD item, plus the open row a done slice may not carry.
+    assert run(tmp_path) == 2
+
+
+def test_done_slice_fully_closed_passes(tmp_path):
+    body = (
+        SLICE.replace("**Status:** open", "**Status:** done")
+        .replace("- [ ] The opening", "- [x] The opening")
+        .replace("| `open` |", "| `done` |")
+    )
+    programme(tmp_path, body)
+    assert run(tmp_path) == 0
+
+
+# --- plan, evidence, and containment ----------------------------------------
+
+
+def test_slice_past_open_without_plan_flagged(tmp_path):
+    body = SLICE.replace("**Status:** open", "**Status:** in-progress").replace(
+        "**Plan:** M001-S05-plan.md\n", ""
+    )
+    programme(tmp_path, body)
+    assert run(tmp_path) == 1
+
+
+def test_named_plan_that_does_not_exist_flagged(tmp_path):
+    programme(tmp_path, plan=False)
+    assert run(tmp_path) == 1
+
+
+def test_done_slice_without_evidence_file_flagged(tmp_path):
+    body = (
+        SLICE.replace("**Status:** open", "**Status:** done")
+        .replace("- [ ] The opening", "- [x] The opening")
+        .replace("| `open` |", "| `done` |")
+    )
+    programme(tmp_path, body, evidence=False)
+    assert run(tmp_path) == 1
+
+
+def test_open_slice_without_evidence_file_passes(tmp_path):
+    programme(tmp_path, evidence=False)
+    assert run(tmp_path) == 0
+
+
+def test_path_outside_the_ledger_directory_flagged(tmp_path):
+    write(tmp_path, "elsewhere/plan.md", "# plan\n")
+    programme(
+        tmp_path, SLICE.replace("**Plan:** M001-S05-plan.md", "**Plan:** ../../elsewhere/plan.md")
+    )
+    assert run(tmp_path) == 1
+
+
+# --- validation tokens -------------------------------------------------------
+
+
+def test_undeclared_validation_token_flagged(tmp_path):
+    programme(
+        tmp_path, SLICE.replace("**Validation:** doc-conformance, gate", "**Validation:** e2e")
+    )
+    assert run(tmp_path) == 1
+
+
+def test_token_arm_skips_without_a_validations_file(tmp_path):
+    programme(
+        tmp_path,
+        SLICE.replace("**Validation:** doc-conformance, gate", "**Validation:** e2e"),
+        validations=None,
+    )
+    assert run(tmp_path) == 0
+
+
+def test_empty_validation_set_flagged(tmp_path):
+    programme(tmp_path, SLICE.replace("**Validation:** doc-conformance, gate", "**Validation:**"))
+    assert run(tmp_path) == 1
+
+
+# --- rows --------------------------------------------------------------------
+
+
+def test_row_table_missing_required_column_flagged(tmp_path):
+    body = SLICE.replace("| ID | Item | Verification | Status |", "| ID | Item | Status |").replace(
+        "|---|---|---|---|", "|---|---|---|"
+    )
+    programme(tmp_path, body)
+    assert run(tmp_path) == 1
+
+
+def test_row_without_verification_flagged(tmp_path):
+    programme(tmp_path, SLICE.replace("| Case `S05-F07` |", "|  |"))
+    assert run(tmp_path) == 1
+
+
+def test_slice_without_a_row_table_passes(tmp_path):
+    body = SLICE.split("| ID |")[0]
+    programme(tmp_path, body)
+    assert run(tmp_path) == 0
+
+
+# --- placeholders and the escape hatch --------------------------------------
+
+
+def test_placeholder_flagged(tmp_path):
+    programme(tmp_path, SLICE.replace("Case `S05-F07`", "TBD"))
+    assert run(tmp_path) == 1
+
+
+def test_escape_hatch_suppresses_the_line_it_sits_on(tmp_path):
+    body = SLICE.replace(
+        "**Validation:** doc-conformance, gate",
+        "**Validation:** manual-uat  <!-- ledger-ok: no automatable gate; UAT script in the plan -->",
+    )
+    programme(tmp_path, body)
+    assert run(tmp_path) == 0
+
+
+def test_escape_hatch_without_a_reason_does_not_suppress(tmp_path):
+    body = SLICE.replace(
+        "**Validation:** doc-conformance, gate",
+        "**Validation:** manual-uat  <!-- ledger-ok: -->",
+    )
+    programme(tmp_path, body)
+    assert run(tmp_path) == 1

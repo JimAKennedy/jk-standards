@@ -16,12 +16,19 @@ This is the importable, in-process-testable backend for the
 an int exit code (0 clean, 1 violations/failures, 2 usage/config error)
 instead of calling sys.exit, so callers and tests can drive it directly.
 
+The same lock file, and the same download/verify plumbing, also vendors
+workflow *commands* — single Markdown files rather than skill directories —
+so a consuming repo has one lock, one installer, and one hash discipline for
+both kinds of vendored asset.
+
 Usage (via the CLI):
-    jk-standards install-skills                          # install missing skills
-    jk-standards install-skills --dest .claude/skills    # Claude Code layout
-    jk-standards install-skills --force                  # reinstall all skills
-    jk-standards install-skills --check                  # verify installed hashes
-    jk-standards install-skills --update-lock            # pin hashes + toolkit version
+    jk-standards install-skills                            # install missing skills
+    jk-standards install-skills --dest .claude/skills      # Claude Code layout
+    jk-standards install-skills --force                    # reinstall all skills
+    jk-standards install-skills --check                    # verify installed hashes
+    jk-standards install-skills --update-lock              # pin hashes + toolkit version
+    jk-standards install-commands                          # install missing commands
+    jk-standards install-commands --dest .claude/commands/jk  # /jk: namespace
 """
 
 from __future__ import annotations
@@ -43,6 +50,12 @@ from jk_standards import __version__
 
 LOCK_FILE = "skills-lock.json"
 SKILLS_DIR = Path(".agents/skills")
+# Commands have no generic-agent equivalent to .agents/skills — a slash
+# command is a Claude Code concept — so the default is the Claude layout.
+# The `jk` subdirectory is deliberate: project commands in a subdirectory
+# are namespaced by it, so a vendored command arrives as `/jk:status`
+# rather than claiming the bare `/status` a consuming repo may want.
+COMMANDS_DIR = Path(".claude/commands/jk")
 GITHUB_ARCHIVE_URL = "https://github.com/{source}/archive/refs/heads/main.tar.gz"
 
 
@@ -227,8 +240,124 @@ def check_skills(project_root: Path, skills_dir: Path = SKILLS_DIR) -> int:
     return 0
 
 
-def update_lock(project_root: Path, skills_dir: Path = SKILLS_DIR) -> int:
-    """Update lock hashes to match installed skills and pin the toolkit version.
+def extract_file(tar: tarfile.TarFile, path_in_repo: str, dest: Path) -> bool:
+    """Extract one file from a repo tarball to ``dest``. True if it was found."""
+    prefix = None
+    for member in tar.getmembers():
+        if prefix is None:
+            prefix = member.name.split("/")[0]
+        if member.name == f"{prefix}/{path_in_repo}" and member.isfile():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            with tar.extractfile(member) as src:  # type: ignore[union-attr]
+                dest.write_bytes(src.read())
+            return True
+    return False
+
+
+def install_commands(
+    project_root: Path, *, force: bool = False, commands_dir: Path = COMMANDS_DIR
+) -> int:
+    """Vendor every command in the lock file that is missing or out of date."""
+    lock = load_lock(project_root)
+    commands = lock.get("commands", {})
+    if not commands:
+        print("No commands in lock file.")
+        return 0
+
+    by_source: dict[str, list[tuple[str, dict]]] = defaultdict(list)
+    for name, info in commands.items():
+        by_source[info["source"]].append((name, info))
+
+    installed = skipped = failed = 0
+
+    for source, command_list in sorted(by_source.items()):
+        to_install = []
+        for name, info in command_list:
+            dest = project_root / commands_dir / f"{name}.md"
+            if not force and dest.exists() and compute_hash(dest) == info["computedHash"]:
+                print(f"  {name}: up to date (skipped)")
+                skipped += 1
+                continue
+            if dest.exists():
+                print(f"  {name}: hash mismatch, reinstalling")
+            to_install.append((name, info))
+
+        if not to_install:
+            continue
+
+        try:
+            tar = download_archive(source)
+        except (urllib.error.URLError, tarfile.TarError, OSError) as e:
+            print(f"  Failed to download {source}: {e}", file=sys.stderr)
+            failed += len(to_install)
+            continue
+
+        for name, info in to_install:
+            dest = project_root / commands_dir / f"{name}.md"
+            if not extract_file(tar, info["commandPath"], dest):
+                print(
+                    f"  {name}: {info['commandPath']} not found in {source} (FAILED)",
+                    file=sys.stderr,
+                )
+                failed += 1
+                continue
+            actual = compute_hash(dest)
+            if actual != info["computedHash"]:
+                print(
+                    f"  {name}: hash verification failed "
+                    f"(expected {info['computedHash'][:12]}..., got {actual[:12]}...)",
+                    file=sys.stderr,
+                )
+                print(f"  {name}: installed anyway — source may have updated")
+            else:
+                print(f"  {name}: installed (hash verified)")
+            installed += 1
+
+        tar.close()
+
+    print(f"\nDone: {installed} installed, {skipped} up-to-date, {failed} failed")
+    return 1 if failed else 0
+
+
+def check_commands(project_root: Path, commands_dir: Path = COMMANDS_DIR) -> int:
+    """Verify installed commands against their lock-file hashes."""
+    lock = load_lock(project_root)
+    commands = lock.get("commands", {})
+    ok = mismatch = missing = 0
+
+    for name, info in sorted(commands.items()):
+        dest = project_root / commands_dir / f"{name}.md"
+        if not dest.exists():
+            print(f"  {name}: MISSING")
+            missing += 1
+            continue
+        actual = compute_hash(dest)
+        if actual == info["computedHash"]:
+            print(f"  {name}: OK")
+            ok += 1
+        else:
+            print(
+                f"  {name}: HASH MISMATCH "
+                f"(expected {info['computedHash'][:12]}..., got {actual[:12]}...)"
+            )
+            mismatch += 1
+
+    print(f"\n{ok} ok, {mismatch} mismatch, {missing} missing")
+    if missing or mismatch:
+        print("Run 'jk-standards install-commands' to fix.")
+        return 1
+    return 0
+
+
+def update_lock(
+    project_root: Path,
+    skills_dir: Path = SKILLS_DIR,
+    commands_dir: Path = COMMANDS_DIR,
+) -> int:
+    """Update lock hashes to match installed assets and pin the toolkit version.
+
+    Both vendored asset kinds are refreshed: skills (a directory whose
+    ``SKILL.md`` carries the hash) and commands (a single Markdown file).
 
     Records the producing jk-standards version in the top-level
     ``jkStandardsVersion`` field so consumers can tell which toolkit version
@@ -245,6 +374,19 @@ def update_lock(project_root: Path, skills_dir: Path = SKILLS_DIR) -> int:
             print(f"  {name}: not installed, skipping")
             continue
         actual = compute_hash(skill_md)
+        if actual != info["computedHash"]:
+            info["computedHash"] = actual
+            print(f"  {name}: hash updated")
+            updated += 1
+        else:
+            print(f"  {name}: unchanged")
+
+    for name, info in sorted(lock.get("commands", {}).items()):
+        command_md = project_root / commands_dir / f"{name}.md"
+        if not command_md.exists():
+            print(f"  {name}: not installed, skipping")
+            continue
+        actual = compute_hash(command_md)
         if actual != info["computedHash"]:
             info["computedHash"] = actual
             print(f"  {name}: hash updated")
@@ -320,6 +462,47 @@ def main(argv: list[str] | None = None) -> int:
         if args.update_lock:
             return update_lock(project_root, skills_dir=args.dest)
         return install_skills(project_root, force=args.force, skills_dir=args.dest)
+    except LockError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 2
+
+
+def _build_commands_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="jk-standards install-commands",
+        description="Install workflow commands from skills-lock.json",
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="Reinstall all commands even if up to date"
+    )
+    parser.add_argument(
+        "--check", action="store_true", help="Verify installed commands match lock file hashes"
+    )
+    parser.add_argument(
+        "--root", type=Path, default=None, help="Project root (default: auto-detect)"
+    )
+    parser.add_argument(
+        "--dest",
+        type=Path,
+        default=COMMANDS_DIR,
+        help="Commands directory relative to project root (default: .claude/commands/jk)",
+    )
+    return parser
+
+
+def commands_main(argv: list[str] | None = None) -> int:
+    """Run the install-commands subcommand. Returns an exit code."""
+    args = _build_commands_parser().parse_args(argv)
+
+    project_root = args.root or find_project_root()
+
+    print(f"Skills lock:   {project_root / LOCK_FILE}")
+    print(f"Commands dir:  {project_root / args.dest}\n")
+
+    try:
+        if args.check:
+            return check_commands(project_root, commands_dir=args.dest)
+        return install_commands(project_root, force=args.force, commands_dir=args.dest)
     except LockError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 2

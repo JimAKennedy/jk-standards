@@ -138,6 +138,11 @@ class Config:
     snippet_markers: list[SnippetMarkerSyntax] = field(default_factory=list)
     # boundaries: directed forbidden-reference rules between component dirs.
     boundaries: list[BoundaryRule] = field(default_factory=list)
+    # ledger: roots searched for `ledger.md` delivery ledgers, and the file the
+    # consuming repo declares its validation tokens in. A missing validations
+    # file skips the token arm rather than failing it (see checks/ledger.py).
+    ledger_roots: list[str] = field(default_factory=lambda: ["docs/plans"])
+    ledger_validations: str = ".jk/validations.yml"
     # doc-coverage: Python source roots the ast enumerator walks, and the doc
     # scopes scanned for the "mention" OR-signal. An absent section yields empty
     # source_roots, so the check trivially passes (nothing to enumerate).
@@ -380,6 +385,11 @@ def load_config(root: Path, config_path: Path | None = None) -> Config:
         cfg.release_pin_extensions = [str(e) for e in release_pins["extensions"]]
     cfg.release_pin_exclude = [str(e) for e in release_pins.get("exclude", [])]
     cfg.release_pin_untagged_versions = _untagged_versions(release_pins.get("untagged_versions"))
+
+    ledger = data.get("ledger", {})
+    if "roots" in ledger:
+        cfg.ledger_roots = [str(r) for r in ledger["roots"]]
+    cfg.ledger_validations = str(ledger.get("validations", cfg.ledger_validations))
     return cfg
 
 

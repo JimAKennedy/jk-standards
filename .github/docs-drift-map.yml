@@ -41,6 +41,16 @@ mappings:
     reason: "reference/configuration.mdx is the public site's config + CLI reference. A source change without a site update ships a deployed site that lies to users."
 
   - sources:
+      - "commands/**"
+    doc: "docs/commands.md"
+    reason: "commands.md is the index of shipped workflow commands and how they are vendored. Adding or renaming a command changes what a consuming repo pins in skills-lock.json."
+
+  - sources:
+      - "src/jk_standards/checks/ledger.py"
+    doc: "docs/ledger-standard.md"
+    reason: "ledger-standard.md is the format the ledger check enforces. A rule change in the check without a standard update leaves the published format and the gate disagreeing, which is the drift the check itself exists to prevent."
+
+  - sources:
       - "skills/**"
     doc: "docs/skills.md"
     reason: "skills.md is the index of shipped skills and their intended use. Adding or renaming a skill changes what consumers vendor via skills-lock.json."

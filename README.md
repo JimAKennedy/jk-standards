@@ -51,6 +51,7 @@ and the CI graph rather than the prose:
 | workflow-permissions | A job calling a local reusable workflow must grant every scope that callee declares, at workflow *and* job level — otherwise the run fails to compose before any job starts, as a `startup_failure` carrying no annotation |
 | workflow-concurrency | Every `concurrency:` group is either ref-scoped or named as a deliberate repo-wide lock; an unscoped group silently serialises the whole repository, so unrelated pull requests cancel each other's jobs |
 | release-pins | Every `## [X.Y.Z]` changelog heading has a matching tag, and every adoption pin naming this repo resolves — so documented install instructions cannot rot into dangling refs |
+| ledger | Delivery ledgers conform to the [ledger standard](docs/ledger-standard.md): IDs well-formed and unique, statuses from the declared vocabulary, dependencies resolvable, every slice carrying a definition of done and validation tokens the repo declares, and a `done` slice proving it — checked boxes, an evidence file on disk, closed rows — with a `<!-- ledger-ok: <reason> -->` escape hatch |
 
 ### 2. Pre-commit hooks (`.pre-commit-hooks.yaml`)
 

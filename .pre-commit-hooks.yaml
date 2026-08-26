@@ -112,6 +112,15 @@
   pass_filenames: false
 # endregion:hook-workflow-concurrency
 
+# region:hook-ledger
+- id: ledger
+  name: delivery ledgers conform to the ledger standard
+  entry: jk-standards ledger
+  language: python
+  types_or: [markdown]
+  pass_filenames: false
+# endregion:hook-ledger
+
 # region:hook-release-pins
 - id: release-pins
   name: released versions are tagged and every pin to this repo resolves

@@ -60,6 +60,10 @@
       "missing_lines": 5,
       "percent_covered": 96.73
     },
+    "src/jk_standards/checks/ledger.py": {
+      "missing_lines": 8,
+      "percent_covered": 96.51
+    },
     "src/jk_standards/checks/release_pins.py": {
       "missing_lines": 1,
       "percent_covered": 98.74
@@ -86,11 +90,11 @@
     },
     "src/jk_standards/cli.py": {
       "missing_lines": 5,
-      "percent_covered": 93.5
+      "percent_covered": 93.75
     },
     "src/jk_standards/config.py": {
-      "missing_lines": 7,
-      "percent_covered": 95.51
+      "missing_lines": 8,
+      "percent_covered": 95.0
     },
     "src/jk_standards/emit.py": {
       "missing_lines": 35,
@@ -109,8 +113,8 @@
       "percent_covered": 100.0
     },
     "src/jk_standards/skills_install.py": {
-      "missing_lines": 2,
-      "percent_covered": 98.14
+      "missing_lines": 10,
+      "percent_covered": 95.45
     },
     "src/jk_standards/testindex.py": {
       "missing_lines": 12,
@@ -123,9 +127,9 @@
   },
   "toolkit_version": "0.11.0",
   "totals": {
-    "covered_lines": 2110,
-    "missing_lines": 242,
-    "num_statements": 2352,
-    "percent_covered": 87.89
+    "covered_lines": 2482,
+    "missing_lines": 259,
+    "num_statements": 2741,
+    "percent_covered": 88.86
   }
 }

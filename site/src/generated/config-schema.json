@@ -133,6 +133,20 @@
       "type": "list[str]"
     },
     {
+      "default": [
+        "docs/plans"
+      ],
+      "has_default_factory": true,
+      "name": "ledger_roots",
+      "type": "list[str]"
+    },
+    {
+      "default": ".jk/validations.yml",
+      "has_default_factory": false,
+      "name": "ledger_validations",
+      "type": "str"
+    },
+    {
       "default": "(ref|fr)-[A-Za-z0-9-]+",
       "has_default_factory": false,
       "name": "provenance_anchor_pattern",

@@ -4,7 +4,7 @@ class: gated
 
 # Configuration reference
 
-Status: current (2026-08-18)
+Status: current (2026-08-26)
 
 All project-specific surface lives in one file, `jk-standards.yaml`, at the
 consuming repo's root (override with `--config`). Every key is optional; an
@@ -133,6 +133,11 @@ release_pins:                 # released versions tagged; pins resolve
     - MIGRATION-              # historical records keep their original pins
   untagged_versions:          # released without a tag; declared, not fixed
     - "0.2.0"                 # keeps the check a ratchet on future releases
+
+ledger:                       # delivery ledgers (docs/ledger-standard.md)
+  roots:                      # trees searched for ledger.md (default below)
+    - docs/plans
+  validations: .jk/validations.yml   # token -> command map (default)
 ```
 
 The `status_prose` section's `date_tolerance_days` tunes the accuracy arm of
@@ -266,6 +271,18 @@ error surfaced as exit 2 — coercing `[0.7]` into `["0.7"]` would exempt a
 string no changelog heading ever produces, leaving the real gap unguarded. See
 the [checks reference](checks.md#release-pins) for the rules these fields tune.
 
+The `ledger` section tunes the `ledger` check. `roots` lists the trees searched
+for `ledger.md` files (default `docs/plans`); a repo with no ledger under them
+reports itself skipped rather than failing. `validations` names the file
+declaring the validation tokens a slice may cite — a `token: command` mapping,
+default `.jk/validations.yml`. That indirection is what makes a ledger
+portable: the ledger says which class of assurance a slice owes, and the repo
+says how it is obtained, so the same token means `ctest` in a native project and
+a Playwright run in a site. When the validations file is absent the token arm
+skips and says so, rather than reporting every token as undeclared. See the
+[ledger standard](ledger-standard.md) for the format itself and the
+[checks reference](checks.md#ledger) for the rules.
+
 ## CLI
 
 ```
@@ -287,6 +304,13 @@ jk-standards doc-coverage --update-baseline
 jk-standards doc-coverage --update-baseline --allow-regression
                             # with --update-baseline: permit a write that
                             # LOWERS an existing floor (refused otherwise)
+jk-standards install-skills [--dest DIR] [--force|--check|--update-lock]
+                            # vendor skills from skills-lock.json
+                            # (default dest .agents/skills)
+jk-standards install-commands [--dest DIR] [--force|--check]
+                            # vendor workflow commands from the same lock file
+                            # (default dest .claude/commands/jk, so a command
+                            # arrives namespaced as /jk:<name>)
 ```
 
 `--update-baseline` and `--allow-regression` are check flags, not emit verbs:

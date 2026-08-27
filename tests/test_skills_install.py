@@ -504,3 +504,141 @@ def test_find_project_root_defaults_to_cwd_when_absent(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     assert skills_install.find_project_root() == tmp_path
+
+
+# --- commands: the second vendored asset kind -------------------------------
+#
+# Commands ride the same lock file, the same download plumbing, and the same
+# hash discipline as skills — but a command is a single Markdown file rather
+# than a directory, so extraction, the on-disk layout, and the "missing after
+# extract" failure all differ. These cover that seam.
+
+
+def _write_command_lock(root: Path, commands: dict, *, version: str | None = None) -> Path:
+    lock: dict = {"commands": commands}
+    if version is not None:
+        lock["jkStandardsVersion"] = version
+    lock_path = root / "skills-lock.json"
+    lock_path.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
+    return lock_path
+
+
+def _command_entry(source: str, name: str, computed_hash: str) -> dict:
+    return {
+        "source": source,
+        "sourceType": "github",
+        "commandPath": f"commands/{name}.md",
+        "computedHash": computed_hash,
+    }
+
+
+def _make_command(root: Path, dest_rel: str, name: str, body: str) -> str:
+    path = root / dest_rel / f"{name}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body, encoding="utf-8")
+    return compute_hash(path)
+
+
+def test_install_downloads_and_installs_command(tmp_path, capsys, monkeypatch):
+    body = "---\ndescription: status\n---\n\nRender the ledger.\n"
+    archive = _make_archive("repo-main", {"commands/status.md": body})
+    _stub_urlopen(monkeypatch, lambda req: archive)
+    _write_command_lock(tmp_path, {"status": _command_entry("owner/repo", "status", _sha(body))})
+
+    assert skills_install.install_commands(tmp_path) == 0
+    installed = tmp_path / ".claude/commands/jk/status.md"
+    assert installed.read_text(encoding="utf-8") == body
+    assert "hash verified" in capsys.readouterr().out
+
+
+def test_install_commands_respects_dest(tmp_path, monkeypatch):
+    body = "# status\n"
+    archive = _make_archive("repo-main", {"commands/status.md": body})
+    _stub_urlopen(monkeypatch, lambda req: archive)
+    _write_command_lock(tmp_path, {"status": _command_entry("owner/repo", "status", _sha(body))})
+
+    assert skills_install.install_commands(tmp_path, commands_dir=Path(".agents/commands")) == 0
+    assert (tmp_path / ".agents/commands/status.md").exists()
+
+
+def test_install_commands_up_to_date_skips_without_download(tmp_path, capsys, monkeypatch):
+    body = "# status\n"
+    h = _make_command(tmp_path, ".claude/commands/jk", "status", body)
+    _write_command_lock(tmp_path, {"status": _command_entry("owner/repo", "status", h)})
+
+    def explode(req):
+        raise AssertionError("must not download an up-to-date command")
+
+    _stub_urlopen(monkeypatch, explode)
+    assert skills_install.install_commands(tmp_path) == 0
+    assert "up to date" in capsys.readouterr().out
+
+
+def test_install_commands_missing_path_in_archive_fails(tmp_path, capsys, monkeypatch):
+    archive = _make_archive("repo-main", {"commands/other.md": "# other\n"})
+    _stub_urlopen(monkeypatch, lambda req: archive)
+    _write_command_lock(tmp_path, {"status": _command_entry("owner/repo", "status", _sha("x"))})
+
+    assert skills_install.install_commands(tmp_path) == 1
+    assert "not found" in capsys.readouterr().err
+
+
+def test_empty_commands_lock_returns_zero(tmp_path, capsys):
+    _write_command_lock(tmp_path, {})
+    assert skills_install.install_commands(tmp_path) == 0
+    assert "No commands in lock file." in capsys.readouterr().out
+
+
+def test_check_commands_ok_returns_zero(tmp_path, capsys):
+    h = _make_command(tmp_path, ".claude/commands/jk", "status", "# status\n")
+    _write_command_lock(tmp_path, {"status": _command_entry("owner/repo", "status", h)})
+    assert skills_install.check_commands(tmp_path) == 0
+    assert "status: OK" in capsys.readouterr().out
+
+
+def test_check_commands_missing_reports_and_exits_1(tmp_path, capsys):
+    _write_command_lock(tmp_path, {"status": _command_entry("owner/repo", "status", "deadbeef")})
+    assert skills_install.check_commands(tmp_path) == 1
+    assert "MISSING" in capsys.readouterr().out
+
+
+def test_check_commands_hash_mismatch_reports_and_exits_1(tmp_path, capsys):
+    _make_command(tmp_path, ".claude/commands/jk", "status", "# status\n")
+    _write_command_lock(tmp_path, {"status": _command_entry("owner/repo", "status", "deadbeef")})
+    assert skills_install.check_commands(tmp_path) == 1
+    assert "HASH MISMATCH" in capsys.readouterr().out
+
+
+def test_update_lock_refreshes_command_hash(tmp_path, capsys):
+    h = _make_command(tmp_path, ".claude/commands/jk", "status", "# status\n")
+    _write_command_lock(
+        tmp_path,
+        {"status": _command_entry("owner/repo", "status", "stale")},
+        version=__version__,
+    )
+    assert skills_install.update_lock(tmp_path) == 0
+    lock = json.loads((tmp_path / "skills-lock.json").read_text(encoding="utf-8"))
+    assert lock["commands"]["status"]["computedHash"] == h
+    assert "hash updated" in capsys.readouterr().out
+
+
+def test_update_lock_skips_uninstalled_command(tmp_path, capsys):
+    _write_command_lock(
+        tmp_path,
+        {"status": _command_entry("owner/repo", "status", "stale")},
+        version=__version__,
+    )
+    assert skills_install.update_lock(tmp_path) == 0
+    assert "not installed, skipping" in capsys.readouterr().out
+
+
+def test_cli_routes_install_commands_to_module(tmp_path, capsys):
+    """`jk-standards install-commands --check` reaches the installer, not a check."""
+    h = _make_command(tmp_path, ".claude/commands/jk", "status", "# status\n")
+    _write_command_lock(tmp_path, {"status": _command_entry("owner/repo", "status", h)})
+    assert cli_main(["install-commands", "--check", "--root", str(tmp_path)]) == 0
+    assert "status: OK" in capsys.readouterr().out
+
+
+def test_cli_install_commands_missing_lockfile_exits_2(tmp_path):
+    assert cli_main(["install-commands", "--check", "--root", str(tmp_path)]) == 2

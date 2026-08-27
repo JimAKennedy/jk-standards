@@ -447,6 +447,102 @@
     },
     {
       "documented": true,
+      "file": "src/jk_standards/checks/ledger.py",
+      "kind": "class",
+      "lineno": 91,
+      "name": "Milestone",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/ledger.py",
+      "kind": "class",
+      "lineno": 72,
+      "name": "Row",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/ledger.py",
+      "kind": "class",
+      "lineno": 80,
+      "name": "Slice",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/ledger.py",
+      "kind": "function",
+      "lineno": 121,
+      "name": "find_ledgers",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/ledger.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "ledger",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/ledger.py",
+      "kind": "function",
+      "lineno": 132,
+      "name": "load_validation_tokens",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/ledger.py",
+      "kind": "function",
+      "lineno": 163,
+      "name": "parse",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/ledger.py",
+      "kind": "function",
+      "lineno": 98,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
       "file": "src/jk_standards/checks/release_pins.py",
       "kind": "module",
       "lineno": 1,
@@ -605,7 +701,7 @@
       "documented": true,
       "file": "src/jk_standards/cli.py",
       "kind": "function",
-      "lineno": 60,
+      "lineno": 62,
       "name": "main",
       "signals": {
         "docstring": false,
@@ -737,7 +833,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 498,
+      "lineno": 508,
       "name": "iter_docs",
       "signals": {
         "docstring": true,
@@ -749,7 +845,7 @@
       "documented": true,
       "file": "src/jk_standards/config.py",
       "kind": "function",
-      "lineno": 218,
+      "lineno": 223,
       "name": "load_config",
       "signals": {
         "docstring": false,
@@ -1049,8 +1145,20 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "class",
-      "lineno": 49,
+      "lineno": 62,
       "name": "LockError",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 322,
+      "name": "check_commands",
       "signals": {
         "docstring": true,
         "drift": false,
@@ -1061,7 +1169,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 201,
+      "lineno": 214,
       "name": "check_skills",
       "signals": {
         "docstring": false,
@@ -1070,10 +1178,22 @@
       }
     },
     {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 493,
+      "name": "commands_main",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 61,
+      "lineno": 74,
       "name": "compute_hash",
       "signals": {
         "docstring": false,
@@ -1085,7 +1205,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 65,
+      "lineno": 78,
       "name": "download_archive",
       "signals": {
         "docstring": false,
@@ -1097,7 +1217,19 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 99,
+      "lineno": 243,
+      "name": "extract_file",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 112,
       "name": "extract_skill",
       "signals": {
         "docstring": true,
@@ -1109,8 +1241,20 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 271,
+      "lineno": 413,
       "name": "find_project_root",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 257,
+      "name": "install_commands",
       "signals": {
         "docstring": true,
         "drift": false,
@@ -1121,7 +1265,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 122,
+      "lineno": 135,
       "name": "install_skills",
       "signals": {
         "docstring": false,
@@ -1133,7 +1277,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 53,
+      "lineno": 66,
       "name": "load_lock",
       "signals": {
         "docstring": false,
@@ -1145,7 +1289,7 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 308,
+      "lineno": 450,
       "name": "main",
       "signals": {
         "docstring": true,
@@ -1169,7 +1313,7 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 230,
+      "lineno": 352,
       "name": "update_lock",
       "signals": {
         "docstring": true,

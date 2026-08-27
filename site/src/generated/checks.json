@@ -68,6 +68,12 @@
     },
     {
       "is_static": true,
+      "name": "ledger",
+      "source_file": "src/jk_standards/checks/ledger.py",
+      "summary": "ledger: enforce the delivery-ledger format."
+    },
+    {
+      "is_static": true,
       "name": "release-pins",
       "source_file": "src/jk_standards/checks/release_pins.py",
       "summary": "release-pins: released versions are tagged, and every pin to this repo resolves."

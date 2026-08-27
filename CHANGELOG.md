@@ -6,6 +6,73 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`ledger` check + the ledger standard**
+  (`src/jk_standards/checks/ledger.py`, `docs/ledger-standard.md`,
+  `tests/test_ledger.py`, `docs/checks.md`,
+  `site/src/content/docs/reference/checks.mdx`): a delivery ledger is the whole
+  state of a programme in one Markdown file — milestones, the slices they
+  decompose into, the rows each slice closes, each slice's definition of done,
+  and the validation tokens that must pass before it may claim to be done. The
+  file is the state and git is the history, so there is nothing to synchronise
+  and nothing that a crashed session or a hand-edit can desync. What a file
+  cannot do is enforce its own invariants, which is what this check recovers:
+  IDs well-formed and unique, a slice nested under the milestone it names,
+  statuses from the declared vocabulary, `Depends` resolving inside the same
+  ledger, every slice carrying a non-empty definition of done, plan and evidence
+  paths staying inside the ledger's own directory, and no placeholder text
+  surviving into a commit. A `done` slice must prove it — every box checked, an
+  evidence file on disk, every row closed or `accepted` — which is the
+  difference between an asserted completion and a demonstrated one. Validation
+  tokens are named in the ledger and resolved by the consuming repo in
+  `.jk/validations.yml`, so the same token means `ctest` in a native project and
+  a browser run in a site; an undeclared token fails rather than skipping
+  silently, while a repo with no validations file skips the arm and says so. The
+  escape hatch is `<!-- ledger-ok: <reason> -->` on the flagged line, and an
+  empty hatch suppresses nothing.
+
+- **`install-commands` — workflow commands vendored from the same lock file**
+  (`src/jk_standards/skills_install.py`, `src/jk_standards/cli.py`,
+  `commands/status.md`, `docs/commands.md`, `docs/configuration.md`): the
+  installer that vendors `skills/` now also vendors `commands/` — single
+  Markdown files rather than skill directories — from a `commands` block in the
+  same `skills-lock.json`, under the same download, hash-verify and
+  `--update-lock` discipline. One lock file, one hash discipline, two kinds of
+  vendored asset. The default destination is `.claude/commands/jk` rather than
+  `.claude/commands`: a project command in a subdirectory is namespaced by it,
+  so a vendored command arrives as `/jk:<name>` and never claims a bare name a
+  consuming repo may want for itself. The first command shipped is `status`,
+  which reads a ledger and reports milestone and slice state, the next
+  actionable slice, and any disagreement between the ledger and the working
+  tree — read-only, reporting anything that would change state as something for
+  the user to run.
+
+- **The workflow command set — `assess`, `plan`, `next`, `ship`, `close`**
+  (`commands/`, `docs/commands.md`): the delivery loop the ledger format
+  exists to serve. `assess` reconciles a free-form audit or vision document
+  against the codebase and refines a ledger with the user section by section,
+  turning every input item into exactly one row — including the ones
+  deliberately not actioned, which become `accepted` rows rather than silent
+  omissions. `plan` classifies one slice, writes an implementation plan beside
+  the ledger with the slice's definition of done copied verbatim, and
+  self-reviews it for DoD coverage, row coverage and placeholders. `next`
+  executes exactly one task and stops: it derives its position by re-reading
+  the files rather than remembering it, works test-first, runs the slice's full
+  validation set, appends terse evidence, and commits code, plan checkbox,
+  ledger row and evidence as one unit under `Plan`/`Slice`/`Rows` trailers — so
+  an interrupted session loses nothing and the next invocation resumes from
+  disk. `ship` refuses an unfinished milestone, re-runs every validation on the
+  current head rather than trusting that it passed when the slice landed, syncs
+  the changelog and roadmap before opening the pull request, and generates the
+  body from the ledger and `git log --grep` — listing any commit without a
+  `Slice:` trailer as untraced work instead of omitting it. `close` verifies
+  the merge landed, retires the milestone and its branch, and rebases or
+  creates the next milestone's branch on the updated base, refusing to rewrite
+  a branch that carries review comments. Each command uses the Superpowers
+  skills where they are installed and names the equivalent by hand where they
+  are not, so a project without them gets the same discipline.
+
 ## [0.11.0] - 2026-08-20
 
 ### Added

@@ -4,7 +4,7 @@ class: gated
 
 # Checks reference
 
-Status: current (2026-08-19)
+Status: current (2026-08-26)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit
@@ -812,3 +812,99 @@ section; an out-of-shape `untagged_versions` fails as a config error (exit 2)
 [verified: test_release_pins::test_untagged_versions_non_list_raises], as does
 a non-string entry
 [verified: test_release_pins::test_untagged_versions_non_string_entry_raises].
+
+## ledger
+
+A delivery ledger is the whole state of a programme in one Markdown file:
+milestones, the slices they decompose into, the rows each slice closes, each
+slice's definition of done, and the validation tokens that must pass before it
+may claim to be done. The [ledger standard](ledger-standard.md) defines the
+format; this check is what makes it a format rather than a convention.
+
+The trade the ledger makes is that a file cannot enforce its own invariants —
+so every guarantee a schema would have given is recovered here as a gate.
+
+**Structure.** A milestone heading declares an `M`-prefixed three-digit ID, and
+a slice heading declares that milestone's ID plus a two-digit slice number. A
+ledger with no milestones is flagged
+[verified: test_ledger::test_ledger_with_no_milestones_flagged], as is a slice
+written before any milestone
+[verified: test_ledger::test_slice_before_any_milestone_flagged] or one naming
+a milestone other than the section it sits in
+[verified: test_ledger::test_slice_naming_a_different_milestone_flagged] — a
+slice belongs to the section it is written in, so the two can never disagree.
+Duplicate slice IDs are flagged
+[verified: test_ledger::test_duplicate_slice_id_flagged], and a milestone
+missing one of its required keys is named
+[verified: test_ledger::test_milestone_missing_required_key_flagged].
+
+**Vocabulary.** Slice and row statuses come from the declared set; anything
+else is flagged
+[verified: test_ledger::test_invalid_slice_status_flagged]
+[verified: test_ledger::test_invalid_row_status_flagged]. `accepted` is a
+first-class status, not an error — a deliberate no-change recorded so a later
+pass does not rediscover it as an omission
+[verified: test_ledger::test_accepted_is_a_valid_slice_status].
+
+**Dependencies.** A `Depends` entry must name a slice the same ledger declares
+[verified: test_ledger::test_depends_on_unknown_slice_flagged]; a declared ID
+resolves rather than being reported as unknown
+[verified: test_ledger::test_depends_on_declared_slice_passes].
+
+**Definition of done.** Every slice carries a non-empty checklist
+[verified: test_ledger::test_slice_without_definition_of_done_flagged] — a
+slice without one cannot be finished, only abandoned. A `done` slice must have
+every box checked [verified: test_ledger::test_done_slice_with_unchecked_item_flagged]
+and every row closed or accepted; one whose boxes and rows agree passes
+[verified: test_ledger::test_done_slice_fully_closed_passes].
+
+**Plan and evidence.** A slice past `open` implements a plan, so it must name
+one [verified: test_ledger::test_slice_past_open_without_plan_flagged], and a
+named plan must exist
+[verified: test_ledger::test_named_plan_that_does_not_exist_flagged]. Evidence
+is owed later than a plan: a `done` slice without its evidence file is flagged
+[verified: test_ledger::test_done_slice_without_evidence_file_flagged] while an
+open one is not [verified: test_ledger::test_open_slice_without_evidence_file_passes],
+because evidence records what was run and nothing has been. Both paths must
+resolve inside the ledger's own directory
+[verified: test_ledger::test_path_outside_the_ledger_directory_flagged], so a
+programme stays one movable tree.
+
+**Validation tokens.** A slice names tokens, never commands; the consuming repo
+maps them to commands in its validations file. A token that file does not
+declare is a failure rather than a silently skipped gate
+[verified: test_ledger::test_undeclared_validation_token_flagged], as is an
+empty set [verified: test_ledger::test_empty_validation_set_flagged]. When the
+repo has no validations file the arm skips and says so
+[verified: test_ledger::test_token_arm_skips_without_a_validations_file] — it
+cannot tell a typo from an unconfigured project, so it declines to judge rather
+than reporting every token as wrong.
+
+**Rows.** A slice's table must carry the `ID`, `Item`, `Verification` and
+`Status` columns
+[verified: test_ledger::test_row_table_missing_required_column_flagged]; extra
+columns (severity, disposition, source section) are carried through untouched.
+A row with no verification is flagged
+[verified: test_ledger::test_row_without_verification_flagged] — the cell names
+the test, check, or artifact a reviewer audits. Rows are optional: an
+infrastructure slice with no table passes
+[verified: test_ledger::test_slice_without_a_row_table_passes].
+
+**Placeholders.** `TBD`, `TODO`, `FIXME`, `XXX` and friends never survive into
+a committed ledger [verified: test_ledger::test_placeholder_flagged]. State the
+real value, or record the row as open with what is still unknown.
+
+**Skip contracts.** A repo with no ledger under the configured roots reports
+itself as having nothing to check
+[verified: test_ledger::test_no_ledger_is_not_a_violation], and a ledger
+outside those roots is not governed
+[verified: test_ledger::test_ledger_outside_configured_roots_is_ignored].
+
+Escape hatch: a `<!-- ledger-ok: <reason> -->` comment suppresses the finding
+on the line it sits on
+[verified: test_ledger::test_escape_hatch_suppresses_the_line_it_sits_on]. The
+reason is load-bearing — an empty hatch suppresses nothing
+[verified: test_ledger::test_escape_hatch_without_a_reason_does_not_suppress],
+because a suppression without a written reason is the silent exemption this
+discipline exists to prevent. Roots and the validations file are configured in
+the `ledger` section.

@@ -4,7 +4,7 @@ class: gated
 
 # Architecture
 
-Status: current (2026-07-30)
+Status: current (2026-08-26)
 
 This document is jk-standards' own architecture document, written to the
 [architecture standard](docs/architecture-standard.md) this toolkit publishes.
@@ -33,8 +33,9 @@ site under `site/`. The parts a reader reasons about in isolation:
 - **Emitters** (`src/jk_standards/emit.py`) — project Python truth (the check
   registry, the config schema, the skills catalog) into the site's tracked JSON
   fixtures under `site/src/generated/`.
-- **Skills installer** (`src/jk_standards/skills_install.py`) — vendors the
-  `skills/` tree into a consuming repository.
+- **Asset installer** (`src/jk_standards/skills_install.py`) — vendors the
+  `skills/` tree and the `commands/` files into a consuming repository, from
+  one lock file under one hash discipline.
 - **Test index** (`src/jk_standards/testindex.py`) — enumerates the test suite
   so the `behavioral-claims` check can bind doc claims to real tests.
 - **Support modules** — `output.py` (GitHub-Actions annotation formatting),

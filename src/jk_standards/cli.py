@@ -4,6 +4,8 @@
   jk-standards all           run every configured static check; doc-drift
                              too when a git base ref is available
   jk-standards list          list available checks
+  jk-standards install-skills    vendor skills from skills-lock.json
+  jk-standards install-commands  vendor workflow commands from skills-lock.json
 
 Exit codes: 0 clean, 1 violations found, 2 usage/config error.
 """
@@ -67,6 +69,10 @@ def main(argv: list[str] | None = None) -> int:
     install_argv = _extract_verb_argv(raw, "install-skills")
     if install_argv is not None:
         return skills_install.main(install_argv)
+
+    commands_argv = _extract_verb_argv(raw, "install-commands")
+    if commands_argv is not None:
+        return skills_install.commands_main(commands_argv)
 
     parser = argparse.ArgumentParser(prog="jk-standards", description=__doc__)
     parser.add_argument("check", choices=[*CHECKS, "all", "list"])

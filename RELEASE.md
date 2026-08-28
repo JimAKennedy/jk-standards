@@ -73,8 +73,10 @@ dangling refs. `release-pins` now catches that, but only from the release after
 the one being cut — so verify the push rather than assuming it.
 
 The tag is immutable release provenance. Consumers pin to it via the adoption
-`rev:` in their `.pre-commit-config.yaml` and the `@v0.10.0` references in the
-quickstart and adopt-in-a-repo guides.
+`rev:` in their `.pre-commit-config.yaml` and the `@vX.Y.Z` workflow references
+in the quickstart and adopt-in-a-repo guides. The version is deliberately not
+spelled out here: this sentence named `v0.10.0` for two releases after that pin
+moved on, which is the same literal-drift this file warns about above.
 
 ## The tag cuts the Release automatically
 

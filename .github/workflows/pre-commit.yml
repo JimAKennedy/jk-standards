@@ -2,7 +2,7 @@
 #
 #   jobs:
 #     pre-commit:
-#       uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.10.0
+#       uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.12.0
 #
 # Runs `pre-commit run --all-files` against the caller's checkout. Set
 # local-config to also run a second config (e.g. self-referential hooks a

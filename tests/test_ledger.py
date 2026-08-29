@@ -443,3 +443,59 @@ def test_evidence_shas_unchecked_outside_a_git_repo(tmp_path):
         "## M001/S05 — task 1\n\n- `unit` → exit 0\n- commit `6ec18b6`\n- 2026-08-28\n",
     )
     assert run(tmp_path) == 0
+
+
+def shallow_clone(src: Path, dest: Path) -> None:
+    """Clone ``src`` into ``dest`` with a truncated history.
+
+    ``file://`` is deliberate: git optimises a plain local-path clone into
+    hardlinks and ignores ``--depth`` entirely, so a test that omits the
+    protocol silently builds a *complete* clone and proves nothing.
+    """
+    import subprocess
+
+    subprocess.run(
+        ["git", "clone", "-q", "--depth", "1", f"file://{src}", str(dest)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+
+def test_evidence_shas_unchecked_in_a_shallow_clone(tmp_path):
+    """A commit absent because history was truncated is not a fabrication.
+
+    This is the case that reaches CI: pre-commit.ci and any
+    ``fetch-depth: 1`` checkout hold one commit, so a SHA recorded from a
+    merge months ago cannot be resolved there. Reporting it would fail a
+    truthful record on the strength of a thin checkout, and the whole point
+    of the tri-state return is to refuse that.
+    """
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    programme(origin)
+    sha = git_repo(origin)
+
+    # A second commit, so the shallow clone's single commit is not the one
+    # the evidence names.
+    import subprocess
+
+    write(origin, "docs/plans/demo/evidence/M001-S05.md", f"- commit `{sha}`\n")
+    for args in (["add", "-A"], ["commit", "-qm", "second"]):
+        subprocess.run(["git", *args], cwd=origin, capture_output=True, check=True)
+
+    clone = tmp_path / "clone"
+    shallow_clone(origin, clone)
+    import subprocess as sp
+
+    assert (
+        sp.run(
+            ["git", "rev-parse", "--is-shallow-repository"],
+            cwd=clone,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        == "true"
+    ), "fixture did not produce a shallow clone"
+
+    assert run(clone) == 0

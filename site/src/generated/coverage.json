@@ -105,8 +105,8 @@
       "percent_covered": 91.67
     },
     "src/jk_standards/gitutil.py": {
-      "missing_lines": 1,
-      "percent_covered": 98.68
+      "missing_lines": 3,
+      "percent_covered": 96.25
     },
     "src/jk_standards/output.py": {
       "missing_lines": 0,
@@ -125,11 +125,11 @@
       "percent_covered": 91.3
     }
   },
-  "toolkit_version": "0.13.0",
+  "toolkit_version": "0.13.1",
   "totals": {
-    "covered_lines": 2620,
-    "missing_lines": 162,
-    "num_statements": 2782,
-    "percent_covered": 92.99
+    "covered_lines": 2622,
+    "missing_lines": 164,
+    "num_statements": 2786,
+    "percent_covered": 92.95
   }
 }

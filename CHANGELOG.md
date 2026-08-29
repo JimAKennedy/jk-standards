@@ -37,6 +37,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   executor to name the defect precisely, and to say whether siblings share it,
   so the repair can be scoped rather than guessed.
 
+## [0.13.1] - 2026-08-28
+
+### Fixed
+
+- **`ledger` no longer reports a truthful evidence SHA as fabricated in a
+  shallow clone** (`src/jk_standards/gitutil.py`, `tests/test_ledger.py`):
+  `commit_exists` probed only whether it was inside a work tree, so in a
+  truncated checkout — pre-commit.ci, or any `fetch-depth: 1` CI job — a
+  commit recorded from a merge months earlier is legitimately absent, and
+  `git cat-file -e` failing was read as evidence of fabrication. It now
+  distinguishes the two with `git rev-parse --is-shallow-repository` and
+  returns `None` (cannot say) rather than `False` (does not exist), which is
+  what the tri-state return existed for. The docstring had claimed this case
+  was handled since 0.13.0; the implementation never did, because the test
+  covering it built a repository and then ran the check *outside* one instead
+  of building a shallow clone. The replacement clones over `file://` — a plain
+  local-path clone is optimised into hardlinks and ignores `--depth`, so the
+  old-style fixture would have silently proved nothing — and asserts
+  `--is-shallow-repository` is `true` before trusting the result. Caught by a
+  real consumer's CI on the first pull request that used the check.
+
 ## [0.13.0] - 2026-08-28
 
 ### Added

@@ -1,5 +1,5 @@
 {
-  "toolkit_version": "0.13.0",
+  "toolkit_version": "0.13.1",
   "units": [
     {
       "documented": true,
@@ -1001,7 +1001,7 @@
       "documented": false,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 101,
+      "lineno": 110,
       "name": "changed_files",
       "signals": {
         "docstring": false,
@@ -1025,7 +1025,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 141,
+      "lineno": 150,
       "name": "commit_trailers",
       "signals": {
         "docstring": true,
@@ -1037,7 +1037,7 @@
       "documented": false,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 107,
+      "lineno": 116,
       "name": "file_diff",
       "signals": {
         "docstring": false,
@@ -1061,7 +1061,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 112,
+      "lineno": 121,
       "name": "last_touched_date",
       "signals": {
         "docstring": true,
@@ -1073,7 +1073,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 43,
+      "lineno": 52,
       "name": "list_tags",
       "signals": {
         "docstring": true,
@@ -1085,7 +1085,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 77,
+      "lineno": 86,
       "name": "resolve_base_ref",
       "signals": {
         "docstring": true,
@@ -1097,7 +1097,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 59,
+      "lineno": 68,
       "name": "tracked_paths",
       "signals": {
         "docstring": true,

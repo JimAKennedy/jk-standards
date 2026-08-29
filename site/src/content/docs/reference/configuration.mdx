@@ -7,7 +7,7 @@ description: Every field of jk-standards.yaml plus the CLI surface.
 import CodeSnippet from '../../../components/CodeSnippet.astro';
 import schema from '../../../generated/config-schema.json';
 
-Status: current (2026-08-26)
+Status: current (2026-08-28)
 
 All project-specific surface lives in one file, `{schema.config_file_name}`,
 at the consuming repo's root (override with `--config`). Every key is
@@ -230,7 +230,7 @@ Pre-commit (pin to a release tag):
 
 ```yaml
 - repo: https://github.com/JimAKennedy/jk-standards
-  rev: v0.10.0
+  rev: v0.12.0
   hooks:
     - id: doc-taxonomy
     - id: status-prose

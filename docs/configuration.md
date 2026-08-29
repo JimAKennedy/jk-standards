@@ -4,7 +4,7 @@ class: gated
 
 # Configuration reference
 
-Status: current (2026-08-26)
+Status: current (2026-08-28)
 
 All project-specific surface lives in one file, `jk-standards.yaml`, at the
 consuming repo's root (override with `--config`). Every key is optional; an
@@ -327,7 +327,7 @@ Pre-commit (pin to a release tag):
 
 ```yaml
 - repo: https://github.com/JimAKennedy/jk-standards
-  rev: v0.10.0
+  rev: v0.12.0
   hooks:
     - id: doc-taxonomy
     - id: status-prose
@@ -339,5 +339,5 @@ CI (the reusable workflow supplies checkout depth and base-ref wiring):
 ```yaml
 jobs:
   doc-discipline:
-    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.10.0
+    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.12.0
 ```

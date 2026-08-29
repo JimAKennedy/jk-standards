@@ -6,6 +6,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Adoption pins moved to `v0.12.0`** (`.pre-commit-hooks.yaml`, the five
+  reusable workflow headers, `README.md`, `docs/configuration.md`,
+  `site/src/content/docs/{reference/configuration,how-to/adopt-in-a-repo,guide/quickstart}`):
+  every documented `rev:` and `uses: …@` reference naming this repository now
+  points at the current release. They had been left at `v0.10.0` — two releases
+  behind — because the bump can only land after the tag exists, which is the
+  gap `RELEASE.md` describes and the reason it is a separate step. `RELEASE.md`
+  itself stops naming a version literal when it points at those references: the
+  sentence had gone stale the same way, which is the drift the file warns about
+  a few lines above. `MIGRATION-poly.md` and `MIGRATION-nfr-review.md` keep
+  their original pins, as the record of what those projects actually adopted.
+
 ## [0.12.0] - 2026-08-28
 
 ### Added

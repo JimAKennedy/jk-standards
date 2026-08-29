@@ -868,6 +868,24 @@ Headings deeper than `##` leave the slice open, so a slice may sub-divide its
 own body without orphaning the rows below
 [verified: test_ledger::test_sub_heading_inside_a_slice_keeps_the_slice_open].
 
+**Evidence commit SHAs.** A SHA an evidence file names must resolve to a real
+commit
+[verified: test_ledger::test_evidence_naming_an_unresolvable_commit_flagged];
+one that does passes
+[verified: test_ledger::test_evidence_naming_a_real_commit_passes]. Evidence is
+what separates an asserted completion from a demonstrated one, so an
+unresolvable SHA is worse than none — unlike a `TBD` it is indistinguishable
+from a real one. The failure is structural rather than careless: evidence
+written as work lands ships *inside* the commit it would name, so the value
+cannot be known, and a field that cannot be filled truthfully gets filled
+falsely. Omitting it is the correct answer there, and passes
+[verified: test_ledger::test_evidence_without_a_commit_line_passes]; the
+`Slice:` trailer is the join. Backfilled evidence, whose commit already exists,
+still names it. Where git cannot answer — outside a repository, or a shallow
+clone that does not reach the commit — the SHA is skipped rather than reported
+[verified: test_ledger::test_evidence_shas_unchecked_outside_a_git_repo], the
+same posture `release-pins` takes toward a checkout with no tags fetched.
+
 **Vocabulary.** Slice and row statuses come from the declared set; anything
 else is flagged
 [verified: test_ledger::test_invalid_slice_status_flagged]

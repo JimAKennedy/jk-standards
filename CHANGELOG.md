@@ -6,7 +6,36 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`ledger`: every commit SHA an evidence file names must resolve**
+  (`src/jk_standards/checks/ledger.py`, `src/jk_standards/gitutil.py`,
+  `tests/test_ledger.py`, `docs/checks.md`,
+  `site/src/content/docs/reference/checks.mdx`): evidence is what separates an
+  asserted completion from a demonstrated one, so a SHA that resolves to
+  nothing is worse than none at all — unlike a `TBD` it is indistinguishable
+  from a real commit and a reader has no reason to doubt it, which also means
+  the placeholder scan could never have caught it. `gitutil.commit_exists`
+  returns `None` rather than `False` when git cannot answer, so a shallow clone
+  or a non-repository skips the SHA instead of reporting a truthful record as
+  fabricated — the same distinction `list_tags` draws for a checkout with no
+  tags fetched.
+
 ### Fixed
+
+- **The evidence template no longer asks for a value that cannot exist**
+  (`docs/ledger-standard.md`, `commands/next.md`): the standard's example
+  recorded ``commit `a1b2c3d` `` while `/jk:next` requires the evidence file to
+  ship *inside* that same commit, so the SHA is unknowable at the moment the
+  line is written. A field that cannot be filled truthfully gets filled falsely,
+  and this one did — a fabricated SHA reached an evidence file in a consuming
+  repo before being caught by hand. Evidence written as work lands now omits the
+  SHA and leans on the `Slice:` and `Rows:` trailers, which the standard already
+  documents as the join in both directions. Backfilled evidence, whose commit
+  predates the file, still names it and now must: the new check above enforces
+  the half that is mechanically checkable. The rule is about order, not style —
+  name a SHA when the commit already exists, never when it does not.
+
 
 - **A `##` section after the last slice is no longer folded into it**
   (`src/jk_standards/checks/ledger.py`, `tests/test_ledger.py`,

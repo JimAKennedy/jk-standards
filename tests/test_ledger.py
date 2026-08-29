@@ -367,3 +367,79 @@ def test_sub_heading_inside_a_slice_keeps_the_slice_open(tmp_path):
     """
     programme(tmp_path, body=SLICE_WITH_SUBHEADING)
     assert run(tmp_path) == 0
+
+
+# --- commit SHAs named by evidence files ------------------------------------
+
+
+def git_repo(root: Path) -> str:
+    """Init a repo under ``root`` with one commit; return its short SHA."""
+    import subprocess
+
+    def git(*args):
+        return subprocess.run(
+            ["git", *args], cwd=root, capture_output=True, text=True, check=True
+        ).stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.email", "t@example.com")
+    git("config", "user.name", "T")
+    git("add", "-A")
+    git("commit", "-qm", "fixture")
+    return git("rev-parse", "--short", "HEAD")
+
+
+def test_evidence_naming_an_unresolvable_commit_flagged(tmp_path):
+    """A SHA that resolves to nothing is a fabrication, and reads as a fact.
+
+    Evidence is the difference between an asserted completion and a
+    demonstrated one, so an invented SHA does more damage than an omitted
+    one: `TBD` is greppable, `6ec18b6` is indistinguishable from a real
+    commit and will be trusted.
+    """
+    programme(tmp_path)
+    git_repo(tmp_path)
+    write(
+        tmp_path,
+        "docs/plans/demo/evidence/M001-S05.md",
+        "## M001/S05 — task 1\n\n- `unit` → exit 0\n- commit `6ec18b6`\n- 2026-08-28\n",
+    )
+    assert run(tmp_path) == 1
+
+
+def test_evidence_naming_a_real_commit_passes(tmp_path):
+    programme(tmp_path)
+    sha = git_repo(tmp_path)
+    write(
+        tmp_path,
+        "docs/plans/demo/evidence/M001-S05.md",
+        f"## M001/S05 — task 1\n\n- `unit` → exit 0\n- commit `{sha}`\n- 2026-08-28\n",
+    )
+    assert run(tmp_path) == 0
+
+
+def test_evidence_without_a_commit_line_passes(tmp_path):
+    """Omitting the SHA is the normal case for evidence written as work lands."""
+    programme(tmp_path)
+    git_repo(tmp_path)
+    write(
+        tmp_path,
+        "docs/plans/demo/evidence/M001-S05.md",
+        "## M001/S05 — task 1\n\n- `unit` → exit 0\n- 2026-08-28\n",
+    )
+    assert run(tmp_path) == 0
+
+
+def test_evidence_shas_unchecked_outside_a_git_repo(tmp_path):
+    """No object database, no opinion — the same posture doc-drift takes.
+
+    A shallow CI clone cannot resolve an old SHA, and failing there would
+    punish a correct ledger for its checkout depth.
+    """
+    programme(tmp_path)
+    write(
+        tmp_path,
+        "docs/plans/demo/evidence/M001-S05.md",
+        "## M001/S05 — task 1\n\n- `unit` → exit 0\n- commit `6ec18b6`\n- 2026-08-28\n",
+    )
+    assert run(tmp_path) == 0

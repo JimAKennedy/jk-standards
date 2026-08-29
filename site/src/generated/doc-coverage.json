@@ -449,7 +449,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/ledger.py",
       "kind": "class",
-      "lineno": 91,
+      "lineno": 95,
       "name": "Milestone",
       "signals": {
         "docstring": false,
@@ -461,7 +461,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/ledger.py",
       "kind": "class",
-      "lineno": 72,
+      "lineno": 76,
       "name": "Row",
       "signals": {
         "docstring": true,
@@ -473,7 +473,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/ledger.py",
       "kind": "class",
-      "lineno": 80,
+      "lineno": 84,
       "name": "Slice",
       "signals": {
         "docstring": false,
@@ -485,7 +485,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/ledger.py",
       "kind": "function",
-      "lineno": 121,
+      "lineno": 125,
       "name": "find_ledgers",
       "signals": {
         "docstring": true,
@@ -509,7 +509,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/ledger.py",
       "kind": "function",
-      "lineno": 132,
+      "lineno": 136,
       "name": "load_validation_tokens",
       "signals": {
         "docstring": true,
@@ -521,7 +521,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/ledger.py",
       "kind": "function",
-      "lineno": 163,
+      "lineno": 167,
       "name": "parse",
       "signals": {
         "docstring": true,
@@ -533,7 +533,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/ledger.py",
       "kind": "function",
-      "lineno": 98,
+      "lineno": 102,
       "name": "run",
       "signals": {
         "docstring": false,
@@ -1001,7 +1001,7 @@
       "documented": false,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 79,
+      "lineno": 101,
       "name": "changed_files",
       "signals": {
         "docstring": false,
@@ -1013,7 +1013,19 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 119,
+      "lineno": 21,
+      "name": "commit_exists",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
+      "lineno": 141,
       "name": "commit_trailers",
       "signals": {
         "docstring": true,
@@ -1025,7 +1037,7 @@
       "documented": false,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 85,
+      "lineno": 107,
       "name": "file_diff",
       "signals": {
         "docstring": false,
@@ -1049,7 +1061,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 90,
+      "lineno": 112,
       "name": "last_touched_date",
       "signals": {
         "docstring": true,
@@ -1061,7 +1073,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 21,
+      "lineno": 43,
       "name": "list_tags",
       "signals": {
         "docstring": true,
@@ -1073,7 +1085,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 55,
+      "lineno": 77,
       "name": "resolve_base_ref",
       "signals": {
         "docstring": true,
@@ -1085,7 +1097,7 @@
       "documented": true,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
-      "lineno": 37,
+      "lineno": 59,
       "name": "tracked_paths",
       "signals": {
         "docstring": true,

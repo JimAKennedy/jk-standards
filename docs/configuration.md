@@ -4,7 +4,7 @@ class: gated
 
 # Configuration reference
 
-Status: current (2026-08-26)
+Status: current (2026-08-28)
 
 All project-specific surface lives in one file, `jk-standards.yaml`, at the
 consuming repo's root (override with `--config`). Every key is optional; an

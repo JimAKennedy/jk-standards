@@ -4,6 +4,21 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Adoption pins moved to `v0.13.0`** (`.pre-commit-hooks.yaml`, the five
+  reusable workflow headers, `README.md`, `docs/configuration.md`,
+  `site/src/content/docs/{reference/configuration,how-to/adopt-in-a-repo,guide/quickstart}`):
+  every documented `rev:` and `uses: …@` reference naming this repository now
+  points at the current release. This lands after the tag by necessity rather
+  than preference — `release-pins` requires every pin to resolve to a tag that
+  exists, so bumping them in the release pull request itself would fail the
+  check, since the tag is not pushed until that merges. `MIGRATION-poly.md` and
+  `MIGRATION-nfr-review.md` keep their original pins, as the record of what
+  those projects actually adopted.
+
 ## [0.13.0] - 2026-08-28
 
 ### Added

@@ -199,14 +199,41 @@ work lands, never rewritten:
 ## M001/S05 — task 2
 
 - `doc-conformance` → exit 0, 16 files, 0 failures
-- commit `a1b2c3d`
 - 2026-08-26
 ```
 
-Evidence is terse by design: the command, its result, the commit it belongs to.
-Logs belong in CI artifacts. What is recorded here is the fact that the gate ran
-and what it returned, so a reader can tell an asserted completion from a
-demonstrated one.
+Evidence is terse by design: the command, its result, the date. Logs belong in
+CI artifacts. What is recorded here is the fact that the gate ran and what it
+returned, so a reader can tell an asserted completion from a demonstrated one.
+
+### Naming the commit
+
+Evidence written as work lands MUST NOT name a commit SHA. The evidence file
+ships *inside* the commit it would be describing, so that SHA cannot be known
+when the line is written, and a line that cannot be written truthfully will be
+written falsely. The join already exists and is stronger: the commit carries
+`Slice:` and `Rows:` trailers, so `git log --grep="Slice: M001/S05"` resolves
+the record to its commits in both directions.
+
+Evidence **backfilled** for work that landed before the ledger existed is the
+opposite case, and MUST name the SHA:
+
+```markdown
+## M001/S02 — landed as PR #256, before this ledger existed
+
+- `site-unit` → exit 0, cases `S02-F01`, `S02-F12`
+- commit `7829930`
+- 2026-08-25 (backfilled 2026-08-28)
+```
+
+Here the commit predates the file, so the SHA is an observed fact rather than a
+guess, and it is the only thing tying the record to the work — there are no
+trailers on a commit that shipped before the ledger existed.
+
+The rule is therefore about *order*, not about style: name a SHA when the commit
+already exists, never when it does not. The `ledger` check enforces the half
+that is mechanically checkable — every SHA an evidence file names must resolve
+to a real commit.
 
 ## Traceability
 
@@ -238,6 +265,7 @@ they are used in preference to branch names or commit-message conventions.
 | A `done` slice's rows are all `done` or `accepted` | `ledger` check |
 | Plan and evidence paths stay inside the ledger's directory | `ledger` check |
 | No placeholder text survives into a committed ledger | `ledger` check |
+| Every commit SHA an evidence file names resolves to a real commit | `ledger` check |
 
 ## Escape hatch
 

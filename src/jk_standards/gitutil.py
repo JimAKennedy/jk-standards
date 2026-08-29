@@ -18,6 +18,28 @@ def _git(root: Path, *args: str) -> str:
     return result.stdout
 
 
+def commit_exists(root: Path, sha: str) -> bool | None:
+    """Whether ``sha`` resolves to a commit, or ``None`` when git cannot say.
+
+    ``None`` is deliberately distinct from ``False``, for the same reason
+    :func:`list_tags` distinguishes them: outside a repository, or in a shallow
+    clone whose history does not reach the commit, "cannot resolve" is not
+    evidence of "does not exist". A caller must be able to skip rather than
+    report a truthful record as fabricated on the strength of a thin checkout.
+    """
+    try:
+        _git(root, "rev-parse", "--is-inside-work-tree")
+    except (GitError, OSError):
+        return None
+    try:
+        _git(root, "cat-file", "-e", f"{sha}^{{commit}}")
+    except OSError:
+        return None
+    except GitError:
+        return False
+    return True
+
+
 def list_tags(root: Path) -> set[str] | None:
     """Every tag name in the repository, or ``None`` when they cannot be read.
 

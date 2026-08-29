@@ -91,12 +91,19 @@ Append to the slice's evidence file — never rewrite it:
 
 - `<token>` → exit 0, <headline counts>
 - `<token>` → exit 0, <headline counts>
-- commit <sha>
 - <YYYY-MM-DD>
 ```
 
-Terse. Command, result, commit, date. Logs belong in CI artifacts; what
-belongs here is the fact that the gate ran and what it returned.
+Terse. Command, result, date. Logs belong in CI artifacts; what belongs here is
+the fact that the gate ran and what it returned.
+
+**Do not name a commit SHA.** This file ships inside the commit it would be
+describing, so that SHA does not exist yet — and a line you cannot write truly
+is a line you will write falsely. A fabricated SHA is worse than an omitted one:
+it is indistinguishable from a real one and will be trusted. The `Slice:` and
+`Rows:` trailers are the join, and `git log --grep` resolves it in both
+directions. (Backfilled evidence, for work that landed before the ledger
+existed, is the opposite case and does name its SHA — see the ledger standard.)
 
 ## 5. Commit as one unit
 

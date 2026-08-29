@@ -37,10 +37,14 @@ from pathlib import Path
 
 import yaml
 
-from jk_standards import output
+from jk_standards import gitutil, output
 from jk_standards.config import Config
 
 LEDGER_NAME = "ledger.md"
+
+# "commit a1b2c3d" / "commit `a1b2c3d`" in an evidence file. Seven hex digits
+# is git's own default abbreviation length, and forty is a full object name.
+_EVIDENCE_SHA_RE = re.compile(r"\bcommit\s+`?([0-9a-f]{7,40})`?")
 
 MILESTONE_STATUSES = ("planned", "in-progress", "done")
 SLICE_STATUSES = ("open", "in-progress", "done", "accepted")
@@ -304,6 +308,65 @@ def _check_ledger(root: Path, path: Path, tokens: set[str] | None) -> int:
         )
         for sl in milestone.slices:
             _check_slice(path, sl, all_slice_ids, tokens, report)
+
+    errors += _check_evidence_shas(root, path, milestones)
+
+    return errors
+
+
+def _check_evidence_shas(root: Path, ledger_path: Path, milestones: list[Milestone]) -> int:
+    """Every commit SHA an evidence file names must resolve to a real commit.
+
+    Evidence is what separates an asserted completion from a demonstrated one,
+    so a SHA nobody can resolve is worse than no SHA at all: unlike a `TBD` it
+    is indistinguishable from a real one, and a reader has no reason to doubt
+    it. The failure this guards is not malice but the shape of the task —
+    evidence written as work lands ships *inside* the commit it would name, so
+    the value cannot be known, and a field that cannot be filled truthfully
+    gets filled falsely. The standard's answer is to omit it there and rely on
+    the `Slice:` trailer; this check is what makes the omission enforceable.
+
+    Unresolvable is not the same as unknown. Outside a repository, or in a
+    shallow clone whose history does not reach the commit, git cannot answer,
+    and the SHA is skipped rather than reported — the same posture
+    ``release-pins`` takes toward a checkout with no tags fetched.
+    """
+    errors = 0
+    ledger_dir = ledger_path.parent
+
+    for milestone in milestones:
+        for sl in milestone.slices:
+            if "Evidence" not in sl.keys:
+                continue
+            value = _unwrap(sl.keys["Evidence"][0])
+            if not value:
+                continue
+            target = (ledger_dir / value).resolve()
+            if not target.is_file():
+                continue  # absence is _check_paths' rule, not this one
+
+            rel = (
+                target.relative_to(root).as_posix() if target.is_relative_to(root) else str(target)
+            )
+            for lineno, line in enumerate(
+                target.read_text(encoding="utf-8", errors="replace").splitlines(), start=1
+            ):
+                if _hatched(line):
+                    continue
+                for sha in _EVIDENCE_SHA_RE.findall(line):
+                    resolved = gitutil.commit_exists(root, sha)
+                    if resolved is None:
+                        continue
+                    if not resolved:
+                        output.error(
+                            rel,
+                            lineno,
+                            f"evidence names commit '{sha}', which does not resolve — "
+                            f"record a SHA only for a commit that already exists; evidence "
+                            f"written as work lands ships inside its own commit and is "
+                            f"traced by the 'Slice:' trailer instead",
+                        )
+                        errors += 1
 
     return errors
 

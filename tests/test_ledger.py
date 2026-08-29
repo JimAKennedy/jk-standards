@@ -313,3 +313,57 @@ def test_escape_hatch_without_a_reason_does_not_suppress(tmp_path):
     )
     programme(tmp_path, body)
     assert run(tmp_path) == 1
+
+
+# --- sections after the last slice -------------------------------------------
+
+
+TRAILING_TABLE = """## Related issues
+
+| Issue | Row | Relationship |
+|---|---|---|
+| #91 | F07 | Closed by F07. |
+"""
+
+# A slice whose row table sits below a sub-heading: the heading must close the
+# definition-of-done checklist without closing the slice, or the rows below it
+# belong to nothing.
+SLICE_WITH_SUBHEADING = """### Slice M001/S05 — Chapter 2 hedges
+
+**Status:** open
+**Validation:** doc-conformance, gate
+**Evidence:** evidence/M001-S05.md
+**Plan:** M001-S05-plan.md
+
+**Definition of Done**
+
+- [ ] The opening no longer asserts multi-century continuity
+
+#### Rows
+
+| ID | Item | Verification | Status |
+|---|---|---|---|
+| F07 | Unsourced centuries claim | Case `S05-F07` | `open` |
+"""
+
+
+def test_milestone_level_section_after_the_last_slice_is_not_absorbed(tmp_path):
+    """A trailing `## ...` section's table is a sibling, not the slice's rows.
+
+    Without this, every pipe table below the last slice is folded into that
+    slice's row table, so a ledger carrying a "Related issues" table fails
+    with a row whose Status cell is empty — a violation the author cannot act
+    on, because the table is not a row table at all.
+    """
+    programme(tmp_path, body=SLICE + "\n" + TRAILING_TABLE)
+    assert run(tmp_path) == 0
+
+
+def test_sub_heading_inside_a_slice_keeps_the_slice_open(tmp_path):
+    """Headings deeper than a milestone stay inside the slice they sit in.
+
+    The guard above must not over-correct: a slice may carry sub-headings
+    after its checklist, and rows below one still belong to it.
+    """
+    programme(tmp_path, body=SLICE_WITH_SUBHEADING)
+    assert run(tmp_path) == 0

@@ -23,11 +23,25 @@ Read the ledger fresh, every time.
    - No such slice, and every slice `done` or `accepted` → the milestone is
      complete. Say so and point at `/jk:ship`.
    - The slice has no `Plan` → say so and point at `/jk:plan`. **Stop.**
-3. **Task** — the first unchecked `- [ ]` step in that plan.
-4. **Branch** — the milestone's `Branch`. If it does not exist, create it from
-   the current default branch and say so. If it exists but is not checked out,
-   check it out. If the working tree is dirty with changes no task claims, stop
-   and ask — do not sweep someone else's work into your commit.
+3. **Task** — the first unchecked box in the plan's **Task status** checklist.
+   Not the definition-of-done copy: that is the slice's acceptance criteria, not
+   task state, and `/jk:plan` requires it to sit below the task list. A plan
+   with no Task status checklist is malformed — say so and **stop**. Repairing
+   a plan is `/jk:plan`'s job, not this command's.
+4. **Branch** — the milestone's `Branch`. Three cases, and only the first two
+   proceed without asking:
+   - It exists → check it out.
+   - It does not exist, and the ledger is on the default branch → create it
+     from there and say so.
+   - It does not exist, and the ledger is **not** on the default branch →
+     **stop and ask.** Cutting from the default branch yields a branch with no
+     ledger and no plan on it, so there is nothing to execute against; cutting
+     from the ledger's own commit carries whatever else is unmerged alongside
+     it. Which is right turns on whether that other work belongs in this
+     milestone's review, and that is the user's call, not a default.
+
+   If the working tree is dirty with changes no task claims, stop and ask — do
+   not sweep someone else's work into your commit.
 
 Announce, before doing anything: the milestone, the slice, the task, and the
 exact command that will prove it.

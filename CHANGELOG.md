@@ -6,7 +6,57 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A `##` section after the last slice is no longer folded into it**
+  (`src/jk_standards/checks/ledger.py`, `tests/test_ledger.py`,
+  `docs/ledger-standard.md`): the parser closed a slice's definition-of-done
+  checklist at any heading but left the slice itself open to the end of the
+  file, so every pipe table below the last slice — a `## Related issues` table,
+  a `## Sequencing` table — was absorbed as that slice's rows and reported as
+  rows with an empty `Status`. The author could not act on the message, because
+  the table was never a row table. A milestone-level (`##`) heading now ends the
+  slice, since it is a sibling section rather than part of one; headings deeper
+  than `##` still leave the slice open, so a slice may sub-divide its own body.
+  The standard now states the slice's extent rather than leaving it implied.
+
 ### Changed
+
+- **The `/jk:plan` → `/jk:next` handoff names where task state lives**
+  (`commands/plan.md`, `commands/next.md`): `/jk:next` picks its task from "the
+  first unchecked box" and commits "the plan's checkbox", but `/jk:plan` never
+  required one — while *also* requiring the slice's definition of done to be
+  copied into the plan verbatim, which is itself a `- [ ]` list. Every plan ever
+  written therefore pointed `/jk:next` at a definition-of-done item instead of a
+  task. `/jk:plan` now mandates a **Task status** checklist above the DoD copy
+  and forbids a third checklist; `/jk:next` reads that list by name, and treats
+  a plan without one as malformed rather than improvising a repair.
+
+- **`/jk:next` stops instead of guessing when the ledger is not on the default
+  branch** (`commands/next.md`, `commands/assess.md`): the instruction to create
+  a milestone branch "from the current default branch" assumed the ledger and
+  its plans were already there. When `/jk:assess` runs on a feature branch —
+  the normal case for an agent — that yields a milestone branch with no ledger
+  and no plan on it, so there is nothing to execute against. `/jk:next` now
+  enumerates the three branch cases and stops for the user's decision on the
+  third, since cutting from the ledger's own commit drags whatever else is
+  unmerged into the milestone's review. `/jk:assess` now names the branch its
+  ledger landed on and says plainly that the ledger must reach the default
+  branch before a milestone branch is cut from it.
+
+- **`/jk:assess` covers programmes that are already part-delivered**
+  (`commands/assess.md`): the command assumed a greenfield audit, but the check
+  requires a `done` slice to carry a resolving `Plan:`, an evidence file, ticked
+  boxes and no open rows — none of which exists retrospectively. A new "Work
+  that already landed" section says to backfill one evidence file per landed
+  slice from its merge commit and to hatch the `Plan:` line rather than invent a
+  plan for finished work, and forbids the tempting shortcut of starting the
+  ledger at the current frontier, which would drop closed rows the input
+  document still contains. Its reconciliation report also gains a **partly
+  satisfied** bucket, for an item whose substance is in the tree but whose
+  verification is not — filed as done, the missing lock never gets written;
+  filed as outstanding, a later pass rewrites prose that was already correct.
+
 
 - **Adoption pins moved to `v0.12.0`** (`.pre-commit-hooks.yaml`, the five
   reusable workflow headers, `README.md`, `docs/configuration.md`,

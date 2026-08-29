@@ -156,6 +156,13 @@ Rows live inside the slice that closes them. There is no `Slice` column and no
 separate index: nesting is what makes "every row belongs to a real slice" true
 by construction rather than by cross-reference.
 
+A slice ends at the next slice heading or at the next milestone-level (`##`)
+heading, whichever comes first. Sections below the last slice — `## Sequencing`,
+`## Related issues`, `## Out of scope` — are siblings of the milestones and may
+carry tables of their own without those tables being read as anybody's rows.
+Headings deeper than `##` stay inside the slice, so a slice may sub-divide its
+own body.
+
 A row's `Verification` cell MUST name what proves it — a test case, a check
 name, a named artifact. Not "tested", not "verified manually". The cell is the
 claim a reviewer audits.

@@ -6,7 +6,7 @@ description: Every check the toolkit ships — rule, mechanism, and escape hatch
 
 import checksData from '../../../generated/checks.json';
 
-Status: current (2026-08-26)
+Status: current (2026-08-28)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit
@@ -858,6 +858,15 @@ Duplicate slice IDs are flagged
 [verified: test_ledger::test_duplicate_slice_id_flagged], and a milestone
 missing one of its required keys is named
 [verified: test_ledger::test_milestone_missing_required_key_flagged].
+
+**Slice extent.** A slice runs to the next slice heading or the next
+milestone-level (`##`) heading, whichever comes first. Sections below the last
+slice — `## Sequencing`, `## Related issues` — are siblings of the milestones,
+so their tables are not read as anybody's rows
+[verified: test_ledger::test_milestone_level_section_after_the_last_slice_is_not_absorbed].
+Headings deeper than `##` leave the slice open, so a slice may sub-divide its
+own body without orphaning the rows below
+[verified: test_ledger::test_sub_heading_inside_a_slice_keeps_the_slice_open].
 
 **Vocabulary.** Slice and row statuses come from the declared set; anything
 else is flagged

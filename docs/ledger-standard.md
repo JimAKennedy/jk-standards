@@ -4,7 +4,7 @@ class: gated
 
 # Ledger standard
 
-Status: current (2026-08-26)
+Status: current (2026-08-28)
 
 A **ledger** is a single Markdown file that holds the whole state of a delivery
 programme: its milestones, the slices each milestone decomposes into, the rows

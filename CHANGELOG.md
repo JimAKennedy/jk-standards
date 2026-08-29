@@ -19,6 +19,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `MIGRATION-nfr-review.md` keep their original pins, as the record of what
   those projects actually adopted.
 
+## [Unreleased]
+
+### Changed
+
+- **`/jk:plan` gains a repair mode** (`commands/plan.md`, `commands/next.md`,
+  `docs/commands.md`): `/jk:next` stops and points at `/jk:plan` when a plan is
+  malformed or a step is wrong, but `/jk:plan` refused any slice that already
+  had a plan — so the two commands contradicted each other in exactly the
+  situation that needs them to agree. A new section 2 covers repair as distinct
+  from re-planning: change only what execution proved wrong, leave ticked task
+  boxes ticked, and re-run the self-review afterwards, because correcting what
+  a task expects often leaves an earlier step that never set that expectation
+  up. It also warns that a defect found in one task is rarely uniform across
+  its siblings — a blanket fix breaks the ones that were already right, which
+  is what nearly happened in the trial programme. `/jk:next` now asks the
+  executor to name the defect precisely, and to say whether siblings share it,
+  so the repair can be scoped rather than guessed.
+
 ## [0.13.0] - 2026-08-28
 
 ### Added

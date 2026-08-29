@@ -27,7 +27,8 @@ Read the ledger fresh, every time.
    Not the definition-of-done copy: that is the slice's acceptance criteria, not
    task state, and `/jk:plan` requires it to sit below the task list. A plan
    with no Task status checklist is malformed — say so and **stop**. Repairing
-   a plan is `/jk:plan`'s job, not this command's.
+   a plan is `/jk:plan`'s job, not this command's — section 2 of that command
+   covers it, and an already-planned slice is a legitimate argument there.
 4. **Branch** — the milestone's `Branch`. Three cases, and only the first two
    proceed without asking:
    - It exists → check it out.
@@ -59,7 +60,10 @@ Either way:
   change proves nothing.
 - **Follow the plan's steps exactly.** If a step is wrong or impossible, stop
   and say so — do not improvise around it. A plan that needs improvising needs
-  editing, and that is a decision for the user.
+  editing, and that is a decision for the user: name the defect precisely, so
+  `/jk:plan` can repair that step rather than re-plan the slice. Report what
+  the step said, what actually happened, and whether sibling tasks share the
+  fault — they often do not, and a blanket fix breaks the ones that were right.
 - **Do only this task.** Adjacent improvements you notice go in the report, not
   in the diff. An unrequested change is one a reviewer did not ask for and
   cannot easily separate.

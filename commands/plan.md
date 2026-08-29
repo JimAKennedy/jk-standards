@@ -14,13 +14,47 @@ picked and why, and name any other slice that was equally ready.
 
 Refuse, and say so, if:
 
-- the slice already has a `Plan` and unchecked steps — it is planned; run
-  `/jk:next`
+- the slice already has a `Plan` and unchecked steps, **and you were not asked
+  to repair it** — it is planned; run `/jk:next`. Section 2 covers the case
+  where execution found the plan wrong, which is the one time an
+  already-planned slice is a legitimate argument
 - its dependencies are unmet — name the blocking slice
 - `jk-standards ledger` fails — fix the ledger first; a plan built on a broken
   ledger inherits the break
 
-## 2. Classify the work
+## 2. Repairing an existing plan
+
+`/jk:next` stops and sends the user here when a plan is malformed or one of its
+steps is wrong — it refuses to repair a plan itself, precisely so the decision
+lands with a human. Repair is not re-planning:
+
+- **Change only what execution proved wrong.** The executor named a defect; fix
+  that. A plan that has already produced correct commits is mostly right, and
+  rewriting it discards the review it already had.
+- **Leave ticked task boxes ticked.** They record work that landed. A repair
+  that resets them tells `/jk:next` to redo committed work.
+- **A defect found in one task is rarely uniform across its siblings.** Check
+  each one before applying the same edit. Tasks differ in ways that make an
+  instruction right in one and wrong in another, so a blanket fix can break a
+  task that was already correct — read each before changing it.
+- **Correcting an executed task's text is a documentation fix, not an
+  instruction change.** Do it: a plan left wrong misleads whoever reads it
+  next. Say in the commit that the task has already run, so nobody reads the
+  diff as revising history — the evidence file remains the record of what
+  actually ran.
+- **Re-run the self-review afterwards** (section 5). A repair can contradict a
+  step it did not touch: correcting what a task expects often leaves an earlier
+  step that never set that expectation up.
+
+If the *decomposition* is wrong — tasks that cannot each end green, a boundary
+in the wrong place — that is a re-plan rather than a repair. Keep the completed
+tasks as they are and re-decompose only what remains, so every ticked box still
+describes a commit that exists.
+
+Do not touch the slice's `Status` or its rows. A repair changes how the
+remaining work is described, not what has been done.
+
+## 3. Classify the work
 
 Use `superpowers:brainstorming` if available; it classifies the slice as
 **spike**, **bounded**, or **architectural** and gates on the user's approval
@@ -37,7 +71,7 @@ When in doubt, take the heavier path. Announce the classification out loud so
 the user can override it — they know things about the change that the tree does
 not show.
 
-## 3. Write the plan
+## 4. Write the plan
 
 Use `superpowers:writing-plans` if available. The plan goes to
 `docs/plans/<slug>/<MID>-<SNN>-plan.md` — beside the ledger, because the
@@ -73,7 +107,7 @@ the thing" with no way to tell whether it worked is not a task, it is a wish.
 to task 2", no reference to a function no task defines. The executor may read
 tasks out of order and cannot ask you what you meant.
 
-## 4. Self-review before handing over
+## 5. Self-review before handing over
 
 Check the plan against the slice yourself — this is a checklist, not a
 delegation:
@@ -86,7 +120,7 @@ delegation:
 4. **Name consistency.** A function called one thing in task 3 and another in
    task 7 is a bug you are shipping to your own executor.
 
-## 5. Register it
+## 6. Register it
 
 Update the slice in the ledger:
 

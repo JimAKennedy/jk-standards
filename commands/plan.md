@@ -46,9 +46,15 @@ ledger check requires plan paths to resolve inside the ledger's own directory.
 The plan must carry, at the top:
 
 - **Slice** — the ledger ID, and the ledger's path
+- **Task status** — a checklist with one `- [ ]` per task, in execution order.
+  This is the plan's executable state: `/jk:next` reads the first unchecked box
+  to choose its task, and that task's own commit ticks it. It must sit *above*
+  the Definition of Done, and these two must be the only checklists in the
+  file — a third would make "the first unchecked box" ambiguous.
 - **Definition of Done** — copied verbatim from the slice. Not paraphrased: the
   plan argues that its tasks satisfy *this* DoD, so the two must be the same
-  text.
+  text. It is acceptance criteria, not task state; `/jk:next` never reads it to
+  decide what to do.
 - **Validation** — the slice's tokens, each expanded to the command
   `.jk/validations.yml` maps it to, so an executor never has to guess
 

@@ -207,8 +207,15 @@ def parse(text: str) -> tuple[list[Milestone], list[tuple[int, str]]]:
             continue
 
         if _HEADING_RE.match(line):
-            # Any other heading closes the DoD checklist but leaves the slice
-            # open, so a slice may carry sub-headings after its checklist.
+            # Any other heading closes the DoD checklist. A milestone-level
+            # (##) heading also closes the slice: it is a sibling section, not
+            # part of one, and leaving the slice open is how a trailing
+            # "## Related issues" table gets folded into the last slice's rows
+            # and reported as rows with an empty Status. Deeper headings leave
+            # the slice open, so a slice may carry sub-headings after its
+            # checklist.
+            if len(line) - len(line.lstrip("#")) <= 2:
+                current_s = None
             in_dod = False
             continue
 

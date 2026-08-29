@@ -36,7 +36,16 @@ def commit_exists(root: Path, sha: str) -> bool | None:
     except OSError:
         return None
     except GitError:
-        return False
+        # The object is not here. That is only evidence of fabrication when
+        # the repository holds its whole history: in a truncated checkout —
+        # pre-commit.ci, or any `fetch-depth: 1` CI job — a commit recorded
+        # months ago is legitimately absent, and reporting it would fail a
+        # truthful record on the strength of a thin clone.
+        try:
+            shallow = _git(root, "rev-parse", "--is-shallow-repository").strip()
+        except (GitError, OSError):
+            return None
+        return None if shallow == "true" else False
     return True
 
 

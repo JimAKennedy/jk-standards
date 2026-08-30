@@ -37,6 +37,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   executor to name the defect precisely, and to say whether siblings share it,
   so the repair can be scoped rather than guessed.
 
+## [Unreleased]
+
+### Fixed
+
+- **`/jk:close` no longer assumes it can push to the default branch**
+  (`commands/close.md`, `docs/commands.md`): section 3 said to set the
+  milestone's status "on the default branch" and commit there, which any
+  repository with branch protection refuses — and protecting the default branch
+  is good practice, so this was the common case rather than an edge one. It now
+  probes with `gh api repos/<owner>/<repo>/rules/branches/<default>`, which
+  needs no admin rights, and takes a pull-request path when a `pull_request`
+  rule is present or the probe is unavailable. It also records that
+  `git push --dry-run` is **not** a probe for this: repository rules are
+  evaluated on receive, so a dry run reports a clean push for a branch that
+  rejects the real one a moment later. The recovery for a commit already made
+  on the default branch names the branch before resetting, so the commit is
+  never reachable only from the reflog. Section 5 gains the consequence: when
+  the close is in review the default branch does not carry it, so the next
+  milestone's branch is cut from a ledger that still calls the previous
+  milestone `in-progress` and needs a rebase once the close merges — cutting it
+  from the unmerged close branch instead would be the stacking that section
+  already forbids. Section 6 gains a second handoff shape, because a close
+  sitting in review must not be reported as a close.
+
 ## [0.13.1] - 2026-08-28
 
 ### Fixed

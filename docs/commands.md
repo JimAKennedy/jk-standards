@@ -4,7 +4,7 @@ class: gated
 
 # Workflow commands index
 
-Status: current (2026-08-28)
+Status: current (2026-09-01)
 
 Slash commands shipped by this repo, under `commands/<name>.md`, vendored into
 a consuming project with `jk-standards install-commands`. They are the
@@ -75,6 +75,7 @@ skills:
 ```json
 {
   "version": 1,
+  "jkStandardsVersion": "<the release this lock is pinned against>",
   "commands": {
     "status": {
       "source": "JimAKennedy/jk-standards",
@@ -85,6 +86,11 @@ skills:
   }
 }
 ```
+
+Commands are pinned by the same `jkStandardsVersion` as skills, and fetched
+from the tag it names. An entry may override that with its own `ref` — the
+escape hatch for an asset vendored from a repo this version says nothing
+about.
 
 Then install, and verify the pinned hashes on demand:
 

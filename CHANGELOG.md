@@ -6,6 +6,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Vendored skills and commands install from a pinned ref**
+  (`src/jk_standards/skills_install.py`, `docs/skills.md`,
+  `docs/commands.md`): `install-skills` and `install-commands` fetched
+  `refs/heads/main` unconditionally, so `skills-lock.json` recorded hashes of
+  whatever upstream held the moment it was written. Any commit to a vendored
+  asset then broke `install --check` in every consuming repo at once, on pull
+  requests that had touched none of it. Worse, a post-download mismatch
+  installed the file anyway and exited 0, so `install` succeeded while the
+  `--check` on the next line rejected what it had just written — the shape a
+  consumer's CI actually hit. The ref now comes from the lock: an entry's own
+  `ref` if it has one, otherwise the tag matching the recorded
+  `jkStandardsVersion`, and only a lock predating that field falls back to the
+  default branch. A mismatch behind a pin is now a failure, because at an
+  immutable ref it can no longer mean "upstream released"; the 404 retry
+  across `master`/`HEAD` likewise applies only to the unpinned default, since
+  answering a missing tag with a branch returns content the lock never saw.
+
 ### Changed
 
 - **Adoption pins moved to `v0.13.0`** (`.pre-commit-hooks.yaml`, the five

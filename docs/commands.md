@@ -4,7 +4,7 @@ class: gated
 
 # Workflow commands index
 
-Status: current (2026-08-28)
+Status: current (2026-09-01)
 
 Slash commands shipped by this repo, under `commands/<name>.md`, vendored into
 a consuming project with `jk-standards install-commands`. They are the

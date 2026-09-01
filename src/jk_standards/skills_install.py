@@ -56,7 +56,13 @@ SKILLS_DIR = Path(".agents/skills")
 # are namespaced by it, so a vendored command arrives as `/jk:status`
 # rather than claiming the bare `/status` a consuming repo may want.
 COMMANDS_DIR = Path(".claude/commands/jk")
-GITHUB_ARCHIVE_URL = "https://github.com/{source}/archive/refs/heads/main.tar.gz"
+GITHUB_ARCHIVE_URL = "https://github.com/{source}/archive/{ref}.tar.gz"
+# Vendoring from a branch is not reproducible: the lock records a hash of
+# whatever upstream held when it was written, so the next commit upstream
+# breaks --check in every consuming repo at once. A lock that records a
+# toolkit version pins the matching tag instead; this default is only for
+# locks written before that version field existed.
+DEFAULT_REF = "refs/heads/main"
 
 
 class LockError(Exception):
@@ -75,36 +81,56 @@ def compute_hash(file_path: Path) -> str:
     return hashlib.sha256(file_path.read_bytes()).hexdigest()
 
 
-def download_archive(source: str) -> tarfile.TarFile:
-    url = GITHUB_ARCHIVE_URL.format(source=source)
-    print(f"  Downloading {source} archive...")
+def resolve_ref(lock: dict, info: dict) -> str:
+    """The upstream ref an asset is vendored from.
+
+    An entry may name its own ``ref`` — the escape hatch for an asset
+    vendored from a repo the toolkit version says nothing about. Otherwise
+    the version the lock records supplies the tag, so one pin governs every
+    entry and a lock cannot describe a mixture of upstream states. Only a
+    lock predating that field falls back to the default branch.
+    """
+    ref = info.get("ref")
+    if ref:
+        return ref
+    version = lock.get("jkStandardsVersion")
+    if version:
+        return f"refs/tags/v{version}"
+    return DEFAULT_REF
+
+
+def _fetch(url: str) -> bytes:
+    req = urllib.request.Request(url)
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        req.add_header("Authorization", f"token {token}")
+    with urllib.request.urlopen(req) as resp:
+        return resp.read()
+
+
+def download_archive(source: str, ref: str = DEFAULT_REF) -> tarfile.TarFile:
+    url = GITHUB_ARCHIVE_URL.format(source=source, ref=ref)
+    print(f"  Downloading {source} at {ref}...")
     try:
-        req = urllib.request.Request(url)
-        token = os.environ.get("GITHUB_TOKEN")
-        if token:
-            req.add_header("Authorization", f"token {token}")
-        with urllib.request.urlopen(req) as resp:
-            data = resp.read()
+        data = _fetch(url)
     except urllib.error.HTTPError as e:
-        if e.code == 404:
-            for branch in ("master", "HEAD"):
-                fallback = url.replace("/main.tar.gz", f"/{branch}.tar.gz")
-                try:
-                    req = urllib.request.Request(fallback)
-                    if token:
-                        req.add_header("Authorization", f"token {token}")
-                    with urllib.request.urlopen(req) as resp:
-                        data = resp.read()
-                    break
-                except urllib.error.HTTPError:
-                    continue
-            else:
-                print(
-                    f"  Error: could not download {source} (tried main/master/HEAD)",
-                    file=sys.stderr,
-                )
-                raise
+        # Guessing at sibling refs is only ever right for the unpinned
+        # default, where it covers a repo whose default branch is master.
+        # Behind a pin a 404 means the ref is wrong, and answering that by
+        # fetching a branch would hand back content the lock never saw.
+        if e.code != 404 or ref != DEFAULT_REF:
+            raise
+        for branch in ("refs/heads/master", "HEAD"):
+            try:
+                data = _fetch(GITHUB_ARCHIVE_URL.format(source=source, ref=branch))
+                break
+            except urllib.error.HTTPError:
+                continue
         else:
+            print(
+                f"  Error: could not download {source} (tried main/master/HEAD)",
+                file=sys.stderr,
+            )
             raise
     return tarfile.open(fileobj=io.BytesIO(data), mode="r:gz")
 
@@ -141,15 +167,17 @@ def install_skills(
         print("No skills in lock file.")
         return 0
 
-    by_source: dict[str, list[tuple[str, dict]]] = defaultdict(list)
+    # Keyed by origin, not source: two entries from one repo may legitimately
+    # sit at different refs, and each needs its own archive.
+    by_origin: dict[tuple[str, str], list[tuple[str, dict]]] = defaultdict(list)
     for name, info in skills.items():
-        by_source[info["source"]].append((name, info))
+        by_origin[(info["source"], resolve_ref(lock, info))].append((name, info))
 
     installed = 0
     skipped = 0
     failed = 0
 
-    for source, skill_list in sorted(by_source.items()):
+    for (source, ref), skill_list in sorted(by_origin.items()):
         to_install = []
         for name, info in skill_list:
             dest = project_root / skills_dir / name
@@ -167,7 +195,7 @@ def install_skills(
             continue
 
         try:
-            tar = download_archive(source)
+            tar = download_archive(source, ref)
         except (urllib.error.URLError, tarfile.TarError, OSError) as e:
             print(f"  Failed to download {source}: {e}", file=sys.stderr)
             failed += len(to_install)
@@ -200,9 +228,10 @@ def install_skills(
                     f"got {actual_hash[:12]}...)",
                     file=sys.stderr,
                 )
-                print(f"  {name}: installed anyway ({count} files) — source may have updated")
-            else:
-                print(f"  {name}: installed ({count} files, hash verified)")
+                print(f"  {name}: {ref} does not carry the locked content")
+                failed += 1
+                continue
+            print(f"  {name}: installed ({count} files, hash verified)")
             installed += 1
 
         tar.close()
@@ -264,13 +293,13 @@ def install_commands(
         print("No commands in lock file.")
         return 0
 
-    by_source: dict[str, list[tuple[str, dict]]] = defaultdict(list)
+    by_origin: dict[tuple[str, str], list[tuple[str, dict]]] = defaultdict(list)
     for name, info in commands.items():
-        by_source[info["source"]].append((name, info))
+        by_origin[(info["source"], resolve_ref(lock, info))].append((name, info))
 
     installed = skipped = failed = 0
 
-    for source, command_list in sorted(by_source.items()):
+    for (source, ref), command_list in sorted(by_origin.items()):
         to_install = []
         for name, info in command_list:
             dest = project_root / commands_dir / f"{name}.md"
@@ -286,7 +315,7 @@ def install_commands(
             continue
 
         try:
-            tar = download_archive(source)
+            tar = download_archive(source, ref)
         except (urllib.error.URLError, tarfile.TarError, OSError) as e:
             print(f"  Failed to download {source}: {e}", file=sys.stderr)
             failed += len(to_install)
@@ -308,9 +337,10 @@ def install_commands(
                     f"(expected {info['computedHash'][:12]}..., got {actual[:12]}...)",
                     file=sys.stderr,
                 )
-                print(f"  {name}: installed anyway — source may have updated")
-            else:
-                print(f"  {name}: installed (hash verified)")
+                print(f"  {name}: {ref} does not carry the locked content")
+                failed += 1
+                continue
+            print(f"  {name}: installed (hash verified)")
             installed += 1
 
         tar.close()

@@ -75,6 +75,7 @@ skills:
 ```json
 {
   "version": 1,
+  "jkStandardsVersion": "<the release this lock is pinned against>",
   "commands": {
     "status": {
       "source": "JimAKennedy/jk-standards",
@@ -85,6 +86,11 @@ skills:
   }
 }
 ```
+
+Commands are pinned by the same `jkStandardsVersion` as skills, and fetched
+from the tag it names. An entry may override that with its own `ref` — the
+escape hatch for an asset vendored from a repo this version says nothing
+about.
 
 Then install, and verify the pinned hashes on demand:
 

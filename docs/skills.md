@@ -32,6 +32,7 @@ this repo, and install with the lock-file installer:
 ```json
 {
   "version": 1,
+  "jkStandardsVersion": "<the release this lock is pinned against>",
   "skills": {
     "doc-anti-drift": {
       "source": "JimAKennedy/jk-standards",
@@ -42,6 +43,12 @@ this repo, and install with the lock-file installer:
   }
 }
 ```
+
+`jkStandardsVersion` is load-bearing, not a label: the installer fetches the
+tag matching it, so the lock names both *which* content it wants and *what
+that content hashes to*. Omit it and the installer falls back to the default
+branch, where the next upstream commit invalidates every hash in the file at
+once. `install-skills --update-lock` writes the field for you.
 
 ```
 jk-standards install-skills                      # → .agents/skills/

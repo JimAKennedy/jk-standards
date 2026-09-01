@@ -344,8 +344,15 @@ def test_install_hash_mismatch_reinstalls(tmp_path, capsys, monkeypatch):
     assert installed.read_text(encoding="utf-8") == new_body
 
 
-def test_install_hash_verify_failure_installs_anyway(tmp_path, capsys, monkeypatch):
-    """Downloaded SKILL.md not matching the pinned hash installs with a warning."""
+def test_install_hash_verify_failure_is_a_failure(tmp_path, capsys, monkeypatch):
+    """Downloaded SKILL.md not matching the locked hash fails the install.
+
+    This used to install anyway and exit 0, on the theory that a mismatch meant
+    upstream had released. That left `install` succeeding and the `--check` on
+    the very next line rejecting what it had just written — the shape every
+    consuming repo's CI hit. Content that is not what the lock names does not
+    get installed quietly.
+    """
     body = "# Alpha drifted upstream\n"
     archive = _make_archive("repo-main", {"skills/alpha/SKILL.md": body})
     _stub_urlopen(monkeypatch, lambda req: archive)
@@ -353,9 +360,11 @@ def test_install_hash_verify_failure_installs_anyway(tmp_path, capsys, monkeypat
 
     rc = skills_install.main(["--root", str(tmp_path)])
 
-    assert rc == 0  # installed-anyway path does not count as a failure
-    err = capsys.readouterr().err
-    assert "hash verification failed" in err
+    assert rc == 1
+    assert "hash verification failed" in capsys.readouterr().err
+    # Left on disk on purpose: a later --check reports the same mismatch, and
+    # the file is there to diff against what the lock expected.
+    assert (tmp_path / ".agents/skills/alpha/SKILL.md").read_text() == body
 
 
 def test_install_missing_skill_md_after_extract_fails(tmp_path, capsys, monkeypatch):
@@ -642,3 +651,112 @@ def test_cli_routes_install_commands_to_module(tmp_path, capsys):
 
 def test_cli_install_commands_missing_lockfile_exits_2(tmp_path):
     assert cli_main(["install-commands", "--check", "--root", str(tmp_path)]) == 2
+
+
+# --- ref pinning: the lock decides which upstream ref is fetched ------------
+#
+# Vendoring pulled from refs/heads/main unconditionally, so the lock's hashes
+# described whatever upstream happened to be that morning. Any commit to a
+# vendored asset broke `install --check` in every consuming repo at once, on
+# pull requests that had touched none of it. The ref has to come from the lock.
+
+
+def test_download_archive_fetches_the_ref_it_is_given(monkeypatch):
+    archive = _make_archive("repo-0.13.0", {"commands/status.md": "# status\n"})
+    seen = _stub_urlopen(monkeypatch, lambda req: archive)
+
+    skills_install.download_archive("owner/repo", ref="refs/tags/v0.13.0").close()
+
+    assert seen[0].full_url == "https://github.com/owner/repo/archive/refs/tags/v0.13.0.tar.gz"
+
+
+def test_download_archive_does_not_fall_back_from_a_pinned_ref(monkeypatch):
+    """A missing tag is an error, not a licence to fetch a moving branch."""
+
+    def handler(req):
+        raise _http_error(req.full_url, 404)
+
+    seen = _stub_urlopen(monkeypatch, handler)
+
+    with pytest.raises(urllib.error.HTTPError):
+        skills_install.download_archive("owner/repo", ref="refs/tags/v9.9.9")
+    assert len(seen) == 1  # no master/HEAD guessing behind a pin
+
+
+def test_install_commands_fetches_the_tag_for_the_locked_version(tmp_path, monkeypatch):
+    body = "# status\n"
+    archive = _make_archive("repo-0.13.0", {"commands/status.md": body})
+    seen = _stub_urlopen(monkeypatch, lambda req: archive)
+    _write_command_lock(
+        tmp_path,
+        {"status": _command_entry("owner/repo", "status", _sha(body))},
+        version="0.13.0",
+    )
+
+    assert skills_install.install_commands(tmp_path) == 0
+    assert seen[0].full_url.endswith("/archive/refs/tags/v0.13.0.tar.gz")
+
+
+def test_install_skills_fetches_the_tag_for_the_locked_version(tmp_path, monkeypatch):
+    body = "# Alpha\n"
+    archive = _make_archive("repo-0.13.0", {"skills/alpha/SKILL.md": body})
+    seen = _stub_urlopen(monkeypatch, lambda req: archive)
+    _write_lock(tmp_path, {"alpha": _entry("owner/repo", "alpha", _sha(body))}, version="0.13.0")
+
+    assert skills_install.install_skills(tmp_path) == 0
+    assert seen[0].full_url.endswith("/archive/refs/tags/v0.13.0.tar.gz")
+
+
+def test_entry_ref_overrides_the_version_derived_tag(tmp_path, monkeypatch):
+    """An asset vendored from somewhere the toolkit version cannot describe."""
+    body = "# status\n"
+    archive = _make_archive("repo-pinned", {"commands/status.md": body})
+    seen = _stub_urlopen(monkeypatch, lambda req: archive)
+    entry = _command_entry("owner/repo", "status", _sha(body))
+    entry["ref"] = "refs/tags/v0.9.0"
+    _write_command_lock(tmp_path, {"status": entry}, version="0.13.0")
+
+    assert skills_install.install_commands(tmp_path) == 0
+    assert seen[0].full_url.endswith("/archive/refs/tags/v0.9.0.tar.gz")
+
+
+def test_install_commands_falls_back_to_main_without_a_version_pin(tmp_path, monkeypatch):
+    """A lock predating the version field keeps its old unpinned behaviour."""
+    body = "# status\n"
+    archive = _make_archive("repo-main", {"commands/status.md": body})
+    seen = _stub_urlopen(monkeypatch, lambda req: archive)
+    _write_command_lock(tmp_path, {"status": _command_entry("owner/repo", "status", _sha(body))})
+
+    assert skills_install.install_commands(tmp_path) == 0
+    assert seen[0].full_url.endswith("/archive/refs/heads/main.tar.gz")
+
+
+def test_install_commands_fails_when_pinned_content_does_not_match_the_lock(
+    tmp_path, capsys, monkeypatch
+):
+    """Behind a pin a mismatch is corruption, not an upstream release."""
+    archive = _make_archive("repo-0.13.0", {"commands/status.md": "# drifted\n"})
+    _stub_urlopen(monkeypatch, lambda req: archive)
+    _write_command_lock(
+        tmp_path,
+        {"status": _command_entry("owner/repo", "status", _sha("# locked\n"))},
+        version="0.13.0",
+    )
+
+    assert skills_install.install_commands(tmp_path) == 1
+    assert "hash verification failed" in capsys.readouterr().err
+
+
+def test_install_skills_fails_when_pinned_content_does_not_match_the_lock(
+    tmp_path, capsys, monkeypatch
+):
+    archive = _make_archive("repo-0.13.0", {"skills/alpha/SKILL.md": "# drifted\n"})
+    _stub_urlopen(monkeypatch, lambda req: archive)
+    _write_lock(
+        tmp_path,
+        {"alpha": _entry("owner/repo", "alpha", _sha("# locked\n"))},
+        version="0.13.0",
+    )
+
+    assert skills_install.install_skills(tmp_path) == 1
+    assert "hash verification failed" in capsys.readouterr().err

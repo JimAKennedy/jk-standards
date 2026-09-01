@@ -4,7 +4,7 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.13.2] - 2026-09-01
 
 ### Fixed
 
@@ -25,41 +25,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   across `master`/`HEAD` likewise applies only to the unpinned default, since
   answering a missing tag with a branch returns content the lock never saw.
 
-### Changed
-
-- **Adoption pins moved to `v0.13.0`** (`.pre-commit-hooks.yaml`, the five
-  reusable workflow headers, `README.md`, `docs/configuration.md`,
-  `site/src/content/docs/{reference/configuration,how-to/adopt-in-a-repo,guide/quickstart}`):
-  every documented `rev:` and `uses: …@` reference naming this repository now
-  points at the current release. This lands after the tag by necessity rather
-  than preference — `release-pins` requires every pin to resolve to a tag that
-  exists, so bumping them in the release pull request itself would fail the
-  check, since the tag is not pushed until that merges. `MIGRATION-poly.md` and
-  `MIGRATION-nfr-review.md` keep their original pins, as the record of what
-  those projects actually adopted.
-
-## [Unreleased]
-
-### Changed
-
-- **`/jk:plan` gains a repair mode** (`commands/plan.md`, `commands/next.md`,
-  `docs/commands.md`): `/jk:next` stops and points at `/jk:plan` when a plan is
-  malformed or a step is wrong, but `/jk:plan` refused any slice that already
-  had a plan — so the two commands contradicted each other in exactly the
-  situation that needs them to agree. A new section 2 covers repair as distinct
-  from re-planning: change only what execution proved wrong, leave ticked task
-  boxes ticked, and re-run the self-review afterwards, because correcting what
-  a task expects often leaves an earlier step that never set that expectation
-  up. It also warns that a defect found in one task is rarely uniform across
-  its siblings — a blanket fix breaks the ones that were already right, which
-  is what nearly happened in the trial programme. `/jk:next` now asks the
-  executor to name the defect precisely, and to say whether siblings share it,
-  so the repair can be scoped rather than guessed.
-
-## [Unreleased]
-
-### Fixed
-
 - **`/jk:close` no longer assumes it can push to the default branch**
   (`commands/close.md`, `docs/commands.md`): section 3 said to set the
   milestone's status "on the default branch" and commit there, which any
@@ -79,6 +44,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   from the unmerged close branch instead would be the stacking that section
   already forbids. Section 6 gains a second handoff shape, because a close
   sitting in review must not be reported as a close.
+
+### Changed
+
+- **Adoption pins moved to `v0.13.0`** (`.pre-commit-hooks.yaml`, the five
+  reusable workflow headers, `README.md`, `docs/configuration.md`,
+  `site/src/content/docs/{reference/configuration,how-to/adopt-in-a-repo,guide/quickstart}`):
+  every documented `rev:` and `uses: …@` reference naming this repository now
+  points at the current release. This lands after the tag by necessity rather
+  than preference — `release-pins` requires every pin to resolve to a tag that
+  exists, so bumping them in the release pull request itself would fail the
+  check, since the tag is not pushed until that merges. `MIGRATION-poly.md` and
+  `MIGRATION-nfr-review.md` keep their original pins, as the record of what
+  those projects actually adopted.
+
+- **`/jk:plan` gains a repair mode** (`commands/plan.md`, `commands/next.md`,
+  `docs/commands.md`): `/jk:next` stops and points at `/jk:plan` when a plan is
+  malformed or a step is wrong, but `/jk:plan` refused any slice that already
+  had a plan — so the two commands contradicted each other in exactly the
+  situation that needs them to agree. A new section 2 covers repair as distinct
+  from re-planning: change only what execution proved wrong, leave ticked task
+  boxes ticked, and re-run the self-review afterwards, because correcting what
+  a task expects often leaves an earlier step that never set that expectation
+  up. It also warns that a defect found in one task is rarely uniform across
+  its siblings — a blanket fix breaks the ones that were already right, which
+  is what nearly happened in the trial programme. `/jk:next` now asks the
+  executor to name the defect precisely, and to say whether siblings share it,
+  so the repair can be scoped rather than guessed.
 
 ## [0.13.1] - 2026-08-28
 

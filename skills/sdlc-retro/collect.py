@@ -150,12 +150,16 @@ def _environment(claude_dir: Path) -> dict:
     return env
 
 
-def _resolve_since(out: Path, since: str | None) -> str | None:
+def _resolve_since(out: Path, since: str | None, today: str) -> str | None:
     if since != "auto":
         return since
     if not out.is_dir():
         return None
-    snapshots = sorted(p.stem for p in out.glob("*.json"))
+    # A same-day (or future-dated) snapshot is this run's own output or a
+    # backdating mistake, not a previous period — using it as the window
+    # start would make a same-day rerun collect a degenerate today→today
+    # window. The previous period is the latest snapshot dated before today.
+    snapshots = sorted(p.stem for p in out.glob("*.json") if p.stem < today)
     return snapshots[-1] if snapshots else None
 
 
@@ -169,7 +173,7 @@ def collect(
 ) -> Path:
     """Collect one snapshot and return the path it was written to."""
     today = today or date.today().isoformat()
-    window_from = _resolve_since(out, since)
+    window_from = _resolve_since(out, since, today)
     repos = {}
     unreadable = []
     for repo in sorted(p for p in Path(root).iterdir() if p.is_dir()):

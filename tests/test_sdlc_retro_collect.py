@@ -142,6 +142,18 @@ def test_since_auto_limits_window_to_new_commits(portfolio, tmp_path):
     assert snap["repos"]["alpha"]["markers"]["CLAUDE.md"] == "2026-01-06"
 
 
+def test_since_auto_ignores_same_day_snapshot_on_rerun(portfolio, tmp_path):
+    # Re-collecting on the same day must not treat the just-written snapshot
+    # as the previous one — that yields a degenerate today→today window.
+    # The window should come from the latest snapshot dated BEFORE today.
+    out = tmp_path / "snaps"
+    _snapshot(portfolio, out)  # 2026-03-01 baseline
+    collect_mod.collect(root=portfolio, out=out, today="2026-04-01", since="auto")
+    path = collect_mod.collect(root=portfolio, out=out, today="2026-04-01", since="auto")
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    assert snap["window"]["from"] == "2026-03-01"
+
+
 def test_window_end_is_enforced_not_just_recorded(portfolio, tmp_path):
     # A snapshot claiming window.to = 2026-01-31 must not contain commits made
     # after that date (backdated regeneration, clock skew) — otherwise two

@@ -21,6 +21,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (e.g. orphaned worktrees) are recorded, never silently skipped. The
   `retro/` directory holds this repo's own snapshot ledger, seeded with a
   full-history baseline.
+- **`sdlc-retro` workflow command** (`commands/sdlc-retro.md`,
+  `docs/commands.md`): drives one cycle of the periodic retrospective —
+  locate the installed skill and its collector (refusing rather than
+  improvising one), bank an incremental snapshot, interpret in the skill's
+  prescribed order, update the standing report, commit. Installs as
+  `/jk:sdlc-retro` alongside the delivery-loop commands.
+- **jk-standards bootstrapped onto its own ledger workflow**
+  (`.jk/validations.yml`, `.claude/commands/jk`): validation tokens
+  mirroring the CI job graph (`format`, `unit`, `emit-fresh`, `discipline`,
+  `gate`), and the `/jk:` command namespace wired as a tracked symlink to
+  the live `commands/` tree — the source repo dogfoods its own commands
+  with zero vendoring drift.
 
 ## [0.13.2] - 2026-09-01
 

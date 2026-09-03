@@ -113,8 +113,8 @@
       "percent_covered": 100.0
     },
     "src/jk_standards/skills_install.py": {
-      "missing_lines": 100,
-      "percent_covered": 56.28
+      "missing_lines": 8,
+      "percent_covered": 96.74
     },
     "src/jk_standards/testindex.py": {
       "missing_lines": 12,
@@ -127,9 +127,9 @@
   },
   "toolkit_version": "0.13.2",
   "totals": {
-    "covered_lines": 2441,
-    "missing_lines": 355,
+    "covered_lines": 2533,
+    "missing_lines": 263,
     "num_statements": 2796,
-    "percent_covered": 84.65
+    "percent_covered": 88.98
   }
 }

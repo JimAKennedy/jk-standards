@@ -4,7 +4,7 @@ class: gated
 
 # Skills index
 
-Status: current (2026-09-01)
+Status: current (2026-09-03)
 
 Agent skills shipped by this repo, under `skills/<name>/SKILL.md`. They are
 the authoring-time half of the discipline: the checks enforce the
@@ -22,6 +22,7 @@ first place.
 | research-provenance | The provenance discipline for documentation that summarises external research or scholarship: every substantive claim is a sourced claim (inline citation), a practical distillation (flagged in the page's Attribution note), or a project-specific value (declared as the project's own); bibliography entries carry stable HTML anchors, terminology credits its coiner, organising frameworks are declared as arrangement rather than discovery, and cultural material claims fidelity to cited scholarship only — mechanically gated by the `research-provenance` check |
 | realtime-audio-safety | Keeping the audio callback thread real-time-safe — no heap allocation, locks, blocking syscalls, exceptions, or unbounded container growth — and gating it with the greppable `check-realtime-safety.sh` scanner honoring an in-band `RT-SAFE-OK: <reason>` waiver with a live suppression count, with RealtimeSanitizer as the dynamic backstop |
 | sanitizer-ci-setup | Layered quality gates for native projects: ASan/UBSan/TSan matrices, sanitizer-aware tests, fuzzer wiring, notification paths that can't be ignored |
+| sdlc-retro | Reconstructing and periodically measuring a portfolio's AI-assisted workflow evolution from evidence rather than memory: the four evidence classes (trailer variants, marker first-appearances, weekly volumes, ephemeral environment state), the append-only snapshot ledger its bundled `collect.py` maintains incrementally, and the interpretation order (era check, guardrail check, throughput/survival, recollection vs evidence) |
 | versioned-state-serialization | Serializing persistent state so old data still loads after the format changes: write a version tag first, branch on it when reading, and never reinterpret unversioned bytes, illustrated with JUCE/VST3 plugin preset/patch state and the "preset compatibility time bomb" anti-pattern |
 
 ## Consuming

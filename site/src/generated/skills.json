@@ -46,6 +46,11 @@
       "path": "skills/sanitizer-ci-setup/SKILL.md"
     },
     {
+      "description": "Use when asked to measure, reconstruct, or periodically report how a portfolio's AI-assisted development workflow evolved — which tools/models were in use when, what guardrails appeared, how productivity and quality trended — or when updating an existing retrospective snapshot ledger.",
+      "name": "sdlc-retro",
+      "path": "skills/sdlc-retro/SKILL.md"
+    },
+    {
       "description": "Serialize persistent state so old data still loads after the format changes — write a version tag first, branch on it when reading, and never reinterpret unversioned bytes. Use when designing or changing any serialized-state format that outlives its writer — plugin preset/patch state, save files, on-disk caches, or wire formats a future build must still read.",
       "name": "versioned-state-serialization",
       "path": "skills/versioned-state-serialization/SKILL.md"

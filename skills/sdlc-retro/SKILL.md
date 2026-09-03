@@ -58,8 +58,22 @@ Rules that keep the ledger trustworthy:
 - **Investigate `unreadable` entries** in the snapshot rather than deleting
   the directories they name — a broken gitdir pointer is itself evidence (an
   orphaned worktree marks an abandoned workflow).
+- **Whether the ledger is tracked in git is the brief's call.** Snapshots
+  contain private telemetry — local filesystem paths, environment manifests,
+  per-repo activity — so in a public repo the ledger is normally gitignored
+  and the brief says so; the snapshot files then live only on the owner's
+  machine, and backing them up is the owner's concern. Never commit a
+  snapshot the brief marks untracked.
 
 ## Interpreting
+
+Before interpreting, read the snapshot directory's README — it is the
+**report brief**: where the standing report lives, who reads it, which repos
+are excluded, what framing rules apply, and the baseline constants that
+quantified claims are measured against. The brief overrides anything this
+section assumes. If no brief exists yet, write one as part of the run:
+a retrospective without a recorded audience and framing drifts back into
+ad-hoc notes.
 
 Read the newest snapshot against the previous one and answer, in this order:
 
@@ -78,9 +92,40 @@ Read the newest snapshot against the previous one and answer, in this order:
    happening, check it against the dated artifacts and report differences
    plainly — sharpening dates is the main value of the exercise.
 
-Write the interpretation into the standing report (for this portfolio: the
-artifact linked from `retro/README.md`, updated in place so the URL is
-stable), never into the snapshot directory.
+## Updating the standing report
+
+The output of a run is not a note — it is an **update to one standing
+report**, maintained in place at the stable location the brief names, so the
+link the audience already has always shows the current state. Never start a
+new document per run, and never write interpretation into the snapshot
+directory.
+
+The report exists to let the owner answer three questions for other people:
+**what happened** (a dated timeline of workflow eras), **what were the major
+moves** (each tool/framework/guardrail adoption, dated from evidence), and
+**what were the benefits** (productivity and quality, quantified against the
+baseline constants recorded in the brief, with the caveats stated). Whatever
+its layout, the report is incomplete if a reader cannot get those three
+answers from it.
+
+An incremental run updates the report as follows:
+
+1. **Add the period.** A short section for the new window: its dates, then
+   the era/guardrail/throughput findings from the interpretation above —
+   one or two sentences per headline change, not a data dump. Quantify
+   against the brief's baselines where the period moved a number.
+2. **Extend the timeline** only if the period contained an era transition
+   (new tool, framework retired, model generation change). A quiet period
+   extends nothing — say the era continues.
+3. **Refresh what the period made stale.** Current-state sections, activity
+   charts and their date ranges, version numbers, "still in use" claims —
+   re-check standing statements the new evidence touches, and only those.
+4. **Keep the framing rules.** The brief's framing (for example: a repo with
+   no recent commits is a product in use, not a dead project) applies to the
+   new period's prose exactly as it applied to the old.
+
+On a baseline run, the report is built rather than updated — same three
+questions, full-history timeline — and the brief is written alongside it.
 
 ## Cadence
 

@@ -49,8 +49,10 @@ routine.
 ## 5. Record and stop
 
 Write the interpretation into the standing report the snapshot directory's
-README points at — never into the snapshot directory itself. Commit the new
-snapshot (and the report pointer if it changed) as one commit. Report the
+README points at — never into the snapshot directory itself. Commit what the
+run changed in tracked files as one commit; include the snapshot only where
+the brief says the ledger is tracked (in a public repo it is normally
+gitignored — then say where the snapshot landed instead). Report the
 window covered, the headline changes in one or two sentences each, and
 anything the skill's rules flagged (`unreadable` entries, a marker removal,
 an empty environment scan), then stop.

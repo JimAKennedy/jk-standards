@@ -6,6 +6,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`sdlc-retro` skill carries the standing-report contract**
+  (`skills/sdlc-retro/SKILL.md`, `retro/README.md`, `docs/skills.md`): the
+  skill specified collection and interpretation but not what the output is,
+  so a run improvised its own report shape. It now defines the update
+  contract — one standing report at a stable location, updated in place,
+  answering *what happened / major moves / quantified benefits*, with an
+  incremental procedure (add the period, extend the timeline only on an era
+  transition, refresh only what the period made stale, keep the framing
+  rules) — and reads a **report brief** from the snapshot ledger's README
+  (audience, framing rules, exclusions, baseline constants, era numbering),
+  which `retro/README.md` now records for this portfolio.
+- **Snapshot ledger privacy** (`.gitignore`, `retro/README.md`,
+  `skills/sdlc-retro/SKILL.md`, `commands/sdlc-retro.md`): snapshots carry
+  private telemetry (local filesystem paths, environment manifests, per-repo
+  activity), so `retro/snapshots/` is now gitignored in this public repo and
+  the tracked baseline snapshot is removed going forward (it remains in git
+  history). The skill and command now treat ledger tracking as the brief's
+  call and never commit a snapshot the brief marks untracked.
+
 ### Added
 
 - **`sdlc-retro` skill with bundled evidence collector**

@@ -4,6 +4,24 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`sdlc-retro` skill with bundled evidence collector**
+  (`skills/sdlc-retro/`, `docs/skills.md`, `retro/`): a method for
+  reconstructing and periodically measuring a portfolio's AI-assisted
+  workflow evolution from evidence rather than memory. Its stdlib-only
+  `collect.py` extracts four evidence classes per repo — Co-authored-by
+  trailer variants, tooling-marker first-appearance dates, weekly
+  commit/line volumes, and ephemeral environment state — into an
+  append-only snapshot ledger with enforced collection windows
+  (`--since auto` / `--until`), so incremental monthly runs stay cheap and
+  their numbers reconcile with prior runs. Unreadable repo directories
+  (e.g. orphaned worktrees) are recorded, never silently skipped. The
+  `retro/` directory holds this repo's own snapshot ledger, seeded with a
+  full-history baseline.
+
 ## [0.13.2] - 2026-09-01
 
 ### Fixed

@@ -1,0 +1,32 @@
+# Validation tokens for the jk-standards delivery workflow — this repo
+# consuming its own ledger discipline.
+#
+# A slice in docs/plans/<slug>/ledger.md names TOKENS, never commands — the
+# ledger says which class of assurance the slice owes, and this file says how
+# that assurance is obtained in this repo. The `ledger` check asserts that
+# every token a ledger cites appears here, so a typo fails rather than
+# silently skipping a gate.
+#
+# The set mirrors the CI job graph in .github/workflows/ci.yml, ordered
+# cheapest-first: a slice normally owes `format` plus whichever subject-matter
+# tokens its change touches, and `gate` before it ships.
+
+# Formatting, lint, and the local hook suite. Seconds.
+format: pre-commit run --all-files
+
+# The Python test suite (mirrors the `test` matrix job on the local venv).
+unit: pytest -q
+
+# Generated fixtures under site/src/generated match a fresh emitter run
+# (mirrors the `emit-check` job). Owed by any slice touching src/ or the
+# inventory the emitters serialize — checks, skills, config schema, coverage.
+emit-fresh: jk-standards emit all --check
+
+# The toolkit's own checks run against this repo (mirrors the `dogfood` job):
+# taxonomy, drift, status prose, count drift, file:line refs, workflow
+# hygiene, ledger conformance, and the rest.
+discipline: jk-standards all
+
+# The whole locally-runnable conformance gate. The token a slice owes before
+# /jk:ship, not during /jk:next. Minutes, not seconds.
+gate: scripts/verify.sh

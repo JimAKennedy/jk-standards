@@ -4,7 +4,7 @@ class: gated
 
 # Workflow commands index
 
-Status: current (2026-09-01)
+Status: current (2026-09-03)
 
 Slash commands shipped by this repo, under `commands/<name>.md`, vendored into
 a consuming project with `jk-standards install-commands`. They are the
@@ -24,6 +24,7 @@ subdirectory is namespaced by it, so a vendored command is invoked as
 | ship | Refuses to ship an unfinished milestone, re-runs every slice's validation on the current head, syncs the changelog and roadmap, pushes, and opens a pull request whose body is generated from the ledger and from git trailers rather than written from memory |
 | close | Verifies the merge landed, closes the milestone in the ledger — directly on the default branch, or through a pull request when that branch is protected — deletes the branch, rebases or creates the next milestone's branch on the updated base, and prints the next action |
 | status | Reads a delivery ledger and reports milestone/slice state, the next actionable slice, and any disagreement between the ledger and the working tree. Read-only: it never writes a file, and reports anything that would change state as something for the user to run |
+| sdlc-retro | Runs one cycle of the periodic portfolio retrospective: locates the installed `sdlc-retro` skill and its bundled collector (refusing rather than improvising one), banks an incremental evidence snapshot with `--since auto`, interprets it against the previous snapshot in the skill's prescribed order, updates the standing report, and commits the snapshot. Unlike the delivery-loop commands above it operates on a portfolio of repos, not a ledger |
 
 The commands operate on the ledger format defined in the
 [ledger standard](ledger-standard.md) and gated by the `ledger` check. A

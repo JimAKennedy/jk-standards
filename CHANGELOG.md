@@ -42,6 +42,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (e.g. orphaned worktrees) are recorded, never silently skipped. The
   `retro/` directory holds this repo's own snapshot ledger, seeded with a
   full-history baseline.
+- **`sdlc-retro` effort-split churn classification** (`skills/sdlc-retro/collect.py`
+  schema 3, `skills/sdlc-retro/SKILL.md`, `docs/skills.md`): weekly line
+  churn is now also split into product / tests / docs / process-guardrail /
+  machine-workflow-state categories, classified by file path with rules
+  versioned inside the collector (first match wins, so `CLAUDE.md` counts
+  as process, not docs; `.gsd*` state gets its own bucket so tool-generated
+  churn cannot masquerade as guardrail effort; rename paths are normalized
+  to their new name). Lets the report narrate
+  the relative effort that went into guardrail development versus core
+  product delivery per repo; the skill records the honesty caveats (churn
+  is a proxy, boilerplate skews product-ward, and a falling guardrail share
+  can mean guardrails are now imported rather than written).
+- **`sdlc-retro` token-usage evidence class** (`skills/sdlc-retro/collect.py`
+  schema 2, `skills/sdlc-retro/SKILL.md`, `docs/skills.md`): the collector
+  now banks weekly per-model token totals (input, output, cache
+  read/creation) harvested from Claude Code session transcripts, attributed
+  to repos via transcript directory names (worktree sessions merge into
+  their repo; out-of-portfolio directories are kept under their raw names).
+  Transcripts are deleted after the Claude Code cleanup period, so this
+  class ignores the `--since` window and scans everything still readable on
+  every run — retention supplies the left edge, and the skill now warns that
+  the run cadence must stay inside the cleanup period. Streamed duplicate
+  transcript entries are deduplicated by message + request id.
 - **`sdlc-retro` workflow command** (`commands/sdlc-retro.md`,
   `docs/commands.md`): drives one cycle of the periodic retrospective —
   locate the installed skill and its collector (refusing rather than

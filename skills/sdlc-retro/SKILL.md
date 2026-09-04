@@ -12,7 +12,7 @@ and cheap. The failure this skill prevents is re-archaeology: every run
 re-mining history with ad-hoc commands, producing numbers that don't reconcile
 with last month's.
 
-## The four evidence classes
+## The five evidence classes
 
 1. **Trailer variants.** `Co-Authored-By:` model names fingerprint tool eras:
    the exact variant text ("Claude Opus 4.6", "Claude Opus 5 (1M context)")
@@ -21,11 +21,26 @@ with last month's.
    (`git log --diff-filter=A`) dates a workflow change: CLAUDE.md, `.mcp.json`,
    pre-commit config, CI workflows, `jk-standards.yaml`, and friends.
 3. **Weekly volumes.** Commits and line churn per ISO week, for throughput
-   trends and dormancy detection.
+   trends and dormancy detection. Churn is also split by effort category —
+   product / tests / docs / process-guardrails / machine workflow state,
+   classified by file path using rules versioned inside the collector — so
+   the report can narrate how much effort went into guardrails versus core
+   delivery per repo. The state bucket (`.gsd*`) exists because tool-managed
+   workflow state can dwarf human guardrail churn; never fold it back into
+   the guardrail number.
 4. **Environment state.** Plugin manifests, per-repo MCP server configs,
    install dates. This class is *ephemeral* — a machine rebuild or an
    uninstall destroys it — which is why collection must not be skipped just
    because git feels sufficient. Bank it while it exists.
+5. **Token usage.** Weekly per-model token totals (input, output, cache
+   read/creation) harvested from Claude Code session transcripts and
+   attributed to repos by transcript directory; usage from directories
+   outside the portfolio root is banked under its raw name, never dropped.
+   The most ephemeral class of all: transcript cleanup deletes the files
+   after ~30 days, so each run scans *everything still readable* — the
+   `--since` window deliberately does not apply, retention supplies the left
+   edge. Coverage therefore begins at the first schema-2 snapshot and cannot
+   be reconstructed further back.
 
 ## Collecting
 
@@ -87,7 +102,18 @@ Read the newest snapshot against the previous one and answer, in this order:
    dormant and new repos appearing. Raw commit counts stop being comparable
    across workflow generations — prefer era-appropriate units (milestones,
    releases, PR-merged slices) when narrating trends, and say which unit you
-   used.
+   used. For token trends, narrate **output tokens** — cache reads dwarf
+   them by orders of magnitude and measure context re-reading, not work —
+   and never compare token counts across model generations as if they cost
+   the same effort. State the coverage left edge whenever charting tokens:
+   the class only exists from its first banked snapshot. When narrating the
+   guardrail-vs-product churn split, state three caveats: line churn is a
+   proxy for effort, not time; generated boilerplate inflates the product
+   side; and a *falling* guardrail share can mean maturity rather than
+   neglect — once guardrails are imported from a standards product instead
+   of written in-repo, the effort moves to that product's ledger. Say which
+   lens a standards repo is read through: its "product" churn is guardrail
+   development at portfolio level.
 4. **Recollection vs evidence.** When the human describes what they remember
    happening, check it against the dated artifacts and report differences
    plainly — sharpening dates is the main value of the exercise.
@@ -131,4 +157,8 @@ questions, full-history timeline — and the brief is written alongside it.
 
 Monthly is enough resolution to date transitions; run it after any machine
 rebuild or tool migration *before* old state is cleaned up — the environment
-evidence class only exists until then.
+evidence class only exists until then. The token-usage class adds a harder
+deadline: transcripts are deleted after the Claude Code cleanup period
+(`cleanupPeriodDays`, default ~30 days), so a skipped month silently loses
+usage data. Either keep the cadence inside that period or raise the setting
+so one missed run cannot open a gap.

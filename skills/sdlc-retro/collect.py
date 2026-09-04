@@ -2,10 +2,11 @@
 """Evidence collector for the sdlc-retro skill.
 
 Walks the immediate subdirectories of --root, and for each git repository
-extracts the four evidence classes the skill's method interprets: weekly
+extracts the evidence classes the skill's method interprets: weekly
 commit/line volumes, Co-authored-by trailer variants, tooling-marker
-first-appearance dates, and tags — plus a best-effort environment scan.
-Writes one dated JSON snapshot per run into --out.
+first-appearance dates, and tags — plus a best-effort environment scan and
+weekly token usage harvested from Claude Code transcripts. Writes one dated
+JSON snapshot per run into --out.
 
 Stdlib-only by design: this file travels with the skill when it is installed
 into consuming repos, where nothing beyond Python 3.11 and git can be assumed.
@@ -16,11 +17,39 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+import re
 import subprocess
 from datetime import date
 from pathlib import Path
 
-SCHEMA = 1
+SCHEMA = 3
+
+# Effort-category rules for the churn split, applied to each numstat path in
+# order — first match wins, so guardrail files beat the generic docs rule
+# (CLAUDE.md is process, not documentation). A versioned constant: changing
+# the rules changes the numbers, so bump SCHEMA when these move.
+# Machine-managed workflow state (.gsd/ event logs, db dumps, .gsd-id) is
+# its own bucket: it can dwarf human guardrail churn in GSD-era repos, and
+# counting it as "process" would make the guardrail-effort split a lie.
+_STATE_PREFIXES = (".gsd",)
+_PROCESS_PREFIXES = (".github/", ".jk/", ".claude/", ".planning/")
+_PROCESS_FILES = (
+    "CLAUDE.md",
+    "AGENTS.md",
+    ".pre-commit-config.yaml",
+    ".clang-format",
+    ".clang-tidy",
+    ".editorconfig",
+    "jk-standards.yaml",
+    "nfr-review.yaml",
+    ".mcp.json",
+    "skills-lock.json",
+    ".gitignore",
+    ".gitattributes",
+)
+_TEST_PREFIXES = ("test/", "tests/")
+_DOC_PREFIXES = ("docs/",)
+_DOC_SUFFIXES = (".md", ".mdx", ".rst")
 
 # Files whose first appearance in history dates a workflow change. Paths are
 # relative to each repo root; directories cover any file added beneath them.
@@ -68,9 +97,29 @@ def _window_args(since: str | None, until: str) -> list[str]:
     return args
 
 
-def _weekly_volumes(repo: Path, since: str | None, until: str) -> tuple[dict, int]:
+def _categorize(path: str) -> str:
+    # numstat renders renames as "src/{old => new}/x.py" or "old => new";
+    # classify the post-rename path.
+    path = re.sub(r"\{[^{}]* => ([^{}]*)\}", r"\1", path)
+    if " => " in path:
+        path = path.split(" => ", 1)[1]
+    path = path.lstrip("/").replace("//", "/")
+    name = path.rsplit("/", 1)[-1]
+    if path.startswith(_STATE_PREFIXES):
+        return "state"
+    if path.startswith(_PROCESS_PREFIXES) or name in _PROCESS_FILES:
+        return "process"
+    if path.startswith(_TEST_PREFIXES) or name.startswith("test_") or "_test." in name:
+        return "tests"
+    if path.startswith(_DOC_PREFIXES) or name.endswith(_DOC_SUFFIXES):
+        return "docs"
+    return "product"
+
+
+def _weekly_volumes(repo: Path, since: str | None, until: str) -> tuple[dict, int, dict]:
     args = ["log", "--format=COMMIT %as", "--numstat", *_window_args(since, until)]
     weekly: dict[str, dict[str, int]] = {}
+    churn_split: dict[str, dict[str, dict[str, int]]] = {}
     commit_count = 0
     current_week = None
     for line in _git(repo, *args).splitlines():
@@ -82,13 +131,19 @@ def _weekly_volumes(repo: Path, since: str | None, until: str) -> tuple[dict, in
             )
             bucket["commits"] += 1
         elif line and current_week and "\t" in line:
-            ins, dels, _path = line.split("\t", 2)
+            ins, dels, path = line.split("\t", 2)
             bucket = weekly[current_week]
+            category = churn_split.setdefault(current_week, {}).setdefault(
+                _categorize(path), {"insertions": 0, "deletions": 0, "files": 0}
+            )
+            category["files"] += 1
             if ins.isdigit():
                 bucket["insertions"] += int(ins)
+                category["insertions"] += int(ins)
             if dels.isdigit():
                 bucket["deletions"] += int(dels)
-    return weekly, commit_count
+                category["deletions"] += int(dels)
+    return weekly, commit_count, churn_split
 
 
 def _trailer_variants(repo: Path, since: str | None, until: str) -> dict:
@@ -150,6 +205,73 @@ def _environment(claude_dir: Path) -> dict:
     return env
 
 
+def _token_usage(claude_dir: Path, root: Path) -> dict:
+    # Claude Code transcripts are the only per-token record and they are
+    # ephemeral (the transcript cleanup period deletes them after ~30 days),
+    # so every run scans everything still readable rather than applying the
+    # --since window: a windowed scan would permanently drop never-banked
+    # usage at the window's left edge. Retention supplies the left edge.
+    projects = claude_dir / "projects"
+    if not projects.is_dir():
+        return {}
+
+    def munge(text: str) -> str:
+        return re.sub(r"[^A-Za-z0-9]", "-", text)
+
+    # Transcript dirs are named by munged cwd; a repo's worktrees munge to the
+    # repo's dir name plus a suffix. Longest repo name first so e.g. a repo
+    # "midi" cannot claim "midi-filter"'s transcripts.
+    prefix = munge(str(root))
+    repo_names = sorted((p.name for p in Path(root).iterdir() if p.is_dir()), key=len, reverse=True)
+    usage: dict[str, dict] = {}
+    for project in sorted(p for p in projects.iterdir() if p.is_dir()):
+        owner = project.name
+        for repo in repo_names:
+            munged_repo = f"{prefix}-{munge(repo)}"
+            if project.name == munged_repo or project.name.startswith(munged_repo + "-"):
+                owner = repo
+                break
+        seen: set[tuple] = set()
+        weekly = usage.setdefault(owner, {})
+        for transcript in sorted(project.glob("*.jsonl")):
+            try:
+                lines = transcript.read_text(encoding="utf-8").splitlines()
+            except OSError:
+                continue
+            for line in lines:
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(obj, dict) or obj.get("type") != "assistant":
+                    continue
+                message = obj.get("message") or {}
+                tokens = message.get("usage")
+                timestamp = obj.get("timestamp")
+                if not isinstance(tokens, dict) or not timestamp:
+                    continue
+                # A streamed response can be rewritten to the transcript under
+                # the same message id + request id; count it once.
+                key = (message.get("id"), obj.get("requestId"))
+                if key != (None, None):
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                try:
+                    week = _week(timestamp[:10])
+                except ValueError:
+                    continue
+                bucket = weekly.setdefault(week, {}).setdefault(
+                    message.get("model") or "unknown",
+                    {"input": 0, "output": 0, "cache_read": 0, "cache_creation": 0},
+                )
+                bucket["input"] += tokens.get("input_tokens") or 0
+                bucket["output"] += tokens.get("output_tokens") or 0
+                bucket["cache_read"] += tokens.get("cache_read_input_tokens") or 0
+                bucket["cache_creation"] += tokens.get("cache_creation_input_tokens") or 0
+    return {owner: weeks for owner, weeks in usage.items() if weeks}
+
+
 def _resolve_since(out: Path, since: str | None, today: str) -> str | None:
     if since != "auto":
         return since
@@ -180,7 +302,7 @@ def collect(
         if not (repo / ".git").exists():
             continue
         try:
-            weekly, commit_count = _weekly_volumes(repo, window_from, today)
+            weekly, commit_count, churn_split = _weekly_volumes(repo, window_from, today)
         except subprocess.CalledProcessError:
             # e.g. an orphaned worktree whose .git file points at a deleted
             # gitdir — record the skip so nothing vanishes silently.
@@ -189,6 +311,7 @@ def collect(
         repos[repo.name] = {
             "commit_count": commit_count,
             "weekly": weekly,
+            "churn_split": churn_split,
             "trailers": _trailer_variants(repo, window_from, today),
             # Always full-history: first-appearance dates must not shift with
             # the collection window.
@@ -196,6 +319,7 @@ def collect(
             "tags": _tags(repo),
             "mcp_servers": _mcp_servers(repo),
         }
+    resolved_claude_dir = claude_dir if claude_dir else Path.home() / ".claude"
     snapshot = {
         "schema": SCHEMA,
         "collected_on": today,
@@ -203,7 +327,8 @@ def collect(
         "window": {"from": window_from, "to": today},
         "repos": repos,
         "unreadable": unreadable,
-        "environment": _environment(claude_dir if claude_dir else Path.home() / ".claude"),
+        "environment": _environment(resolved_claude_dir),
+        "token_usage": _token_usage(resolved_claude_dir, Path(root)),
     }
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"{today}.json"

@@ -42,6 +42,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (e.g. orphaned worktrees) are recorded, never silently skipped. The
   `retro/` directory holds this repo's own snapshot ledger, seeded with a
   full-history baseline.
+- **`sdlc-retro` token-usage evidence class** (`skills/sdlc-retro/collect.py`
+  schema 2, `skills/sdlc-retro/SKILL.md`, `docs/skills.md`): the collector
+  now banks weekly per-model token totals (input, output, cache
+  read/creation) harvested from Claude Code session transcripts, attributed
+  to repos via transcript directory names (worktree sessions merge into
+  their repo; out-of-portfolio directories are kept under their raw names).
+  Transcripts are deleted after the Claude Code cleanup period, so this
+  class ignores the `--since` window and scans everything still readable on
+  every run — retention supplies the left edge, and the skill now warns that
+  the run cadence must stay inside the cleanup period. Streamed duplicate
+  transcript entries are deduplicated by message + request id.
 - **`sdlc-retro` workflow command** (`commands/sdlc-retro.md`,
   `docs/commands.md`): drives one cycle of the periodic retrospective —
   locate the installed skill and its collector (refusing rather than

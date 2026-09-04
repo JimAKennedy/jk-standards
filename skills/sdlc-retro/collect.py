@@ -22,7 +22,30 @@ import subprocess
 from datetime import date
 from pathlib import Path
 
-SCHEMA = 2
+SCHEMA = 3
+
+# Effort-category rules for the churn split, applied to each numstat path in
+# order — first match wins, so guardrail files beat the generic docs rule
+# (CLAUDE.md is process, not documentation). A versioned constant: changing
+# the rules changes the numbers, so bump SCHEMA when these move.
+_PROCESS_PREFIXES = (".github/", ".jk/", ".claude/", ".planning/", ".gsd")
+_PROCESS_FILES = (
+    "CLAUDE.md",
+    "AGENTS.md",
+    ".pre-commit-config.yaml",
+    ".clang-format",
+    ".clang-tidy",
+    ".editorconfig",
+    "jk-standards.yaml",
+    "nfr-review.yaml",
+    ".mcp.json",
+    "skills-lock.json",
+    ".gitignore",
+    ".gitattributes",
+)
+_TEST_PREFIXES = ("test/", "tests/")
+_DOC_PREFIXES = ("docs/",)
+_DOC_SUFFIXES = (".md", ".mdx", ".rst")
 
 # Files whose first appearance in history dates a workflow change. Paths are
 # relative to each repo root; directories cover any file added beneath them.
@@ -70,9 +93,27 @@ def _window_args(since: str | None, until: str) -> list[str]:
     return args
 
 
-def _weekly_volumes(repo: Path, since: str | None, until: str) -> tuple[dict, int]:
+def _categorize(path: str) -> str:
+    # numstat renders renames as "src/{old => new}/x.py" or "old => new";
+    # classify the post-rename path.
+    path = re.sub(r"\{[^{}]* => ([^{}]*)\}", r"\1", path)
+    if " => " in path:
+        path = path.split(" => ", 1)[1]
+    path = path.lstrip("/").replace("//", "/")
+    name = path.rsplit("/", 1)[-1]
+    if path.startswith(_PROCESS_PREFIXES) or name in _PROCESS_FILES:
+        return "process"
+    if path.startswith(_TEST_PREFIXES) or name.startswith("test_") or "_test." in name:
+        return "tests"
+    if path.startswith(_DOC_PREFIXES) or name.endswith(_DOC_SUFFIXES):
+        return "docs"
+    return "product"
+
+
+def _weekly_volumes(repo: Path, since: str | None, until: str) -> tuple[dict, int, dict]:
     args = ["log", "--format=COMMIT %as", "--numstat", *_window_args(since, until)]
     weekly: dict[str, dict[str, int]] = {}
+    churn_split: dict[str, dict[str, dict[str, int]]] = {}
     commit_count = 0
     current_week = None
     for line in _git(repo, *args).splitlines():
@@ -84,13 +125,19 @@ def _weekly_volumes(repo: Path, since: str | None, until: str) -> tuple[dict, in
             )
             bucket["commits"] += 1
         elif line and current_week and "\t" in line:
-            ins, dels, _path = line.split("\t", 2)
+            ins, dels, path = line.split("\t", 2)
             bucket = weekly[current_week]
+            category = churn_split.setdefault(current_week, {}).setdefault(
+                _categorize(path), {"insertions": 0, "deletions": 0, "files": 0}
+            )
+            category["files"] += 1
             if ins.isdigit():
                 bucket["insertions"] += int(ins)
+                category["insertions"] += int(ins)
             if dels.isdigit():
                 bucket["deletions"] += int(dels)
-    return weekly, commit_count
+                category["deletions"] += int(dels)
+    return weekly, commit_count, churn_split
 
 
 def _trailer_variants(repo: Path, since: str | None, until: str) -> dict:
@@ -249,7 +296,7 @@ def collect(
         if not (repo / ".git").exists():
             continue
         try:
-            weekly, commit_count = _weekly_volumes(repo, window_from, today)
+            weekly, commit_count, churn_split = _weekly_volumes(repo, window_from, today)
         except subprocess.CalledProcessError:
             # e.g. an orphaned worktree whose .git file points at a deleted
             # gitdir — record the skip so nothing vanishes silently.
@@ -258,6 +305,7 @@ def collect(
         repos[repo.name] = {
             "commit_count": commit_count,
             "weekly": weekly,
+            "churn_split": churn_split,
             "trailers": _trailer_variants(repo, window_from, today),
             # Always full-history: first-appearance dates must not shift with
             # the collection window.

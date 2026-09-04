@@ -21,7 +21,10 @@ with last month's.
    (`git log --diff-filter=A`) dates a workflow change: CLAUDE.md, `.mcp.json`,
    pre-commit config, CI workflows, `jk-standards.yaml`, and friends.
 3. **Weekly volumes.** Commits and line churn per ISO week, for throughput
-   trends and dormancy detection.
+   trends and dormancy detection. Churn is also split by effort category —
+   product / tests / docs / process-guardrails, classified by file path
+   using rules versioned inside the collector — so the report can narrate
+   how much effort went into guardrails versus core delivery per repo.
 4. **Environment state.** Plugin manifests, per-repo MCP server configs,
    install dates. This class is *ephemeral* — a machine rebuild or an
    uninstall destroys it — which is why collection must not be skipped just
@@ -100,7 +103,14 @@ Read the newest snapshot against the previous one and answer, in this order:
    them by orders of magnitude and measure context re-reading, not work —
    and never compare token counts across model generations as if they cost
    the same effort. State the coverage left edge whenever charting tokens:
-   the class only exists from its first banked snapshot.
+   the class only exists from its first banked snapshot. When narrating the
+   guardrail-vs-product churn split, state three caveats: line churn is a
+   proxy for effort, not time; generated boilerplate inflates the product
+   side; and a *falling* guardrail share can mean maturity rather than
+   neglect — once guardrails are imported from a standards product instead
+   of written in-repo, the effort moves to that product's ledger. Say which
+   lens a standards repo is read through: its "product" churn is guardrail
+   development at portfolio level.
 4. **Recollection vs evidence.** When the human describes what they remember
    happening, check it against the dated artifacts and report differences
    plainly — sharpening dates is the main value of the exercise.

@@ -93,8 +93,8 @@ def test_snapshot_lists_repos_and_skips_non_repos(portfolio, tmp_path):
     assert path.name == "2026-03-01.json"
     assert set(snap["repos"]) == {"alpha"}
     assert snap["repos"]["alpha"]["commit_count"] == 3
-    # Schema 2 added the token_usage evidence class.
-    assert snap["schema"] == 2
+    # Schema 2 added the token_usage evidence class; schema 3 the churn split.
+    assert snap["schema"] == 3
 
 
 def test_weekly_commit_and_line_volumes(portfolio, tmp_path):
@@ -124,6 +124,64 @@ def test_marker_first_appearance_dates(portfolio, tmp_path):
 def test_tags_recorded_with_dates(portfolio, tmp_path):
     _, snap = _snapshot(portfolio, tmp_path / "snaps")
     assert snap["repos"]["alpha"]["tags"]["v0.1.0"] == "2026-02-10"
+
+
+# --- churn split (effort categories) ----------------------------------------
+#
+# Line churn classified by file path into product / tests / docs / process,
+# so the report can narrate guardrail effort vs core delivery per repo. The
+# rules are a versioned constant in the collector: every run must classify
+# identically or splits stop reconciling across snapshots.
+
+
+def test_churn_split_buckets_lines_by_category(portfolio, tmp_path):
+    repo = portfolio / "alpha"
+    _commit(repo, "src/main.py", "print(1)\nprint(2)\n", "feat: core", date="2026-01-12")
+    _commit(repo, "tests/test_main.py", "def test():\n    pass\n", "test: cover", date="2026-01-12")
+    _commit(repo, "docs/guide.md", "# guide\n", "docs: guide", date="2026-01-12")
+    _commit(repo, ".github/workflows/ci.yml", "on: push\n", "ci: gate", date="2026-01-12")
+    _, snap = _snapshot(portfolio, tmp_path / "snaps")
+    split = snap["repos"]["alpha"]["churn_split"]["2026-W03"]
+    assert split["product"] == {"insertions": 2, "deletions": 0, "files": 1}
+    assert split["tests"] == {"insertions": 2, "deletions": 0, "files": 1}
+    assert split["docs"] == {"insertions": 1, "deletions": 0, "files": 1}
+    assert split["process"] == {"insertions": 1, "deletions": 0, "files": 1}
+
+
+def test_churn_split_process_beats_docs_for_standards_files(portfolio, tmp_path):
+    # CLAUDE.md is a guardrail marker, not documentation: the process rules
+    # must win over the *.md docs rule. The fixture's W02 has CLAUDE.md (1
+    # insertion) and a.txt (1 insertion, product); no docs churn at all.
+    _, snap = _snapshot(portfolio, tmp_path / "snaps")
+    week = snap["repos"]["alpha"]["churn_split"]["2026-W02"]
+    assert week["process"] == {"insertions": 1, "deletions": 0, "files": 1}
+    assert week["product"] == {"insertions": 1, "deletions": 0, "files": 1}
+    assert "docs" not in week
+
+
+def test_churn_split_is_windowed_like_volumes(portfolio, tmp_path):
+    out = tmp_path / "snaps"
+    _snapshot(portfolio, out)  # baseline on 2026-03-01
+    _commit(
+        portfolio / "alpha",
+        "tests/test_new.py",
+        "def test_n():\n    pass\n",
+        "test: more",
+        date="2026-03-20",
+    )
+    path = collect_mod.collect(root=portfolio, out=out, today="2026-04-01", since="auto")
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    split = snap["repos"]["alpha"]["churn_split"]
+    assert list(split) == ["2026-W12"]
+    assert split["2026-W12"]["tests"]["insertions"] == 2
+
+
+def test_categorize_normalizes_rename_paths():
+    # git numstat renders renames as "src/{old => new}/x.py" or
+    # "old.py => new.py"; classification must apply to the new path.
+    assert collect_mod._categorize("src/{old => new}/x.py") == "product"
+    assert collect_mod._categorize("notes.md => docs/notes.md") == "docs"
+    assert collect_mod._categorize(".github/{a => b}/ci.yml") == "process"
 
 
 # --- incremental (--since auto) --------------------------------------------

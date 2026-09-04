@@ -176,6 +176,20 @@ def test_churn_split_is_windowed_like_volumes(portfolio, tmp_path):
     assert split["2026-W12"]["tests"]["insertions"] == 2
 
 
+def test_gsd_state_is_its_own_category_not_process(portfolio, tmp_path):
+    # GSD-era repos commit machine-generated workflow state (.gsd/ event
+    # logs, db dumps) that dwarfs human guardrail churn — MorphForge's
+    # history is ~80% .gsd/. Counting it as "process" would make the
+    # guardrail-effort number a lie, so it gets its own bucket.
+    repo = portfolio / "alpha"
+    _commit(repo, ".gsd/events.jsonl", "{}\n{}\n", "chore: gsd state", date="2026-01-12")
+    _commit(repo, ".gsd-id", "abc\n", "chore: gsd id", date="2026-01-12")
+    _, snap = _snapshot(portfolio, tmp_path / "snaps")
+    week = snap["repos"]["alpha"]["churn_split"]["2026-W03"]
+    assert week["state"] == {"insertions": 3, "deletions": 0, "files": 2}
+    assert "process" not in week
+
+
 def test_categorize_normalizes_rename_paths():
     # git numstat renders renames as "src/{old => new}/x.py" or
     # "old.py => new.py"; classification must apply to the new path.

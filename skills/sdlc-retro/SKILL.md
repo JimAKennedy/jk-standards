@@ -22,9 +22,12 @@ with last month's.
    pre-commit config, CI workflows, `jk-standards.yaml`, and friends.
 3. **Weekly volumes.** Commits and line churn per ISO week, for throughput
    trends and dormancy detection. Churn is also split by effort category —
-   product / tests / docs / process-guardrails, classified by file path
-   using rules versioned inside the collector — so the report can narrate
-   how much effort went into guardrails versus core delivery per repo.
+   product / tests / docs / process-guardrails / machine workflow state,
+   classified by file path using rules versioned inside the collector — so
+   the report can narrate how much effort went into guardrails versus core
+   delivery per repo. The state bucket (`.gsd*`) exists because tool-managed
+   workflow state can dwarf human guardrail churn; never fold it back into
+   the guardrail number.
 4. **Environment state.** Plugin manifests, per-repo MCP server configs,
    install dates. This class is *ephemeral* — a machine rebuild or an
    uninstall destroys it — which is why collection must not be skipped just

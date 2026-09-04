@@ -44,10 +44,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   full-history baseline.
 - **`sdlc-retro` effort-split churn classification** (`skills/sdlc-retro/collect.py`
   schema 3, `skills/sdlc-retro/SKILL.md`, `docs/skills.md`): weekly line
-  churn is now also split into product / tests / docs / process-guardrail
-  categories, classified by file path with rules versioned inside the
-  collector (first match wins, so `CLAUDE.md` counts as process, not docs;
-  rename paths are normalized to their new name). Lets the report narrate
+  churn is now also split into product / tests / docs / process-guardrail /
+  machine-workflow-state categories, classified by file path with rules
+  versioned inside the collector (first match wins, so `CLAUDE.md` counts
+  as process, not docs; `.gsd*` state gets its own bucket so tool-generated
+  churn cannot masquerade as guardrail effort; rename paths are normalized
+  to their new name). Lets the report narrate
   the relative effort that went into guardrail development versus core
   product delivery per repo; the skill records the honesty caveats (churn
   is a proxy, boilerplate skews product-ward, and a falling guardrail share

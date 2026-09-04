@@ -28,7 +28,11 @@ SCHEMA = 3
 # order — first match wins, so guardrail files beat the generic docs rule
 # (CLAUDE.md is process, not documentation). A versioned constant: changing
 # the rules changes the numbers, so bump SCHEMA when these move.
-_PROCESS_PREFIXES = (".github/", ".jk/", ".claude/", ".planning/", ".gsd")
+# Machine-managed workflow state (.gsd/ event logs, db dumps, .gsd-id) is
+# its own bucket: it can dwarf human guardrail churn in GSD-era repos, and
+# counting it as "process" would make the guardrail-effort split a lie.
+_STATE_PREFIXES = (".gsd",)
+_PROCESS_PREFIXES = (".github/", ".jk/", ".claude/", ".planning/")
 _PROCESS_FILES = (
     "CLAUDE.md",
     "AGENTS.md",
@@ -101,6 +105,8 @@ def _categorize(path: str) -> str:
         path = path.split(" => ", 1)[1]
     path = path.lstrip("/").replace("//", "/")
     name = path.rsplit("/", 1)[-1]
+    if path.startswith(_STATE_PREFIXES):
+        return "state"
     if path.startswith(_PROCESS_PREFIXES) or name in _PROCESS_FILES:
         return "process"
     if path.startswith(_TEST_PREFIXES) or name.startswith("test_") or "_test." in name:

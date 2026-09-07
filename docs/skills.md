@@ -4,7 +4,7 @@ class: gated
 
 # Skills index
 
-Status: current (2026-09-03)
+Status: current (2026-09-07)
 
 Agent skills shipped by this repo, under `skills/<name>/SKILL.md`. They are
 the authoring-time half of the discipline: the checks enforce the

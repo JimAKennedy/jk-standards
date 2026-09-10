@@ -52,6 +52,14 @@ passed on yesterday's base proves nothing about today's.
 
 Before the PR, not after — a docs-follow-up commit is a docs-never commit:
 
+- **The milestone's own status** — set it to `done` in the ledger, **unless
+  this is a `--slice` run**, which ships part of a milestone and must not
+  touch its status. This is not a claim about the future: the commit reaches
+  the default branch only if the PR merges, and the merge is what makes the
+  milestone done — section 1 already refused to run unless every slice and
+  row was finished, which is exactly that claim. Closing the status here is
+  what lets `/jk:close` verify instead of write, so a protected default
+  branch never needs a second pull request just to say a milestone ended.
 - **Changelog** — an entry for the milestone, in the file's existing style and
   under the right heading.
 - **Roadmap or equivalent** — if the repo tracks planned work in a doc, move

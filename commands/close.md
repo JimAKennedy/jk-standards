@@ -120,7 +120,7 @@ End with the state the user needs to start again, and nothing else:
 M001 closed — merged in #123, branch deleted.
 Next: M002 Citation Integrity (4 slices, none planned).
 Branch milestone/M002-citation-integrity created from main @ <sha>.
-Run /jk:plan to plan M002/S01.
+Run /jk:plan to plan M002/S01, or /jk:auto to run M002 end to end.
 ```
 
 When the close went to a pull request, do not report it as closed — it is not,

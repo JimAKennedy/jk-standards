@@ -136,5 +136,7 @@ same slice and stop at the slice boundary. Never run past a slice boundary:
 that is where a human decides whether the thing being built is still the right
 thing.
 
-For unattended running the user wraps this in their own loop. That is their
-choice to make per session, not a mode baked into this command.
+For unattended running, `/jk:auto` is that loop — it composes this command
+without changing it, front-loads the human decisions, and stops at a review
+gate before anything ships. Choosing it remains a per-session decision, not a
+mode baked into this command.

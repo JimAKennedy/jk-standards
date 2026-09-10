@@ -4,6 +4,35 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`auto` workflow command** (`commands/auto.md`, `docs/commands.md`): drives
+  one milestone end to end by composing `/jk:plan` and `/jk:next` — every
+  clarifying question is asked up front and recorded in a per-milestone
+  `decisions.md`, execution runs through slice boundaries, any condition the
+  composed commands would stop for halts the run instead of being guessed
+  past, and the run ends at a review gate: a generated per-milestone
+  `report.md` (changes, validations, traceability including untraced commits,
+  and the decisions verbatim) that the user reads before deliberately issuing
+  `/jk:ship`. Re-entrant by construction — position is derived from the
+  ledger, plans, and git, so a re-issued `/jk:auto` resumes, and the call
+  after `/jk:close` picks up the next milestone.
+
+### Changed
+
+- **`ship` merges on green** (`commands/ship.md`, `commands/next.md`,
+  `commands/close.md`, `docs/commands.md`): the command now rebases the
+  milestone branch onto the default branch when the base has moved (before
+  the PR exists — the one point where a force-push rewrites nothing anyone
+  reviewed; conflicts stop the run), and after opening the PR watches the
+  checks and merges once they are green, prompting for `/jk:close`. This
+  moves the human review gate from "PR review + manual merge" to the
+  milestone report read before issuing `/jk:ship` — a failed check or a
+  requested change still stops the run rather than being fixed in place, and
+  the command never approves a PR or bypasses branch protection.
+
 ## [0.14.0] - 2026-09-08
 
 ### Fixed

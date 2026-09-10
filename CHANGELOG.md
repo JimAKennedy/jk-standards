@@ -4,6 +4,23 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Milestone close needs no commit — and no second pull request**
+  (`commands/ship.md`, `commands/close.md`, `docs/commands.md`; fixes
+  [#100](https://github.com/JimAKennedy/jk-standards/issues/100)): `/jk:ship`
+  now sets the milestone's `Status: done` inside its existing pre-PR docs
+  sync (never on a `--slice` run) — not a claim about the future, since the
+  commit reaches the default branch only through the merge that makes it
+  true. `/jk:close` becomes verify-and-prepare: it confirms the milestone
+  reads `done`, reports any ledger/tree disagreement as a finding instead of
+  tidying it, and commits nothing — so the branch-protection probe, the
+  `chore/close-<mid>` pull-request path, and the stale-base rebase handed to
+  the next milestone (observed twice in poly, PRs #281/#284) all disappear,
+  and the next milestone's branch is cut from a genuinely current base.
+
 ## [0.15.0] - 2026-09-09
 
 ### Added

@@ -934,7 +934,7 @@
       "signals": {
         "docstring": false,
         "drift": true,
-        "mention": false
+        "mention": true
       }
     },
     {

@@ -30,3 +30,9 @@ discipline: jk-standards all
 # The whole locally-runnable conformance gate. The token a slice owes before
 # /jk:ship, not during /jk:next. Minutes, not seconds.
 gate: scripts/verify.sh
+
+# LLM-judged skill evaluation (docs/plans/skill-evals). Unlike every other
+# token this one needs ANTHROPIC_API_KEY in the environment and spends real
+# money per run — it is deliberately absent from `discipline` and `gate`.
+# The make target lands with slice M002/S01 of the skill-evals ledger.
+eval: make eval

@@ -78,6 +78,17 @@ mappings:
 # documented exemption from an accidental omission. The reason is required
 # and must be non-empty (enforced by doc_drift._parse_cannot_drift).
 cannot_drift:
+  - doc: "docs/plans/skill-evals/ledger.md"
+    reason: >-
+      A delivery ledger is the plan of record for in-flight work, not a
+      description of the code surface — its own `ledger` check governs its
+      structure, statuses, and evidence, and its rows change with programme
+      state rather than with any source file. Mapping it to sources would
+      manufacture a false positive on every implementation commit. It stays
+      `class: gated` per the ledger standard (Status prose swept), so it is
+      registered here exactly; sibling plan/evidence/decision files carry
+      `class: plan` and are exempted by class instead.
+
   - doc: "site/src/content/docs/reference/skills.mdx"
     reason: >-
       skills.mdx is generated, not hand-maintained. Unlike checks.mdx and

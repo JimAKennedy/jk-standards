@@ -4,6 +4,38 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **skill-lint check** (`src/jk_standards/checks/skill_lint.py`,
+  `docs/checks.md`, README, `reference/checks.mdx`; ledger
+  `docs/plans/skill-evals/ledger.md`, milestone M001): every
+  `skills/<name>/SKILL.md` must parse front-matter whose `name` matches its
+  directory, carry "Use when" trigger phrasing, reference only script assets
+  that exist beside it, and ship its `.sh` scripts executable — with a
+  `skill-lint-ok: <reason>` escape hatch. Registered in the check registry,
+  shipped as a pre-commit hook id, and dogfooded green across all skills.
+- **Staged-files secret scanning in this repo's own pre-commit** — the
+  upstream pinned gitleaks hook in `.pre-commit-config.yaml`, plus the
+  shipped `secrets-scan` id dogfooded in `.pre-commit-config.local.yaml`,
+  with a pytest guard (`tests/test_gitleaks_pin_sync.py`) asserting the two
+  gitleaks version pins never diverge.
+- **`plan` taxonomy class** (`jk-standards.yaml`): delivery-programme docs
+  under `docs/plans/` (plans, evidence, decisions) are governed by the
+  `ledger` check rather than the drift map; ledgers themselves stay `gated`
+  with an exact cannot_drift entry.
+
+### Fixed
+
+- **Shipped `secrets-scan` hook was unbuildable in every consumer**:
+  pre-commit's golang language unconditionally runs `go install ./...` in
+  the hook repo, and this repo had no Go module and the hook declared no
+  `additional_dependencies`, so the environment build failed before
+  gitleaks was ever fetched. A commented stub `go.mod` plus a pinned
+  `additional_dependencies` entry make the hook build and run; proven
+  against a simulated consumer repo, including a staged-key rejection.
+
 ## [0.16.0] - 2026-09-10
 
 ### Changed

@@ -28,6 +28,7 @@ from jk_standards.checks import (
     ledger,
     release_pins,
     research_provenance,
+    skill_lint,
     snippet_regions,
     status_prose,
     workflow_concurrency,
@@ -53,6 +54,7 @@ CHECKS = {
     "workflow-permissions": workflow_permissions.run,
     "workflow-concurrency": workflow_concurrency.run,
     "release-pins": release_pins.run,
+    "skill-lint": skill_lint.run,
 }
 
 # Checks that need only the working tree; `all` runs these unconditionally.

@@ -15,7 +15,12 @@ doc_roots:
     extensions: [".md"]
 
 taxonomy:
-  classes: [generated, gated, archived]
+  # `plan` is the delivery-programme class: ledger-adjacent plans, evidence,
+  # and decision records under docs/plans/. They are governed by the `ledger`
+  # check (structure, DoD, evidence) rather than the drift map, so the class
+  # is exempted from doc-completeness below. Ledgers themselves stay `gated`
+  # per the ledger standard and carry an exact cannot_drift entry each.
+  classes: [generated, gated, archived, plan]
   # ARCHITECTURE.md lives at the repo root, outside the doc_roots, so it is not
   # swept by iter_docs. List it here so the doc-taxonomy check still governs its
   # lifecycle class — the repo's own architecture exemplar must carry class:gated
@@ -45,6 +50,11 @@ count_drift:
 # endregion:count-triggers
 
 drift_map: .github/docs-drift-map.yml
+
+doc_completeness:
+  # `archived` docs are frozen; `plan` docs (see taxonomy above) are the
+  # delivery programme's own working records, governed by the `ledger` check.
+  exempt_classes: [archived, plan]
 
 behavioral_claims:
   sources:

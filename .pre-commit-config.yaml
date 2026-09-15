@@ -25,3 +25,13 @@ repos:
     hooks:
       - id: ruff
       - id: ruff-format
+
+  # Staged-files secret scan — catches an API key before it enters a commit,
+  # which the CI-side gitleaks scan (PR-time, full history) is too late for.
+  # Upstream hook rather than this repo's shipped `secrets-scan` id: that
+  # shipped hook's `language: golang` cannot build from a repo with no Go
+  # module (see docs/plans/skill-evals/M001-decisions.md).
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks

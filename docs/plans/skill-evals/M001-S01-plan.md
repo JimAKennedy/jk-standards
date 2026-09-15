@@ -11,7 +11,7 @@ Status: current (2026-09-15)
 
 **Task status**
 
-- [ ] Task 1 — add the secrets-scan hook to the local pre-commit config and
+- [x] Task 1 — add the secrets-scan hook to the local pre-commit config and
       prove a staged Anthropic-style key is rejected
 
 **Definition of Done**

@@ -66,3 +66,20 @@ behalf while planning and executing M001, per `/jk:auto`.
   commit so that commit is not CI-red alone; milestone branch rebased on
   top. — **Why:** uses designed seams, keeps everything taxonomy-governed,
   and avoids a registry treadmill on every evidence file.
+
+## 2026-09-15 — executing M001/S01
+
+- **Decision:** Fallback path taken as planned: the shipped `secrets-scan`
+  hook's golang environment cannot build under `repo: .` ("directory prefix
+  . does not contain main module"), so the upstream `gitleaks/gitleaks`
+  hook, pinned `v8.30.1`, landed in `.pre-commit-config.yaml`. — **Why:**
+  step 2 of the plan prescribed exactly this on exactly this failure.
+- **Decision:** S01's second DoD box and R0's cells reworded to describe
+  the fallback outcome rather than the local-config placement. — **Why:**
+  the approved design sanctioned the fallback but the DoD wording had not
+  tracked it; ticking the old wording would have been false. Judgment call:
+  same agreed outcome, corrected description.
+- **Note for the report:** the shipped `secrets-scan` hook in
+  `.pre-commit-hooks.yaml` is unusable by any consumer for the same reason
+  (`language: golang`, no Go module, no `additional_dependencies`). Fixing
+  it is outside this slice; it deserves its own row in a future pass.

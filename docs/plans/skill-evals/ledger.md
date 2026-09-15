@@ -23,18 +23,20 @@ cost anywhere in the gate.
 **Plan:** M001-S01-plan.md
 **Validation:** format, gate
 **Evidence:** evidence/M001-S01.md
-**Status:** in-progress
+**Status:** done
 
 **Definition of Done**
 
-- [ ] A staged Anthropic-style key fails a local commit, demonstrated and
+- [x] A staged Anthropic-style key fails a local commit, demonstrated and
       recorded in evidence
-- [ ] The GHA `pre-commit` job passes running
-      `.pre-commit-config.local.yaml` with the `secrets-scan` hook included
+- [x] A config the GHA `pre-commit` job runs includes a staged-files
+      gitleaks hook and the full suite passes (landed via R0's sanctioned
+      fallback: the upstream pinned hook in `.pre-commit-config.yaml`; the
+      shipped `secrets-scan` hook cannot build from this non-Go repo)
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R0 | Shipped `secrets-scan` gitleaks hook added to this repo's own local pre-commit config, closing the dogfood gap; fallback is the upstream gitleaks hook in the dev config | `.pre-commit-config.local.yaml` | GHA `pre-commit` job green with the hook present; evidence records a staged dummy key being rejected | `open` |
+| R0 | Staged-files gitleaks gate in this repo's own pre-commit setup. Shipped `secrets-scan` hook proved unbuildable under `repo: .` (no Go module, no `additional_dependencies` — defect noted for the report); the recorded fallback landed: upstream pinned hook in the dev config | `.pre-commit-config.yaml` | evidence records the staged `sk-ant-` key rejected (hook exit 1, rule `anthropic-api-key`) and the full suite passing | `done` |
 
 ### Slice M001/S02 — skill-lint check
 

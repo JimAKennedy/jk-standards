@@ -98,3 +98,16 @@ behalf while planning and executing M001, per `/jk:auto`.
   golang language runs `go install ./...` unconditionally (verified in its
   source), so the repo must be a valid module; the one-stop adoption surface
   is worth the two-line stub.
+
+## 2026-09-15 — post-gate follow-up: gitleaks pin-sync guard (R24)
+
+- **Q:** Should the gitleaks pins join the `release-pins` check? —
+  **A:** No — release-pins is self-referential and offline by design;
+  a pytest equality guard was chosen instead.
+- **Decision:** One test asserts the `additional_dependencies` version in
+  `.pre-commit-hooks.yaml` equals the gitleaks `rev:` in
+  `.pre-commit-config.yaml`, with a failure message naming both files and
+  the post-bump rejection-demo rerun. — **Why:** the realistic failure is
+  skew (autoupdate moves only the dev config); a nonexistent tag already
+  fails loudly at environment build. Promote to a registered check only if
+  more third-party cross-file pins accumulate.

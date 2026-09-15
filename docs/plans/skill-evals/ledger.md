@@ -41,6 +41,7 @@ cost anywhere in the gate.
 |---|---|---|---|---|
 | R0 | Staged-files gitleaks gate in this repo's own pre-commit setup. Shipped `secrets-scan` hook proved unbuildable under `repo: .` (no Go module, no `additional_dependencies` — defect noted for the report); the recorded fallback landed: upstream pinned hook in the dev config | `.pre-commit-config.yaml` | evidence records the staged `sk-ant-` key rejected (hook exit 1, rule `anthropic-api-key`) and the full suite passing | `done` |
 | R23 | Shipped-hook defect fixed (user-requested follow-up at the review gate): pre-commit unconditionally runs `go install ./...` in the hook repo, so a stub `go.mod` satisfies the build and `additional_dependencies` pins the gitleaks module; local config dogfoods the shipped id | `go.mod`, `.pre-commit-hooks.yaml`, `.pre-commit-config.local.yaml` | consumer-simulation build and staged-key rejection recorded in evidence; local-config run green in the GHA `pre-commit` job's invocation | `done` |
+| R24 | Gitleaks pin-sync guard (user-requested follow-up): the version is pinned in two files with different update mechanisms — autoupdate bumps the dev config `rev:` but nothing bumps `additional_dependencies` — so a pytest asserts the two agree, failing with both locations named | `tests/test_gitleaks_pin_sync.py` | `test_gitleaks_pin_sync::test_gitleaks_pins_agree` passes on agreeing pins; skew-detection demonstrated in evidence | `done` |
 
 ### Slice M001/S02 — skill-lint check
 

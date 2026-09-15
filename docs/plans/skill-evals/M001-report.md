@@ -171,3 +171,8 @@ The shipped-hook defect flagged above was fixed at the user's request as
 row R23 before shipping: stub `go.mod` + pinned `additional_dependencies`
 make the shipped `secrets-scan` hook build in consumers (proven by a
 simulated consumer repo), and this repo's local config now dogfoods it.
+
+A second follow-up (row R24) guards the two gitleaks pins against skew:
+`test_gitleaks_pin_sync` fails the `unit` gate, naming both files, if the
+shipped hook's `additional_dependencies` and the dev config's `rev:` ever
+disagree.

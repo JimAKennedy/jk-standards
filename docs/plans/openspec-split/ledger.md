@@ -24,9 +24,10 @@ at close.
 
 ### Slice M001/S01 — The contract
 
+**Plan:** M001-S01-plan.md
 **Validation:** format, unit, emit-fresh, discipline, gate
 **Evidence:** evidence/M001-S01.md
-**Status:** open
+**Status:** in-progress
 
 **Definition of Done**
 
@@ -51,9 +52,10 @@ at close.
 ### Slice M001/S02 — The commands
 
 **Depends:** M001/S01
+**Plan:** M001-S02-plan.md
 **Validation:** format, discipline, gate
 **Evidence:** evidence/M001-S02.md
-**Status:** open
+**Status:** in-progress
 
 **Definition of Done**
 

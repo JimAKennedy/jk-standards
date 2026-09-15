@@ -12,7 +12,7 @@ Status: current (2026-09-15)
 **Task status**
 
 - [x] Task 1 — Source path resolution in the ledger check, tests first
-- [ ] Task 2 — the standard's Source section and the check's doc pairs
+- [x] Task 2 — the standard's Source section and the check's doc pairs
 
 **Definition of Done**
 

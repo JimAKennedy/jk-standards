@@ -62,7 +62,7 @@
     },
     "src/jk_standards/checks/ledger.py": {
       "missing_lines": 11,
-      "percent_covered": 95.58
+      "percent_covered": 95.59
     },
     "src/jk_standards/checks/release_pins.py": {
       "missing_lines": 1,
@@ -131,9 +131,9 @@
   },
   "toolkit_version": "0.16.0",
   "totals": {
-    "covered_lines": 2604,
+    "covered_lines": 2618,
     "missing_lines": 268,
-    "num_statements": 2872,
-    "percent_covered": 89.07
+    "num_statements": 2886,
+    "percent_covered": 89.11
   }
 }

@@ -27,27 +27,27 @@ at close.
 **Plan:** M001-S01-plan.md
 **Validation:** format, unit, emit-fresh, discipline, gate
 **Evidence:** evidence/M001-S01.md
-**Status:** in-progress
+**Status:** done
 
 **Definition of Done**
 
-- [ ] `docs/ledger-standard.md` specifies `Source:` as an optional
+- [x] `docs/ledger-standard.md` specifies `Source:` as an optional
       ledger-level bold key and states the ownership split, the mirror
       rule, and the granularity contract (one change → one ledger;
       milestone is the landing unit; a partially ticked mirror is expected
       mid-programme; archival is handed off at the final milestone's close)
-- [ ] The `ledger` check verifies a repo-relative-path `Source:` resolves
+- [x] The `ledger` check verifies a repo-relative-path `Source:` resolves
       and leaves prose `Source:` untouched, with tests covering both —
       including a prose-with-filename case mirroring the skill-evals
       ledger's Source line, whose named proposal file no longer exists and
       must not flag
-- [ ] The `checks/**` drift pairs (`docs/checks.md`, README tables,
+- [x] The `checks/**` drift pairs (`docs/checks.md`, README tables,
       `reference/checks.mdx`) are satisfied for the check change
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R6 | Formalize `Source:`: optional bold key naming the input document or spec change; when it names a structured spec, the standard states the ownership split, the mirror rule, and the granularity contract adopted at assess | `docs/ledger-standard.md` | the standard's new section; `status-prose`/`doc-taxonomy` green over the edit | `open` |
-| R7 | `ledger` check: a `Source:` value that is a bare repo-relative path must resolve; prose values (the current examples) are not paths and are not checked; no inspection of mirror-checklist formats. Cost named up front: `checks/**` edits drag the checks.md/README/mdx drift pairs | `src/jk_standards/checks/ledger.py`, `tests/test_ledger.py` | pytest cases for resolving path, dangling path, and prose-with-filename leniency in `tests/test_ledger.py` | `open` |
+| R6 | Formalize `Source:`: optional bold key naming the input document or spec change; when it names a structured spec, the standard states the ownership split, the mirror rule, and the granularity contract adopted at assess | `docs/ledger-standard.md` | the standard's new section; `status-prose`/`doc-taxonomy` green over the edit | `done` |
+| R7 | `ledger` check: a `Source:` value that is a bare repo-relative path must resolve; prose values (the current examples) are not paths and are not checked; no inspection of mirror-checklist formats. Cost named up front: `checks/**` edits drag the checks.md/README/mdx drift pairs | `src/jk_standards/checks/ledger.py`, `tests/test_ledger.py` | pytest cases for resolving path, dangling path, and prose-with-filename leniency in `tests/test_ledger.py` | `done` |
 
 ### Slice M001/S02 — The commands
 

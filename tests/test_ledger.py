@@ -531,14 +531,10 @@ def test_source_path_dangling_flagged(tmp_path):
 
 
 def test_source_prose_skipped(tmp_path):
-    _source_programme(
-        tmp_path, "PROPOSAL-x.md (repo root, 2026-09-15). Deleted after assess."
-    )
+    _source_programme(tmp_path, "PROPOSAL-x.md (repo root, 2026-09-15). Deleted after assess.")
     assert run(tmp_path) == 0
 
 
 def test_source_dangling_hatch_suppresses(tmp_path):
-    _source_programme(
-        tmp_path, "specs/gone.md  <!-- ledger-ok: source archived externally -->"
-    )
+    _source_programme(tmp_path, "specs/gone.md  <!-- ledger-ok: source archived externally -->")
     assert run(tmp_path) == 0

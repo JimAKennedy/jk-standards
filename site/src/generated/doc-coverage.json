@@ -591,6 +591,30 @@
     },
     {
       "documented": true,
+      "file": "src/jk_standards/checks/skill_lint.py",
+      "kind": "function",
+      "lineno": 70,
+      "name": "run",
+      "signals": {
+        "docstring": false,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/checks/skill_lint.py",
+      "kind": "module",
+      "lineno": 1,
+      "name": "skill_lint",
+      "signals": {
+        "docstring": true,
+        "drift": true,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
       "file": "src/jk_standards/checks/snippet_regions.py",
       "kind": "function",
       "lineno": 124,

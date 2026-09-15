@@ -13,6 +13,7 @@ from jk_standards.checks import (
     file_line_refs,
     generated_freshness,
     research_provenance,
+    skill_lint,
     snippet_regions,
     status_prose,
 )
@@ -961,3 +962,80 @@ def test_provenance_invalid_anchor_pattern_is_a_violation(tmp_path):
     _write_bib(tmp_path, "ref-1")
     cfg = _provenance_config(provenance_anchor_pattern=r"(unclosed")
     assert research_provenance.run(tmp_path, cfg) == 1
+
+
+# --- skill-lint -------------------------------------------------------------
+
+
+def _write_skill(root: Path, dirname: str, name: str, description: str, body: str = "") -> Path:
+    return write(
+        root,
+        f"skills/{dirname}/SKILL.md",
+        f"---\nname: {name}\ndescription: {description}\n---\n\n{body}",
+    )
+
+
+def test_skill_lint_clean_skill_passes(tmp_path):
+    _write_skill(tmp_path, "good", "good", "Use when testing the linter.")
+    assert skill_lint.run(tmp_path, Config()) == 0
+
+
+def test_skill_lint_name_dir_mismatch_flagged(tmp_path):
+    _write_skill(tmp_path, "good", "other", "Use when testing the linter.")
+    assert skill_lint.run(tmp_path, Config()) == 1
+
+
+def test_skill_lint_missing_frontmatter_flagged(tmp_path):
+    write(tmp_path, "skills/good/SKILL.md", "# No front-matter here\n")
+    assert skill_lint.run(tmp_path, Config()) == 1
+
+
+def test_skill_lint_missing_trigger_flagged(tmp_path):
+    _write_skill(tmp_path, "good", "good", "A description with no trigger phrasing.")
+    assert skill_lint.run(tmp_path, Config()) == 1
+
+
+def test_skill_lint_dangling_asset_flagged(tmp_path):
+    _write_skill(tmp_path, "good", "good", "Use when testing.", "Run `helper.sh` first.\n")
+    assert skill_lint.run(tmp_path, Config()) == 1
+
+
+def test_skill_lint_existing_asset_passes(tmp_path):
+    _write_skill(tmp_path, "good", "good", "Use when testing.", "Run `helper.sh` first.\n")
+    helper = write(tmp_path, "skills/good/helper.sh", "#!/bin/sh\n")
+    helper.chmod(0o755)
+    assert skill_lint.run(tmp_path, Config()) == 0
+
+
+def test_skill_lint_nonexecutable_sh_flagged(tmp_path):
+    _write_skill(tmp_path, "good", "good", "Use when testing.", "Run `helper.sh` first.\n")
+    helper = write(tmp_path, "skills/good/helper.sh", "#!/bin/sh\n")
+    helper.chmod(0o644)
+    assert skill_lint.run(tmp_path, Config()) == 1
+
+
+def test_skill_lint_py_asset_needs_no_exec_bit(tmp_path):
+    _write_skill(tmp_path, "good", "good", "Use when testing.", "Run `python helper.py`.\n")
+    helper = write(tmp_path, "skills/good/helper.py", "print('hi')\n")
+    helper.chmod(0o644)
+    assert skill_lint.run(tmp_path, Config()) == 0
+
+
+def test_skill_lint_pathed_reference_ignored(tmp_path):
+    _write_skill(tmp_path, "good", "good", "Use when testing.", "See `tests/foo.py` upstream.\n")
+    assert skill_lint.run(tmp_path, Config()) == 0
+
+
+def test_skill_lint_marker_exempts(tmp_path):
+    _write_skill(
+        tmp_path,
+        "good",
+        "good",
+        "Use when testing.",
+        "Run `helper.sh` first. <!-- skill-lint-ok: doc example, ships elsewhere -->\n",
+    )
+    assert skill_lint.run(tmp_path, Config()) == 0
+
+
+def test_skill_lint_no_skills_dir_skips(tmp_path):
+    assert skill_lint.run(tmp_path, Config()) == 0

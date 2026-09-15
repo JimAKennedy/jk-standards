@@ -12,7 +12,7 @@ Status: current (2026-09-15)
 **Task status**
 
 - [x] Task 1 — skill_lint module with failing-first pytest coverage
-- [ ] Task 2 — registry, hook id, docs, and regenerated fixtures
+- [x] Task 2 — registry, hook id, docs, and regenerated fixtures
 
 **Definition of Done**
 

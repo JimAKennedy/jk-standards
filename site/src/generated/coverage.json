@@ -72,6 +72,10 @@
       "missing_lines": 4,
       "percent_covered": 93.1
     },
+    "src/jk_standards/checks/skill_lint.py": {
+      "missing_lines": 5,
+      "percent_covered": 92.24
+    },
     "src/jk_standards/checks/snippet_regions.py": {
       "missing_lines": 6,
       "percent_covered": 91.41
@@ -127,9 +131,9 @@
   },
   "toolkit_version": "0.16.0",
   "totals": {
-    "covered_lines": 2533,
-    "missing_lines": 263,
-    "num_statements": 2796,
-    "percent_covered": 88.98
+    "covered_lines": 2604,
+    "missing_lines": 268,
+    "num_statements": 2872,
+    "percent_covered": 89.07
   }
 }

@@ -956,3 +956,43 @@ reason is load-bearing — an empty hatch suppresses nothing
 because a suppression without a written reason is the silent exemption this
 discipline exists to prevent. Roots and the validations file are configured in
 the `ledger` section.
+
+## skill-lint
+
+A skill is a `skills/<name>/SKILL.md` instruction file an agent runtime
+loads, optionally with bundled assets beside it. The pieces a runtime
+actually depends on — the front-matter that names and triggers the skill,
+and the scripts its body tells the reader to run — can each rot with no
+test failing: the generated inventory and the installer key on the
+front-matter `name`, selection depends on the description's trigger
+phrasing, and a renamed or unshipped asset leaves the skill instructing
+readers to run a file that is not there.
+
+Four rules close those gaps. Front-matter must parse and its `name` must
+match the directory name
+[verified: test_checks::test_skill_lint_name_dir_mismatch_flagged]
+[verified: test_checks::test_skill_lint_missing_frontmatter_flagged],
+satisfied by a conforming skill
+[verified: test_checks::test_skill_lint_clean_skill_passes]. The
+`description` must carry the "Use when" trigger phrasing every skill in
+this repo uses to make an agent select it
+[verified: test_checks::test_skill_lint_missing_trigger_flagged]. A
+backtick-referenced same-directory script (`foo.sh` / `foo.py`, no path
+separator) must exist beside the skill
+[verified: test_checks::test_skill_lint_dangling_asset_flagged]
+[verified: test_checks::test_skill_lint_existing_asset_passes]; a
+reference carrying a path separator is out of scope
+[verified: test_checks::test_skill_lint_pathed_reference_ignored]. And a
+sibling `*.sh` must carry the owner-executable bit
+[verified: test_checks::test_skill_lint_nonexecutable_sh_flagged], while
+`*.py` assets are exempt because skill bodies invoke them through the
+interpreter
+[verified: test_checks::test_skill_lint_py_asset_needs_no_exec_bit].
+
+A repository without a `skills/` directory — every downstream consumer —
+is skipped, not failed
+[verified: test_checks::test_skill_lint_no_skills_dir_skips].
+
+Escape hatch: a `skill-lint-ok: <reason>` marker on the offending line or
+the line immediately above suppresses exactly that finding
+[verified: test_checks::test_skill_lint_marker_exempts].

@@ -128,3 +128,12 @@
   language: python
   pass_filenames: false
 # endregion:hook-release-pins
+
+# region:hook-skill-lint
+- id: skill-lint
+  name: skills carry valid front-matter, triggers, and assets
+  entry: jk-standards skill-lint
+  language: python
+  types_or: [markdown]
+  pass_filenames: false
+# endregion:hook-skill-lint

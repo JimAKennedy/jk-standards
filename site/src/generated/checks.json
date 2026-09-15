@@ -86,6 +86,12 @@
     },
     {
       "is_static": true,
+      "name": "skill-lint",
+      "source_file": "src/jk_standards/checks/skill_lint.py",
+      "summary": "skill-lint: every skill directory is internally consistent."
+    },
+    {
+      "is_static": true,
       "name": "snippet-regions",
       "source_file": "src/jk_standards/checks/snippet_regions.py",
       "summary": "snippet-regions: doc references to code regions resolve to real markers."

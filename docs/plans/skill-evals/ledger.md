@@ -16,7 +16,7 @@ may be deleted once this ledger is the plan of record.
 asset-dangling skill cannot pass CI — with no LLM, no API key, and no new
 cost anywhere in the gate.
 **Branch:** milestone/M001-deterministic-guardrails
-**Status:** planned
+**Status:** done
 
 ### Slice M001/S01 — Secret-hygiene preflight
 
@@ -43,23 +43,23 @@ cost anywhere in the gate.
 **Plan:** M001-S02-plan.md
 **Validation:** format, unit, emit-fresh, discipline, gate
 **Evidence:** evidence/M001-S02.md
-**Status:** in-progress
+**Status:** done
 
 **Definition of Done**
 
-- [ ] `skill-lint` is registered in `CHECKS` and `STATIC_CHECKS`
-- [ ] Each violation class — name/dir mismatch, missing trigger phrasing,
+- [x] `skill-lint` is registered in `CHECKS` and `STATIC_CHECKS`
+- [x] Each violation class — name/dir mismatch, missing trigger phrasing,
       dangling asset, non-executable script — has a pytest case that fails
       without the check and passes with it
-- [ ] The hook id ships in `.pre-commit-hooks.yaml`
-- [ ] `docs/checks.md` and the README check tables describe the check
-- [ ] Regenerated `site/src/generated/checks.json` is committed
+- [x] The hook id ships in `.pre-commit-hooks.yaml`
+- [x] `docs/checks.md` and the README check tables describe the check
+- [x] Regenerated `site/src/generated/checks.json` is committed
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R1 | `skill-lint` check: front-matter `name` matches directory, description carries trigger phrasing, referenced assets exist and scripts are executable. Rescoped: `emit_skills()` already fails on unparseable front-matter, so parseability is not this row's work | `src/jk_standards/checks/` | pytest cases for each violation class in `tests/test_checks.py` | `open` |
-| R2 | Registration, hook id, `docs/checks.md`, README tables | `src/jk_standards/checks/__init__.py`, `.pre-commit-hooks.yaml`, `docs/checks.md`, `README.md` | `doc-drift` mapping forces the doc pair; registry covered by pytest | `open` |
-| R3 | Emitter fixtures regenerated with the new check | `site/src/generated/checks.json` | `jk-standards emit all --check` exits 0 | `open` |
+| R1 | `skill-lint` check: front-matter `name` matches directory, description carries trigger phrasing, referenced assets exist and scripts are executable. Rescoped: `emit_skills()` already fails on unparseable front-matter, so parseability is not this row's work | `src/jk_standards/checks/` | pytest cases for each violation class in `tests/test_checks.py` | `done` |
+| R2 | Registration, hook id, `docs/checks.md`, README tables | `src/jk_standards/checks/__init__.py`, `.pre-commit-hooks.yaml`, `docs/checks.md`, `README.md` | `doc-drift` mapping forces the doc pair; registry covered by pytest | `done` |
+| R3 | Emitter fixtures regenerated with the new check | `site/src/generated/checks.json` | `jk-standards emit all --check` exits 0 | `done` |
 
 ## Milestone M002 — Eval corpus and harness, locally runnable
 

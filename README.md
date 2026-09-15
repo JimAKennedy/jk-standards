@@ -52,6 +52,7 @@ and the CI graph rather than the prose:
 | workflow-concurrency | Every `concurrency:` group is either ref-scoped or named as a deliberate repo-wide lock; an unscoped group silently serialises the whole repository, so unrelated pull requests cancel each other's jobs |
 | release-pins | Every `## [X.Y.Z]` changelog heading has a matching tag, and every adoption pin naming this repo resolves — so documented install instructions cannot rot into dangling refs |
 | ledger | Delivery ledgers conform to the [ledger standard](docs/ledger-standard.md): IDs well-formed and unique, statuses from the declared vocabulary, dependencies resolvable, every slice carrying a definition of done and validation tokens the repo declares, and a `done` slice proving it — checked boxes, an evidence file on disk, closed rows — with a `<!-- ledger-ok: <reason> -->` escape hatch |
+| skill-lint | Every `skills/<name>/SKILL.md` parses front-matter whose `name` matches its directory, carries "Use when" trigger phrasing, references only script assets that exist beside it, and ships its `.sh` scripts executable — with a `skill-lint-ok: <reason>` escape hatch |
 
 ### 2. Pre-commit hooks (`.pre-commit-hooks.yaml`)
 

@@ -11,7 +11,7 @@ Status: current (2026-09-15)
 
 **Task status**
 
-- [ ] Task 1 — assess and auto: input modes, materialization, notice
+- [x] Task 1 — assess and auto: input modes, materialization, notice
 - [ ] Task 2 — plan, ship, close, commands.md, changelog, R9 verification
 
 **Definition of Done**

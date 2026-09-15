@@ -20,7 +20,7 @@ ledger owns the *how and proof* — and the spec's own task checklist is a
 mirror the loop keeps true, from its creation at assess to its verification
 at close.
 **Branch:** milestone/M001-openspec-split
-**Status:** planned
+**Status:** done
 
 ### Slice M001/S01 — The contract
 
@@ -55,45 +55,45 @@ at close.
 **Plan:** M001-S02-plan.md
 **Validation:** format, discipline, gate
 **Evidence:** evidence/M001-S02.md
-**Status:** in-progress
+**Status:** done
 
 **Definition of Done**
 
-- [ ] `commands/assess.md` carries both input modes: a spec change
+- [x] `commands/assess.md` carries both input modes: a spec change
       directory is consumed with `tasks.md` excluded from row extraction;
       a free-form proposal, when the repo has OpenSpec available, is first
       materialized into a validated OpenSpec change whose `tasks.md` is
       written as the unticked mirror of the agreed slices — and when
       OpenSpec is absent, verified install guidance is printed and the
       assess proceeds plain
-- [ ] `commands/assess.md` states the boundary rule and records `Source:`
+- [x] `commands/assess.md` states the boundary rule and records `Source:`
       naming the spec change directory
-- [ ] `commands/plan.md` requires plans to cite spec requirements by name,
+- [x] `commands/plan.md` requires plans to cite spec requirements by name,
       never paraphrase them
-- [ ] `commands/ship.md`'s docs-sync ticks the mirror checklist exactly as
+- [x] `commands/ship.md`'s docs-sync ticks the mirror checklist exactly as
       far as the ledger proves, reports unprovable boxes, and links the
       spec change in the PR body
-- [ ] `commands/close.md` verifies the mirror (an unprovable tick is a
+- [x] `commands/close.md` verifies the mirror (an unprovable tick is a
       finding at any close; a short mirror is a finding only at the final
       milestone's close) and names the spec system's archival step as the
       user's next action at the final close only
-- [ ] `commands/auto.md`'s orient step prints the availability notice when
+- [x] `commands/auto.md`'s orient step prints the availability notice when
       the ledger's `Source:` names a spec change directory and the CLI is
       absent — non-blocking
-- [ ] `docs/commands.md` reflects all changed commands
-- [ ] The changelog carries the milestone's entry
+- [x] `docs/commands.md` reflects all changed commands
+- [x] The changelog carries the milestone's entry
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R1 | Assess input modes: spec-directory mode (rows from deltas and proposal items, one row per requirement/scenario with a source-section column; `tasks.md` excluded as mirror-to-be) and proposal mode (materialize + validate the OpenSpec change when available, then assess it; `tasks.md` born as the unticked mirror of the agreed slices) | `commands/assess.md` | command prose carries both modes; `doc-drift` forces the `docs/commands.md` pair | `open` |
-| R2 | Assess records provenance (`Source:` names the change directory) and states the boundary rule so ledgers cite requirements rather than restate them | `commands/assess.md` | boundary-rule prose present; exercised by the next spec-directory assess | `open` |
-| R3 | Plans cite the spec requirements their slice implements and never paraphrase them; DoD verbatim-copy rule untouched | `commands/plan.md` | prose addition in the "Write the plan" section | `open` |
-| R4 | Ship docs-sync ticks the mirror exactly as far as the ledger proves, in the same commit as the changelog entry; unprovable boxes stay unticked and are reported; PR body links the change | `commands/ship.md` | docs-sync and PR-body sections carry the mirror rule | `open` |
-| R5 | Close verifies the mirror per the granularity contract and hands off `openspec archive <id>` as the user's next action at the final milestone's close; close still commits nothing | `commands/close.md` | verify and handoff sections carry the contract | `open` |
-| R8 | `docs/commands.md` rows for assess, plan, ship, close, and auto synced with R1–R5 and R11 | `docs/commands.md` | `doc-drift` mapping `commands/**` → `docs/commands.md` green on the PR | `open` |
-| R9 | Superpowers interplay verified unchanged: the existing `superpowers:*` references in assess, plan, and next are orthogonal to the split. Deliverable is confirmation during implementation, or the small fix if wrong | `commands/assess.md`, `commands/plan.md`, `commands/next.md` | verification recorded in evidence | `open` |
-| R10 | Changelog entry lands with ship's docs-sync; release tag and adoption-pin bump follow `RELEASE.md` post-merge so consumers can bump `jkStandardsVersion` and re-run `jk-standards install-commands` | `CHANGELOG.md`, release process | changelog entry in the ship commit; tag is the user's post-merge step per `RELEASE.md` | `open` |
-| R11 | OpenSpec-availability notice, relevance-gated and non-blocking: assess's proposal mode prints verified install guidance when OpenSpec is absent; auto's orient step prints it when the ledger's `Source:` names a spec change directory and the CLI is absent. Install command verified from OpenSpec's documentation at implementation time, never guessed | `commands/assess.md`, `commands/auto.md` | notice prose in both commands; guidance text cites its source | `open` |
+| R1 | Assess input modes: spec-directory mode (rows from deltas and proposal items, one row per requirement/scenario with a source-section column; `tasks.md` excluded as mirror-to-be) and proposal mode (materialize + validate the OpenSpec change when available, then assess it; `tasks.md` born as the unticked mirror of the agreed slices) | `commands/assess.md` | command prose carries both modes; `doc-drift` forces the `docs/commands.md` pair | `done` |
+| R2 | Assess records provenance (`Source:` names the change directory) and states the boundary rule so ledgers cite requirements rather than restate them | `commands/assess.md` | boundary-rule prose present; exercised by the next spec-directory assess | `done` |
+| R3 | Plans cite the spec requirements their slice implements and never paraphrase them; DoD verbatim-copy rule untouched | `commands/plan.md` | prose addition in the "Write the plan" section | `done` |
+| R4 | Ship docs-sync ticks the mirror exactly as far as the ledger proves, in the same commit as the changelog entry; unprovable boxes stay unticked and are reported; PR body links the change | `commands/ship.md` | docs-sync and PR-body sections carry the mirror rule | `done` |
+| R5 | Close verifies the mirror per the granularity contract and hands off `openspec archive <id>` as the user's next action at the final milestone's close; close still commits nothing | `commands/close.md` | verify and handoff sections carry the contract | `done` |
+| R8 | `docs/commands.md` rows for assess, plan, ship, close, and auto synced with R1–R5 and R11 | `docs/commands.md` | `doc-drift` mapping `commands/**` → `docs/commands.md` green on the PR | `done` |
+| R9 | Superpowers interplay verified unchanged: the existing `superpowers:*` references in assess, plan, and next are orthogonal to the split. Deliverable is confirmation during implementation, or the small fix if wrong | `commands/assess.md`, `commands/plan.md`, `commands/next.md` | verification recorded in evidence | `done` |
+| R10 | Changelog entry lands with ship's docs-sync; release tag and adoption-pin bump follow `RELEASE.md` post-merge so consumers can bump `jkStandardsVersion` and re-run `jk-standards install-commands` | `CHANGELOG.md`, release process | changelog entry in the ship commit; tag is the user's post-merge step per `RELEASE.md` | `done` |
+| R11 | OpenSpec-availability notice, relevance-gated and non-blocking: assess's proposal mode prints verified install guidance when OpenSpec is absent; auto's orient step prints it when the ledger's `Source:` names a spec change directory and the CLI is absent. Install command verified from OpenSpec's documentation at implementation time, never guessed | `commands/assess.md`, `commands/auto.md` | notice prose in both commands; guidance text cites its source | `done` |
 | O1 | No `Spec:` commit trailer — `Slice:`/`Rows:` plus the ledger's `Source:` already give a two-hop join; a third trailer is derivable ceremony | — | recorded as a deliberate non-goal | `accepted` |
 | O2 | No mirror-checklist enforcement in the `ledger` check — close reports it as a finding; Python enforcement would couple the check to foreign file formats. Revisit only if the finding proves chronic | — | recorded as a deliberate non-goal | `accepted` |
 | O3 | No changes to `next.md` or `status.md` — they compose the rules above (R9 verifies the composition holds). Amended at assess: `auto.md` is no longer exempt; it gains exactly the R11 notice and nothing else | — | recorded as a deliberate non-goal, amendment noted | `accepted` |

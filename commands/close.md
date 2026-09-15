@@ -45,6 +45,13 @@ request just to say a milestone ended. Here, verify that it did:
   finding.
 - The changelog carries the milestone's entry. `/jk:ship` owed it; if it is
   missing, report that as a finding too.
+- When the ledger's `Source:` document carries a mirror checklist (worked
+  example: an OpenSpec change's `tasks.md`), confirm it reflects exactly
+  what the ledger proves. A ticked box the ledger cannot prove is a finding
+  at **any** close. An unticked box for proven work is a finding only when
+  this close ends the source change's **final** milestone — after an
+  intermediate milestone, a partially ticked mirror is the expected state,
+  per the ledger standard's granularity contract.
 
 Run `jk-standards ledger` on the default branch, so the state being handed to
 the next milestone is a checked one.
@@ -87,4 +94,9 @@ Run /jk:plan to plan M002/S01, or /jk:auto to run M002 end to end.
 ```
 
 If no milestone remains, say the programme is complete and name the ledger, so
-its final state is easy to find later.
+its final state is easy to find later. When the ledger's `Source:` names a
+spec change and this close ended its final milestone, also name the spec
+system's own archival step as the **user's** next action — for OpenSpec,
+`/opsx:archive` (its current workflow) or `openspec archive <id>` (the
+earlier CLI form) — this command never runs it; each scheme keeps its own
+lifecycle.

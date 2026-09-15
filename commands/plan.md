@@ -92,6 +92,13 @@ The plan must carry, at the top:
 - **Validation** — the slice's tokens, each expanded to the command
   `.jk/validations.yml` maps it to, so an executor never has to guess
 
+When the ledger's `Source:` names a structured spec document (worked
+example: an OpenSpec change directory), the plan **links the requirements
+its slice implements by name and never paraphrases them** — the spec delta
+stays the sole authority on intended behavior, and a paraphrase is a second
+source of truth waiting to drift. The Definition of Done is still copied
+verbatim from the slice; that rule is untouched.
+
 Then tasks. Each task:
 
 - names exact files to create and modify

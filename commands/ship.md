@@ -64,6 +64,11 @@ Before the PR, not after — a docs-follow-up commit is a docs-never commit:
   under the right heading.
 - **Roadmap or equivalent** — if the repo tracks planned work in a doc, move
   the milestone's row to reflect reality.
+- **The mirror checklist, when the ledger's `Source:` document carries one**
+  (worked example: an OpenSpec change's `tasks.md`) — tick each box the
+  ledger proves done, in this same docs-sync commit. A box the ledger cannot
+  prove stays unticked and is reported. The checklist is a mirror of the
+  ledger, never a tracker; this commit is the only place it is ever ticked.
 - **Whatever the repo's own drift rules require** for the sources this branch
   touched.
 
@@ -108,6 +113,9 @@ Ledger: `docs/plans/<slug>/ledger.md`
 
 <one line per commit: sha, subject, and the Slice/Rows trailers it carries>
 ```
+
+When the ledger's `Source:` names a spec change, link it in the body — the
+PR is the execution record; the change is the intent it executed.
 
 Build the traceability section with `git log --grep="Slice: "` over the
 branch's range, so it reflects what was actually committed rather than what you

@@ -8,6 +8,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Clean split between the jk delivery loop and external spec systems**
+  (`commands/assess.md`, `plan.md`, `ship.md`, `close.md`, `auto.md`,
+  `docs/ledger-standard.md`, `src/jk_standards/checks/ledger.py`; ledger
+  `docs/plans/openspec-split/ledger.md`): the ledger standard formalizes
+  `Source:` — the ownership split (the spec owns the *what*; the ledger owns
+  the *how and proof*), the boundary rule (cite requirements, never restate
+  them), and the mirror rule with its granularity contract (one change → one
+  ledger, milestone as the landing unit, archival handed off at the final
+  close). The `ledger` check verifies a single-token `Source:` path
+  resolves. `/jk:assess` accepts a spec change directory as input (task
+  checklist excluded as the mirror-to-be) and, given a free-form proposal in
+  a repo running a spec system, materializes the change through that
+  system's own workflow first — printing install guidance when the system is
+  absent (OpenSpec is the worked example throughout). `/jk:ship` ticks the
+  mirror exactly as far as the ledger proves; `/jk:close` verifies it and
+  names the archival step at the final milestone's close.
+
 - **skill-lint check** (`src/jk_standards/checks/skill_lint.py`,
   `docs/checks.md`, README, `reference/checks.mdx`; ledger
   `docs/plans/skill-evals/ledger.md`, milestone M001): every

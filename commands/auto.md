@@ -30,6 +30,12 @@ re-issuing `/jk:auto` recomputes its position from the files — including after
      `/jk:close` respectively, and stop.
 4. Announce the milestone, its slices and their states, and what this run
    intends to do, before doing any of it.
+5. When the ledger's `Source:` names a spec system's change directory
+   (worked example: OpenSpec's `openspec/changes/<id>/`) and that system's
+   CLI is not on PATH, say so once with the install pointer (for OpenSpec:
+   `npm install -g @fission-ai/openspec@latest`, per its README) and
+   continue — the loop itself never depends on the spec system's tooling;
+   only its own validate/archive steps do, and those belong to the user.
 
 ## 2. Front-load the decisions
 

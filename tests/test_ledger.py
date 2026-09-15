@@ -499,3 +499,42 @@ def test_evidence_shas_unchecked_in_a_shallow_clone(tmp_path):
     ), "fixture did not produce a shallow clone"
 
     assert run(clone) == 0
+
+
+# --- Source: path resolution -------------------------------------------------
+
+
+def _source_programme(root: Path, source_value: str) -> None:
+    """A conforming programme whose ledger carries a Source: line."""
+    write(root, ".jk/validations.yml", VALIDATIONS)
+    write(root, "docs/plans/demo/M001-S05-plan.md", "# plan\n")
+    write(root, "docs/plans/demo/evidence/M001-S05.md", "# evidence\n")
+    text = HEADER + f"**Source:** {source_value}\n\n" + MILESTONE + SLICE
+    write(root, "docs/plans/demo/ledger.md", text)
+
+
+def test_source_path_resolving_passes(tmp_path):
+    write(tmp_path, "docs/input.md", "# input\n")
+    _source_programme(tmp_path, "docs/input.md")
+    assert run(tmp_path) == 0
+
+
+def test_source_path_directory_passes(tmp_path):
+    write(tmp_path, "specs/change-1/proposal.md", "# p\n")
+    _source_programme(tmp_path, "specs/change-1/")
+    assert run(tmp_path) == 0
+
+
+def test_source_path_dangling_flagged(tmp_path):
+    _source_programme(tmp_path, "specs/gone.md")
+    assert run(tmp_path) == 1
+
+
+def test_source_prose_skipped(tmp_path):
+    _source_programme(tmp_path, "PROPOSAL-x.md (repo root, 2026-09-15). Deleted after assess.")
+    assert run(tmp_path) == 0
+
+
+def test_source_dangling_hatch_suppresses(tmp_path):
+    _source_programme(tmp_path, "specs/gone.md  <!-- ledger-ok: source archived externally -->")
+    assert run(tmp_path) == 0

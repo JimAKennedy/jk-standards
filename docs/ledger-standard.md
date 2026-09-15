@@ -4,7 +4,7 @@ class: gated
 
 # Ledger standard
 
-Status: current (2026-08-28)
+Status: current (2026-09-15)
 
 A **ledger** is a single Markdown file that holds the whole state of a delivery
 programme: its milestones, the slices each milestone decomposes into, the rows
@@ -167,6 +167,46 @@ A row's `Verification` cell MUST name what proves it — a test case, a check
 name, a named artifact. Not "tested", not "verified manually". The cell is the
 claim a reviewer audits.
 
+## Source
+
+A ledger MAY carry, below its title, a `**Source:**` line naming the input
+document or spec change it was assessed from. Two value forms:
+
+- **A single path-like token** — no whitespace, e.g.
+  `openspec/changes/add-rate-limits/` — is a repo-relative path, and the
+  `ledger` check requires it to resolve to a file or directory. A claim
+  about the tree gets the tree's veto.
+- **Prose** — anything containing whitespace, such as a description of an
+  external archive or an input document deleted after assessment — is not a
+  path and is not checked.
+
+When `Source:` names a document from a structured spec system (OpenSpec's
+`openspec/changes/<id>/` is the worked example throughout the commands),
+three rules govern the relationship:
+
+**The ownership split.** The spec system owns the *what*: the proposal, the
+requirement and scenario deltas, the archived capability specs. The ledger
+owns the *how and proof*: milestones, slices, rows, definitions of done,
+validation gates, evidence, and commit traceability. Neither restates the
+other.
+
+**The boundary rule.** The ledger cites requirements and scenarios by name —
+a row carries a source-section column naming what it traces to — and never
+copies spec content. The spec delta remains the sole authority on intended
+behavior, so there is exactly one source of truth for the *what*.
+
+**The mirror rule and granularity contract.** One spec change maps to one
+ledger, defaulting to one milestone; a large change may decompose into
+several milestones within its ledger. The milestone is the landing unit: if
+the source document carries its own task checklist (OpenSpec's `tasks.md`),
+that checklist is a **mirror, never a tracker** — its boxes are ticked only
+in `/jk:ship`'s docs-sync commit, exactly as far as the ledger proves. A
+partially ticked mirror after an intermediate milestone ships is the
+expected state, not a defect. A ticked box the ledger cannot prove is a
+finding at any close; an unticked box for proven work is a finding only at
+the final milestone's close, which is also when the spec system's own
+archival step is handed to the user.
+
 ## Validation tokens
 
 A slice's `Validation` line names tokens, never commands:
@@ -265,6 +305,7 @@ they are used in preference to branch names or commit-message conventions.
 | A `done` slice's rows are all `done` or `accepted` | `ledger` check |
 | Plan and evidence paths stay inside the ledger's directory | `ledger` check |
 | No placeholder text survives into a committed ledger | `ledger` check |
+| A single-token `Source:` path resolves to a file or directory | `ledger` check |
 | Every commit SHA an evidence file names resolves to a real commit | `ledger` check |
 
 ## Escape hatch

@@ -936,6 +936,17 @@ because a suppression without a written reason is the silent exemption this
 discipline exists to prevent. Roots and the validations file are configured in
 the `ledger` section.
 
+**Source resolution.** A ledger-level `Source:` whose value is a single
+whitespace-free token is a repo-relative path and must resolve to a file or
+directory
+[verified: test_ledger::test_source_path_dangling_flagged]
+[verified: test_ledger::test_source_path_directory_passes]; a prose value —
+a description, an external archive, an input document deleted after
+assessment — is not a path and is never checked
+[verified: test_ledger::test_source_prose_skipped], and the standard hatch
+suppresses a flagged line
+[verified: test_ledger::test_source_dangling_hatch_suppresses].
+
 ## skill-lint
 
 A skill is a `skills/<name>/SKILL.md` instruction file an agent runtime

@@ -16,6 +16,35 @@ it completely before saying anything about it. Identify what it actually
 asserts: findings, gaps, requested capabilities, and — importantly — anything
 it *assumes* about the codebase.
 
+**A structured spec change directory** is a first-class input. When the
+argument is a spec system's change directory (worked example: OpenSpec's
+`openspec/changes/<id>/`), the input document is the proposal, the design
+doc, and the requirement/scenario deltas — and the change's own task
+checklist (OpenSpec's `tasks.md`) is **excluded from row extraction**: it is
+the mirror-to-be, not research. "Every input item becomes exactly one row"
+then maps to one row per requirement or scenario in the deltas and per
+discrete proposal item, each carrying a source-section column naming what it
+traces to.
+
+**A free-form proposal feeds the spec system first, when one is present.**
+When the argument is a free-form document and the repo runs a spec system
+(for OpenSpec: an `openspec/` directory from `openspec init`), do not assess
+the raw proposal. Materialize the change from it first, following the spec
+system's own creation workflow (for OpenSpec, the conventions its
+`/opsx:propose` workflow scaffolds: `proposal.md`, `specs/` deltas,
+`design.md`), validate it with the spec system's tooling where it provides
+validation — then assess *that change* under the rules above. Write its task
+checklist only after the slice decomposition is agreed below, as the
+unticked mirror of the agreed slices: it is born a mirror, never an
+independent tracker.
+
+When the input is a free-form proposal and no spec system is present, say
+so once — for OpenSpec: install with
+`npm install -g @fission-ai/openspec@latest`, then `openspec init` (per the
+OpenSpec README, 2026-09-15) — note that the assess can be re-run against a
+change directory later, and proceed with the plain document. The notice is
+informational; nothing in this command depends on the spec system's tooling.
+
 **The codebase.** Establish what is already true. For each claim or request in
 the input, determine whether it is already done, partly done, wrong about the
 current state, or genuinely outstanding. This is the step that earns the
@@ -121,7 +150,12 @@ is what makes a programme serialise for no reason.
 ## 6. Write it
 
 Write `docs/plans/<slug>/ledger.md` (slug from the argument, else proposed and
-confirmed), then:
+confirmed). When the input was a structured spec change, the ledger's
+`**Source:**` names the change directory as a repo-relative path — the
+`ledger` check verifies it resolves — and the boundary rule from the ledger
+standard's Source section governs the whole file: rows cite requirements and
+scenarios by name; the ledger never restates spec content, because the spec
+delta stays the sole authority on intended behavior. Then:
 
 - Run `jk-standards ledger` and fix anything it reports. Do not hand over a
   ledger that fails its own check.

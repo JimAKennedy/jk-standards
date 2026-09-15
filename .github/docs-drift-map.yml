@@ -78,6 +78,15 @@ mappings:
 # documented exemption from an accidental omission. The reason is required
 # and must be non-empty (enforced by doc_drift._parse_cannot_drift).
 cannot_drift:
+  - doc: "docs/plans/openspec-split/ledger.md"
+    reason: >-
+      Delivery ledger — same rationale as the skill-evals entry below: the
+      `ledger` check governs it, its rows move with programme state rather
+      than any source file, and mapping it to sources would false-positive
+      on every implementation commit. Gated class, so it is registered
+      exactly; sibling plan/evidence files carry `class: plan` and are
+      exempt by class.
+
   - doc: "docs/plans/skill-evals/ledger.md"
     reason: >-
       A delivery ledger is the plan of record for in-flight work, not a

@@ -4,7 +4,7 @@ class: gated
 
 # Skill Evaluation Programme Ledger
 
-Status: current (2026-09-14)
+Status: current (2026-09-15)
 
 **Source:** PROPOSAL-skill-evals.md (repo root, 2026-09-14). Every R/N item
 in that proposal is exactly one row below; the proposal file is research and

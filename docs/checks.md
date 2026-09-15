@@ -4,7 +4,7 @@ class: gated
 
 # Checks reference
 
-Status: current (2026-08-28)
+Status: current (2026-09-15)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit

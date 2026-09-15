@@ -83,3 +83,18 @@ behalf while planning and executing M001, per `/jk:auto`.
   `.pre-commit-hooks.yaml` is unusable by any consumer for the same reason
   (`language: golang`, no Go module, no `additional_dependencies`). Fixing
   it is outside this slice; it deserves its own row in a future pass.
+
+## 2026-09-15 — post-gate follow-up: shipped secrets-scan hook (R23)
+
+- **Q:** Fix the shipped hook via a stub `go.mod` plus
+  `additional_dependencies`, or drop the id and document gitleaks'
+  upstream hook? — **A:** Stub `go.mod` + dependency.
+- **Decision:** `go.mod` stub (commented, no Go code) at the repo root;
+  `additional_dependencies: ["github.com/zricethezav/gitleaks/v8@v8.30.1"]`
+  on the shipped hook — the module path is the historical zricethezav one,
+  verified from the tag's own go.mod, not guessed. Local config gains
+  `- id: secrets-scan` to dogfood the consumer path; the dev config's
+  upstream hook stays as the developers' daily gate. — **Why:** pre-commit's
+  golang language runs `go install ./...` unconditionally (verified in its
+  source), so the repo must be a valid module; the one-stop adoption surface
+  is worth the two-line stub.

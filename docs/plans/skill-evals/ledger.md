@@ -33,10 +33,14 @@ cost anywhere in the gate.
       gitleaks hook and the full suite passes (landed via R0's sanctioned
       fallback: the upstream pinned hook in `.pre-commit-config.yaml`; the
       shipped `secrets-scan` hook cannot build from this non-Go repo)
+- [x] The shipped `secrets-scan` hook builds and runs in a consumer
+      (follow-up R23: go.mod stub plus a pinned `additional_dependencies`
+      entry), and this repo's local config dogfoods it
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
 | R0 | Staged-files gitleaks gate in this repo's own pre-commit setup. Shipped `secrets-scan` hook proved unbuildable under `repo: .` (no Go module, no `additional_dependencies` — defect noted for the report); the recorded fallback landed: upstream pinned hook in the dev config | `.pre-commit-config.yaml` | evidence records the staged `sk-ant-` key rejected (hook exit 1, rule `anthropic-api-key`) and the full suite passing | `done` |
+| R23 | Shipped-hook defect fixed (user-requested follow-up at the review gate): pre-commit unconditionally runs `go install ./...` in the hook repo, so a stub `go.mod` satisfies the build and `additional_dependencies` pins the gitleaks module; local config dogfoods the shipped id | `go.mod`, `.pre-commit-hooks.yaml`, `.pre-commit-config.local.yaml` | consumer-simulation build and staged-key rejection recorded in evidence; local-config run green in the GHA `pre-commit` job's invocation | `done` |
 
 ### Slice M001/S02 — skill-lint check
 

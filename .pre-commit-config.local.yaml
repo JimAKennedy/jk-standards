@@ -25,3 +25,7 @@ repos:
       - id: workflow-permissions
       - id: workflow-concurrency
       - id: release-pins
+      # Dogfoods the shipped golang hook exactly as a consumer builds it
+      # (go.mod stub + additional_dependencies); the dev config's upstream
+      # gitleaks hook stays as the developers' daily gate.
+      - id: secrets-scan

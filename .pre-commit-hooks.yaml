@@ -93,6 +93,11 @@
   name: no hardcoded secrets in staged changes
   entry: gitleaks git --pre-commit --redact --staged --verbose
   language: golang
+  # This repo has no Go module, so the binary must come from a declared
+  # dependency — without this line, `go install ./...` fails in every
+  # consumer's environment build. The module path is the historical
+  # zricethezav one; gitleaks kept it after the org rename.
+  additional_dependencies: ["github.com/zricethezav/gitleaks/v8@v8.30.1"]
   pass_filenames: false
 # endregion:hook-secrets-scan
 

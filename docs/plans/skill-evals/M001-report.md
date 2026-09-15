@@ -164,3 +164,10 @@ behalf while planning and executing M001, per `/jk:auto`.
   `.pre-commit-hooks.yaml` is unusable by any consumer for the same reason
   (`language: golang`, no Go module, no `additional_dependencies`). Fixing
   it is outside this slice; it deserves its own row in a future pass.
+
+## Addendum (2026-09-15, post-gate)
+
+The shipped-hook defect flagged above was fixed at the user's request as
+row R23 before shipping: stub `go.mod` + pinned `additional_dependencies`
+make the shipped `secrets-scan` hook build in consumers (proven by a
+simulated consumer repo), and this repo's local config now dogfoods it.

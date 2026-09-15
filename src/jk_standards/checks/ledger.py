@@ -23,6 +23,10 @@ is for. It recovers, as a gate, the guarantees a schema would have given:
   7. Plan and evidence paths stay inside the ledger's own directory, so a
      programme is one movable tree.
   8. No placeholder text survives into a committed ledger.
+  9. A ledger-level `Source:` whose value is a single path-like token names
+     a file or directory that exists. Prose values (a description, a
+     reference to an external archive, a deliberately deleted input) are
+     not paths and are not checked.
 
 Each finding is suppressible in place with a `<!-- ledger-ok: reason -->`
 comment on the flagged line, following the toolkit's escape-hatch discipline:
@@ -253,6 +257,36 @@ def parse(text: str) -> tuple[list[Milestone], list[tuple[int, str]]]:
     return milestones, structural
 
 
+def _check_source(root: Path, lines: list[str], report) -> None:
+    """Rule 9: a single-token ledger-level ``Source:`` must resolve.
+
+    Only the region above the first milestone heading is scanned — that is
+    where the standard places ledger-level keys. A value carrying
+    whitespace is prose (the common case: a description, an external
+    archive, a deliberately deleted input document) and is never checked;
+    a lone path-like token is a claim about the tree, so the tree gets to
+    veto it. The hatch comment is stripped from the value before the
+    whitespace test so a suppressed line is judged by its path alone.
+    """
+    for lineno, line in enumerate(lines, start=1):
+        if _MILESTONE_RE.match(line):
+            return
+        m = _KEY_RE.match(line)
+        if not m or m.group(1) != "Source":
+            continue
+        value = _HATCH_RE.sub("", m.group(2)).strip()
+        if not value or any(ch.isspace() for ch in value):
+            continue
+        target = root / value
+        if not (target.is_file() or target.is_dir()):
+            report(
+                lineno,
+                f"Source: names '{value}', which does not exist — a single-token "
+                f"Source is a repo-relative path the tree must contain (prose "
+                f"descriptions are not checked; or add <!-- ledger-ok: reason -->)",
+            )
+
+
 def _absorb_table_line(sl: Slice, line: str, lineno: int) -> None:
     """Fold one pipe-table line into the slice's row table."""
     if _TABLE_SEPARATOR_RE.match(line.strip()):
@@ -294,6 +328,7 @@ def _check_ledger(root: Path, path: Path, tokens: set[str] | None) -> int:
     all_slice_ids = {sl.sid for m in milestones for sl in m.slices}
     _check_uniqueness(milestones, report)
     _check_placeholders(lines, report)
+    _check_source(root, lines, report)
 
     for milestone in milestones:
         _check_keys(

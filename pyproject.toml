@@ -30,6 +30,14 @@ dev = [
   "twine>=5.0",
   "pre-commit>=3.7",
 ]
+# LLM-judged skill evaluation (evals/harness; the `eval` validation token).
+# Deliberately outside `dev`: the base install and CI test matrix stay
+# LLM-free, and only the paid eval path pulls these. deepeval is pinned
+# exactly — its evaluate() API broke at 1.0 and its surface moves fast.
+eval = [
+  "deepeval==4.2.3",
+  "anthropic>=0.40",
+]
 # Optional native grammar for the C++ doc-coverage enumerator. This is the ONLY
 # place tree-sitter is declared — the base `dependencies` list stays PyYAML-only
 # so `pip install jk-standards` never pulls a native wheel and a C++-free repo

@@ -11,7 +11,7 @@ Status: current (2026-09-16)
 
 **Task status**
 
-- [ ] Task 1 — offline harness: extra, modules, mocked tests
+- [x] Task 1 — offline harness: extra, modules, mocked tests
 - [ ] Task 2 — eval entry, make target, config region, live run
 
 **Definition of Done**

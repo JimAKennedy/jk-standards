@@ -138,14 +138,15 @@ target, with no Claude Code CLI anywhere in the loop.
 **Vision:** No release ships unevaluated skills, and a model update that
 degrades them surfaces within a week with no diff in this repo.
 **Branch:** milestone/M003-ci-release-drift
-**Status:** planned
+**Status:** in-progress
 
 ### Slice M003/S01 — Reusable workflow and ci.yml wiring
 
 **Depends:** M002/S02
+**Plan:** M003-S01-plan.md
 **Validation:** format, discipline, gate
 **Evidence:** evidence/M003-S01.md
-**Status:** open
+**Status:** in-progress
 
 **Definition of Done**
 
@@ -168,9 +169,10 @@ degrades them surfaces within a week with no diff in this repo.
 ### Slice M003/S02 — Release gate and governed doc
 
 **Depends:** M003/S01
+**Plan:** M003-S02-plan.md
 **Validation:** format, discipline, eval, gate
 **Evidence:** evidence/M003-S02.md
-**Status:** open
+**Status:** in-progress
 
 **Definition of Done**
 
@@ -193,15 +195,19 @@ degrades them surfaces within a week with no diff in this repo.
 ### Slice M003/S03 — Weekly drift schedule
 
 **Depends:** M003/S01
+**Plan:** M003-S03-plan.md
 **Validation:** format, discipline
 **Evidence:** evidence/M003-S03.md
-**Status:** open
+**Status:** in-progress
 
 **Definition of Done**
 
 - [ ] The reusable workflow carries `schedule` (weekly) and
       `workflow_dispatch` triggers on main
-- [ ] One dispatched run on main completes and uploads its results artifact
+- [ ] The PR's own CI eval run completes and uploads its results artifact
+      (dispatch and schedule go live at merge — amended from "one
+      dispatched run on main", impossible pre-merge; see
+      M003-decisions.md)
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|

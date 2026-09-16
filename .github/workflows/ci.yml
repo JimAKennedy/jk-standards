@@ -342,10 +342,47 @@ jobs:
   secrets-scan:
     uses: ./.github/workflows/secrets-scan.yml
 
+  # Which paths changed decides whether the paid eval gate runs at all.
+  # A plain git diff, not a third-party filter action — nothing new to pin.
+  eval-paths:
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.diff.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: diff
+        name: Detect eval-relevant changes
+        run: |
+          if [ -n "${GITHUB_BASE_REF}" ]; then
+            RANGE="origin/${GITHUB_BASE_REF}...HEAD"
+          else
+            RANGE="${{ github.event.before }} ${{ github.sha }}"
+          fi
+          CHANGED=$(git diff --name-only $RANGE 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '^(skills/|commands/|evals/|jk-standards\.yaml$|pyproject\.toml$|\.github/workflows/skill-evals\.yml$)'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # The paid, LLM-judged gate — runs only when eval-relevant paths changed;
+  # any other PR passes through via the guarded skip that ci-complete
+  # verifies against eval-paths' own verdict (never an advisory pass).
+  skill-evals:
+    needs: eval-paths
+    if: needs.eval-paths.outputs.relevant == 'true'
+    uses: ./.github/workflows/skill-evals.yml
+    secrets: inherit
+
   # Single check for branch protection to require. If any dependency job
   # fails, skips, or is cancelled, this fails — no advisory-pass loophole.
+  # The one sanctioned skip: skill-evals may be 'skipped' only when
+  # eval-paths itself succeeded AND reported the change set irrelevant.
   ci-complete:
-    needs: [test, coverage, pre-commit, emit-check, dogfood, cpp-dogfood, package, reusable-workflow-smoke, sanitizer-nightly-smoke, deploy-site-smoke, deploy-site-fixture-smoke, secrets-scan, site-build]
+    needs: [test, coverage, pre-commit, emit-check, dogfood, cpp-dogfood, package, reusable-workflow-smoke, sanitizer-nightly-smoke, deploy-site-smoke, deploy-site-fixture-smoke, secrets-scan, site-build, eval-paths, skill-evals]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -363,8 +400,17 @@ jobs:
              [[ "${{ needs.deploy-site-smoke.result }}" != "success" ]] || \
              [[ "${{ needs.deploy-site-fixture-smoke.result }}" != "success" ]] || \
              [[ "${{ needs.secrets-scan.result }}" != "success" ]] || \
-             [[ "${{ needs.site-build.result }}" != "success" ]]; then
+             [[ "${{ needs.site-build.result }}" != "success" ]] || \
+             [[ "${{ needs.eval-paths.result }}" != "success" ]]; then
             echo "One or more CI jobs failed"
             exit 1
+          fi
+          if [[ "${{ needs.skill-evals.result }}" != "success" ]]; then
+            if [[ "${{ needs.skill-evals.result }}" == "skipped" && "${{ needs.eval-paths.outputs.relevant }}" != "true" ]]; then
+              echo "skill-evals skipped: no eval-relevant paths changed"
+            else
+              echo "skill-evals did not pass (result: ${{ needs.skill-evals.result }})"
+              exit 1
+            fi
           fi
           echo "All CI jobs passed"

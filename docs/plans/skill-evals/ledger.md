@@ -146,24 +146,24 @@ degrades them surfaces within a week with no diff in this repo.
 **Plan:** M003-S01-plan.md
 **Validation:** format, discipline, gate
 **Evidence:** evidence/M003-S01.md
-**Status:** in-progress
+**Status:** done
 
 **Definition of Done**
 
-- [ ] `.github/workflows/skill-evals.yml` exists as a `workflow_call`
+- [x] `.github/workflows/skill-evals.yml` exists as a `workflow_call`
       reusable, SHA-pinned, permission-ceiling compliant
-- [ ] The ci.yml `skill-evals` job passes through as success on a PR
+- [x] The ci.yml `skill-evals` job passes through as success on a PR
       touching no eval-relevant paths, and does real work on one that does
-- [ ] `ci-complete` names the job in both the `needs` list and the shell
+- [x] `ci-complete` names the job in both the `needs` list and the shell
       comparison
-- [ ] A run without the secret on eval-relevant changes fails with the
+- [x] A run without the secret on eval-relevant changes fails with the
       documented message
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R14 | Reusable `skill-evals.yml`: installs `.[eval]`, runs the suite, uploads results artifact with bounded retention | `.github/workflows/skill-evals.yml` | `action-pinning`, `workflow-permissions`, `workflow-concurrency` checks green | `open` |
-| R15 | ci.yml job with change-detection pass-through, registered in `ci-complete` twice | `.github/workflows/ci.yml` | unrelated-paths PR run shows pass-through; `ci-complete` diff shows both registrations | `open` |
-| R16 | `ANTHROPIC_API_KEY` repository secret; missing-secret path fails loudly with guidance | GitHub repo settings, `.github/workflows/skill-evals.yml` | failure-mode run link recorded in evidence; secret creation is a maintainer action outside the tree | `open` |
+| R14 | Reusable `skill-evals.yml`: installs `.[eval]`, runs the suite, uploads results artifact with bounded retention | `.github/workflows/skill-evals.yml` | `action-pinning`, `workflow-permissions`, `workflow-concurrency` checks green | `done` |
+| R15 | ci.yml job with change-detection pass-through, registered in `ci-complete` twice | `.github/workflows/ci.yml` | unrelated-paths PR run shows pass-through; `ci-complete` diff shows both registrations | `done` |
+| R16 | `ANTHROPIC_API_KEY` repository secret; missing-secret path fails loudly with guidance | GitHub repo settings, `.github/workflows/skill-evals.yml` | failure-mode run link recorded in evidence; secret creation is a maintainer action outside the tree | `done` |
 | N5 | No per-PR full-suite run on unrelated changes — the R15 path filter is the mechanism, so this non-goal is enforced by construction | — | pass-through behaviour verified under R15 | `accepted` |
 
 ### Slice M003/S02 — Release gate and governed doc

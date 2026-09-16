@@ -760,3 +760,185 @@ def test_install_skills_fails_when_pinned_content_does_not_match_the_lock(
 
     assert skills_install.install_skills(tmp_path) == 1
     assert "hash verification failed" in capsys.readouterr().err
+
+
+# --- upgrade_to_version: the version argument --------------------------------
+
+
+def _write_full_lock(
+    root: Path, *, version: str = "0.16.0", extra_skill: dict | None = None
+) -> Path:
+    """A lock with one governed skill and one governed command from one source."""
+    skills = {"alpha": _entry("owner/repo", "alpha", _sha("old alpha\n"))}
+    if extra_skill:
+        skills.update(extra_skill)
+    lock = {
+        "jkStandardsVersion": version,
+        "skills": skills,
+        "commands": {
+            "status": {
+                "source": "owner/repo",
+                "commandPath": "commands/status.md",
+                "computedHash": _sha("old status\n"),
+            }
+        },
+    }
+    lock_path = root / "skills-lock.json"
+    lock_path.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
+    return lock_path
+
+
+_NEW_SKILL = "# Alpha v2\n"
+_NEW_COMMAND = "# status v2\n"
+
+
+def _upgrade_archive() -> bytes:
+    return _make_archive(
+        "repo-v9.9.9",
+        {"skills/alpha/SKILL.md": _NEW_SKILL, "commands/status.md": _NEW_COMMAND},
+    )
+
+
+def test_upgrade_missing_version_exits_2_lock_untouched(tmp_path, monkeypatch, capsys):
+    lock_path = _write_full_lock(tmp_path)
+    before = lock_path.read_bytes()
+
+    def handler(req):
+        raise _http_error(req.full_url, 404)
+
+    _stub_urlopen(monkeypatch, handler)
+    rc = skills_install.main(["v9.9.9", "--root", str(tmp_path)])
+
+    assert rc == 2
+    assert lock_path.read_bytes() == before
+    assert not (tmp_path / ".agents/skills/alpha").exists()
+
+
+def test_upgrade_success_single_lock_write(tmp_path, monkeypatch, capsys):
+    lock_path = _write_full_lock(tmp_path)
+    archive = _upgrade_archive()
+    _stub_urlopen(monkeypatch, lambda req: archive)
+
+    rc = skills_install.main(["v9.9.9", "--root", str(tmp_path)])
+
+    assert rc == 0
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    assert lock["jkStandardsVersion"] == "9.9.9"
+    assert lock["skills"]["alpha"]["computedHash"] == _sha(_NEW_SKILL)
+    assert lock["commands"]["status"]["computedHash"] == _sha(_NEW_COMMAND)
+    assert (tmp_path / ".agents/skills/alpha/SKILL.md").read_text(
+        encoding="utf-8"
+    ) == _NEW_SKILL
+    assert (tmp_path / ".claude/commands/jk/status.md").read_text(
+        encoding="utf-8"
+    ) == _NEW_COMMAND
+
+
+def test_upgrade_via_install_commands_entrypoint(tmp_path, monkeypatch, capsys):
+    lock_path = _write_full_lock(tmp_path)
+    archive = _upgrade_archive()
+    _stub_urlopen(monkeypatch, lambda req: archive)
+
+    rc = skills_install.commands_main(["v9.9.9", "--root", str(tmp_path)])
+
+    assert rc == 0
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    assert lock["jkStandardsVersion"] == "9.9.9"
+    assert (tmp_path / ".agents/skills/alpha/SKILL.md").exists()
+    assert (tmp_path / ".claude/commands/jk/status.md").exists()
+
+
+def test_upgrade_latest_resolves_releases_api(tmp_path, monkeypatch, capsys):
+    lock_path = _write_full_lock(tmp_path)
+    archive = _upgrade_archive()
+
+    def handler(req):
+        if "api.github.com" in req.full_url:
+            assert req.full_url.endswith("/repos/owner/repo/releases/latest")
+            return json.dumps({"tag_name": "v9.9.9"}).encode("utf-8")
+        return archive
+
+    _stub_urlopen(monkeypatch, handler)
+    rc = skills_install.main(["latest", "--root", str(tmp_path)])
+
+    assert rc == 0
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    assert lock["jkStandardsVersion"] == "9.9.9"
+
+
+def test_upgrade_skew_note(tmp_path, monkeypatch, capsys):
+    _write_full_lock(tmp_path)
+    archive = _upgrade_archive()
+    _stub_urlopen(monkeypatch, lambda req: archive)
+
+    rc = skills_install.main(["v9.9.9", "--root", str(tmp_path)])
+
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "but the installed jk-standards package is" in out
+    assert __version__ in out
+
+
+def test_upgrade_leaves_entry_with_own_ref_alone(tmp_path, monkeypatch, capsys):
+    pinned_body = "# pinned elsewhere\n"
+    h = _make_skill(tmp_path, ".agents/skills", "pinned", pinned_body)
+    extra = {
+        "pinned": {
+            "source": "other/repo",
+            "skillPath": "skills/pinned/SKILL.md",
+            "computedHash": h,
+            "ref": "refs/tags/v1.0.0",
+        }
+    }
+    lock_path = _write_full_lock(tmp_path, extra_skill=extra)
+    archive = _upgrade_archive()
+    _stub_urlopen(monkeypatch, lambda req: archive)
+
+    rc = skills_install.main(["v9.9.9", "--root", str(tmp_path)])
+
+    assert rc == 0
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    assert lock["skills"]["pinned"]["ref"] == "refs/tags/v1.0.0"
+    assert lock["skills"]["pinned"]["computedHash"] == h
+    assert (tmp_path / ".agents/skills/pinned/SKILL.md").read_text(
+        encoding="utf-8"
+    ) == pinned_body
+    assert skills_install.resolve_ref(lock, lock["skills"]["pinned"]) == "refs/tags/v1.0.0"
+
+
+def test_upgrade_rejects_malformed_argument(tmp_path, monkeypatch, capsys):
+    lock_path = _write_full_lock(tmp_path)
+    before = lock_path.read_bytes()
+
+    def explode(req):  # pragma: no cover
+        raise AssertionError("no network call for a malformed argument")
+
+    _stub_urlopen(monkeypatch, explode)
+
+    for bad in ("0.17", "main"):
+        rc = skills_install.main([bad, "--root", str(tmp_path)])
+        assert rc == 2
+    assert lock_path.read_bytes() == before
+
+
+def test_upgrade_multi_source_governed_entries_exit_2(tmp_path, monkeypatch, capsys):
+    extra = {
+        "beta": {
+            "source": "another/repo",
+            "skillPath": "skills/beta/SKILL.md",
+            "computedHash": _sha("beta\n"),
+        }
+    }
+    lock_path = _write_full_lock(tmp_path, extra_skill=extra)
+    before = lock_path.read_bytes()
+
+    def explode(req):  # pragma: no cover
+        raise AssertionError("no network call for a multi-source governed set")
+
+    _stub_urlopen(monkeypatch, explode)
+    rc = skills_install.main(["v9.9.9", "--root", str(tmp_path)])
+
+    assert rc == 2
+    assert lock_path.read_bytes() == before
+    err = capsys.readouterr().err
+    assert "owner/repo" in err and "another/repo" in err

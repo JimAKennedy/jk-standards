@@ -29,6 +29,8 @@ Usage (via the CLI):
     jk-standards install-skills --update-lock              # pin hashes + toolkit version
     jk-standards install-commands                          # install missing commands
     jk-standards install-commands --dest .claude/commands/jk  # /jk: namespace
+    jk-standards install-skills v0.17.0     # move the lock to a release and reinstall
+    jk-standards install-skills latest      # same, resolved via the latest GitHub Release
 """
 
 from __future__ import annotations
@@ -38,6 +40,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import tarfile
@@ -57,6 +60,11 @@ SKILLS_DIR = Path(".agents/skills")
 # rather than claiming the bare `/status` a consuming repo may want.
 COMMANDS_DIR = Path(".claude/commands/jk")
 GITHUB_ARCHIVE_URL = "https://github.com/{source}/archive/{ref}.tar.gz"
+GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/{source}/releases/latest"
+# The version argument accepts exactly two forms: a release tag or the
+# literal "latest". Branches and arbitrary refs stay behind the per-entry
+# `ref` escape hatch — a moving target must be chosen per asset, on purpose.
+VERSION_ARG_RE = re.compile(r"^v\d+\.\d+\.\d+$")
 # Vendoring from a branch is not reproducible: the lock records a hash of
 # whatever upstream held when it was written, so the next commit upstream
 # breaks --check in every consuming repo at once. A lock that records a
@@ -449,10 +457,131 @@ def find_project_root() -> Path:
     return cwd
 
 
+def resolve_latest(source: str) -> str:
+    """The tag name of ``source``'s latest published GitHub Release.
+
+    Releases, not tags, on purpose: this repo's own history has tags that
+    never got a Release and Releases are the only signal that means
+    "consumable" — the same reasoning release-pins encodes.
+    """
+    data = json.loads(_fetch(GITHUB_LATEST_RELEASE_URL.format(source=source)))
+    tag = data.get("tag_name")
+    if not isinstance(tag, str) or not VERSION_ARG_RE.match(tag):
+        raise LockError(f"latest release of {source} has unusable tag_name: {tag!r}")
+    return tag
+
+
+def upgrade_to_version(
+    project_root: Path,
+    version_arg: str,
+    skills_dir: Path = SKILLS_DIR,
+    commands_dir: Path = COMMANDS_DIR,
+) -> int:
+    """Move the shared pin to a release and reinstall everything it governs.
+
+    Order is the contract: resolve and download first — any failure exits
+    before a single byte on disk or in the lock changes — then install both
+    asset kinds, then write the lock once, last, with the new version and
+    the hashes of the files actually installed. Both kinds move together
+    whichever subcommand carried the argument: the pin is shared, and
+    moving it for one kind only would create the mixture of upstream
+    states resolve_ref's single-pin design exists to forbid. Entries
+    carrying their own ``ref`` are governed separately and are untouched.
+    """
+    lock = load_lock(project_root)
+    governed_skills = {
+        name: info for name, info in lock.get("skills", {}).items() if not info.get("ref")
+    }
+    governed_commands = {
+        name: info for name, info in lock.get("commands", {}).items() if not info.get("ref")
+    }
+    sources = {i["source"] for i in governed_skills.values()} | {
+        i["source"] for i in governed_commands.values()
+    }
+    if not sources:
+        print("No version-governed entries in the lock (all carry their own ref).")
+        return 0
+    if len(sources) > 1:
+        print(
+            "Error: version-governed entries name more than one source "
+            f"({', '.join(sorted(sources))}) — one pin cannot govern them; "
+            "give the odd one out its own `ref`.",
+            file=sys.stderr,
+        )
+        return 2
+    source = sources.pop()
+
+    if version_arg == "latest":
+        tag = resolve_latest(source)
+        print(f"Latest release of {source}: {tag}")
+    elif VERSION_ARG_RE.match(version_arg):
+        tag = version_arg
+    else:
+        print(
+            f"Error: version argument must be vX.Y.Z or 'latest', got {version_arg!r}",
+            file=sys.stderr,
+        )
+        return 2
+
+    # The download is the existence check: a missing tag fails here, with
+    # nothing yet mutated.
+    tar = download_archive(source, f"refs/tags/{tag}")
+
+    installed = 0
+    for name, info in sorted(governed_skills.items()):
+        dest = project_root / skills_dir / name
+        skill_dir_in_repo = str(PurePosixPath(info["skillPath"]).parent)
+        if dest.exists():
+            shutil.rmtree(dest)
+        dest.mkdir(parents=True, exist_ok=True)
+        extract_skill(tar, skill_dir_in_repo, dest)
+        skill_md = dest / "SKILL.md"
+        if not skill_md.exists():
+            print(f"  {name}: SKILL.md not found in {tag} (FAILED)", file=sys.stderr)
+            return 1
+        info["computedHash"] = compute_hash(skill_md)
+        print(f"  {name}: installed at {tag}")
+        installed += 1
+
+    for name, info in sorted(governed_commands.items()):
+        dest = project_root / commands_dir / f"{name}.md"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if not extract_file(tar, info["commandPath"], dest):
+            print(f"  {name}: {info['commandPath']} not found in {tag} (FAILED)", file=sys.stderr)
+            return 1
+        info["computedHash"] = compute_hash(dest)
+        print(f"  {name}: installed at {tag}")
+        installed += 1
+    tar.close()
+
+    version = tag.lstrip("v")
+    lock["jkStandardsVersion"] = version
+    lock_path = project_root / LOCK_FILE
+    with lock_path.open("w", encoding="utf-8") as f:
+        json.dump(lock, f, indent=2)
+        f.write("\n")
+    print(f"\nUpgraded {installed} asset(s); jkStandardsVersion={version}")
+
+    if version != __version__:
+        print(
+            f"Note: the lock now pins jkStandardsVersion={version}, "
+            f"but the installed jk-standards package is {__version__}. "
+            f"The checks run at the package's version — consider "
+            f"`pip install -U jk-standards=={version}`."
+        )
+    return 0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="jk-standards install-skills",
         description="Install third-party skills from skills-lock.json",
+    )
+    parser.add_argument(
+        "version",
+        nargs="?",
+        default=None,
+        help="Move the lock to a release and reinstall: vX.Y.Z or 'latest'",
     )
     parser.add_argument(
         "--force", action="store_true", help="Reinstall all skills even if up to date"
@@ -487,12 +616,20 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Skills dir:  {project_root / args.dest}\n")
 
     try:
+        if args.version:
+            if args.check or args.update_lock:
+                print(
+                    "Error: a version argument cannot combine with --check/--update-lock",
+                    file=sys.stderr,
+                )
+                return 2
+            return upgrade_to_version(project_root, args.version, skills_dir=args.dest)
         if args.check:
             return check_skills(project_root, skills_dir=args.dest)
         if args.update_lock:
             return update_lock(project_root, skills_dir=args.dest)
         return install_skills(project_root, force=args.force, skills_dir=args.dest)
-    except LockError as e:
+    except (LockError, urllib.error.URLError, tarfile.TarError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 2
 
@@ -501,6 +638,12 @@ def _build_commands_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="jk-standards install-commands",
         description="Install workflow commands from skills-lock.json",
+    )
+    parser.add_argument(
+        "version",
+        nargs="?",
+        default=None,
+        help="Move the lock to a release and reinstall: vX.Y.Z or 'latest'",
     )
     parser.add_argument(
         "--force", action="store_true", help="Reinstall all commands even if up to date"
@@ -530,10 +673,18 @@ def commands_main(argv: list[str] | None = None) -> int:
     print(f"Commands dir:  {project_root / args.dest}\n")
 
     try:
+        if args.version:
+            if args.check:
+                print(
+                    "Error: a version argument cannot combine with --check",
+                    file=sys.stderr,
+                )
+                return 2
+            return upgrade_to_version(project_root, args.version, commands_dir=args.dest)
         if args.check:
             return check_commands(project_root, commands_dir=args.dest)
         return install_commands(project_root, force=args.force, commands_dir=args.dest)
-    except LockError as e:
+    except (LockError, urllib.error.URLError, tarfile.TarError, OSError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 2
 

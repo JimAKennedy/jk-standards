@@ -1181,7 +1181,7 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "class",
-      "lineno": 68,
+      "lineno": 76,
       "name": "LockError",
       "signals": {
         "docstring": true,
@@ -1193,7 +1193,7 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 352,
+      "lineno": 360,
       "name": "check_commands",
       "signals": {
         "docstring": true,
@@ -1205,7 +1205,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 243,
+      "lineno": 251,
       "name": "check_skills",
       "signals": {
         "docstring": false,
@@ -1217,19 +1217,19 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 523,
+      "lineno": 666,
       "name": "commands_main",
       "signals": {
         "docstring": true,
         "drift": false,
-        "mention": false
+        "mention": true
       }
     },
     {
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 80,
+      "lineno": 88,
       "name": "compute_hash",
       "signals": {
         "docstring": false,
@@ -1241,7 +1241,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 111,
+      "lineno": 119,
       "name": "download_archive",
       "signals": {
         "docstring": false,
@@ -1253,31 +1253,31 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 272,
+      "lineno": 280,
       "name": "extract_file",
       "signals": {
         "docstring": true,
         "drift": false,
-        "mention": false
+        "mention": true
       }
     },
     {
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 138,
+      "lineno": 146,
       "name": "extract_skill",
       "signals": {
         "docstring": true,
         "drift": false,
-        "mention": false
+        "mention": true
       }
     },
     {
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 443,
+      "lineno": 451,
       "name": "find_project_root",
       "signals": {
         "docstring": true,
@@ -1289,7 +1289,7 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 286,
+      "lineno": 294,
       "name": "install_commands",
       "signals": {
         "docstring": true,
@@ -1301,7 +1301,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 161,
+      "lineno": 169,
       "name": "install_skills",
       "signals": {
         "docstring": false,
@@ -1313,7 +1313,7 @@
       "documented": false,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 72,
+      "lineno": 80,
       "name": "load_lock",
       "signals": {
         "docstring": false,
@@ -1325,7 +1325,7 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 480,
+      "lineno": 609,
       "name": "main",
       "signals": {
         "docstring": true,
@@ -1337,7 +1337,19 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 84,
+      "lineno": 460,
+      "name": "resolve_latest",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": true
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 92,
       "name": "resolve_ref",
       "signals": {
         "docstring": true,
@@ -1361,12 +1373,24 @@
       "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
-      "lineno": 382,
+      "lineno": 390,
       "name": "update_lock",
       "signals": {
         "docstring": true,
         "drift": false,
         "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/skills_install.py",
+      "kind": "function",
+      "lineno": 474,
+      "name": "upgrade_to_version",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": true
       }
     },
     {

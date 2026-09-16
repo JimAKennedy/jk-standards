@@ -1,0 +1,124 @@
+# Reusable LLM-judged skill-evaluation gate. Consume from a pinned tag:
+#
+#   permissions:
+#     contents: read
+#   jobs:
+#     skill-evals:
+#       uses: JimAKennedy/jk-standards/.github/workflows/skill-evals.yml@v0.17.0
+#       secrets: inherit
+#
+# Runs the evals/ suite (two-arm judged compliance + selection) against the
+# Anthropic API. Needs the ANTHROPIC_API_KEY repository secret — the guard
+# step fails loudly without it, because forked pull requests cannot see
+# secrets and a silent skip would read as green. ANTHROPIC_WORKSPACE_ID is
+# optional (org-level keys need it; workspace-scoped keys do not).
+#
+# The weekly schedule is the model-drift watch: an unchanged corpus
+# re-scored on current models, failures surfacing through the notify job's
+# label-deduped skill-evals-drift issue (open/update on red, close on
+# green) — the same posture sanitizer-nightly uses. Flaky-judge recovery is
+# re-running the job, never re-tagging or force-merging.
+
+name: skill-evals
+
+on:
+  workflow_call:
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: false
+      ANTHROPIC_WORKSPACE_ID:
+        required: false
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# region:skill-evals-jobs
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install with the eval extra
+        run: pip install -e ".[eval]"
+      - name: Require the API key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::skill-evals needs the ANTHROPIC_API_KEY repository secret — forked PRs cannot see it; a maintainer re-runs this from a branch in this repo."
+            exit 1
+          fi
+      - name: Run the eval suite
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
+        run: python -m pytest evals/ -q
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: skill-evals-results
+          path: evals/results/*.json
+          retention-days: 14
+          if-no-files-found: error
+
+  # Schedule runs only: the drift watch's single living issue. PR runs
+  # surface through ci-complete; a scheduled failure has no PR to be seen
+  # on, so it gets the sanitizer-nightly issue posture instead.
+  notify:
+    needs: [eval]
+    if: always() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Open, update, or close the skill-evals-drift issue
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          EVAL_RESULT: ${{ needs.eval.result }}
+        with:
+          script: |
+            const LABEL = 'skill-evals-drift';
+            const failed = process.env.EVAL_RESULT !== 'success';
+            const { owner, repo } = context.repo;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: LABEL, per_page: 100,
+            });
+
+            if (failed) {
+              const body = [
+                'Weekly skill-eval drift run failed: an unchanged corpus no longer passes on current models.',
+                '',
+                `Run: ${runUrl}`,
+              ].join('\n');
+              if (open.length > 0) {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: open[0].number, body,
+                });
+                core.notice(`Updated existing #${open[0].number}`);
+              } else {
+                const created = await github.rest.issues.create({
+                  owner, repo, title: 'Skill-eval drift failure', labels: [LABEL], body,
+                });
+                core.notice(`Opened #${created.data.number}`);
+              }
+            } else if (open.length > 0) {
+              for (const issue of open) {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: issue.number,
+                  body: `Weekly drift run green again: ${runUrl}`,
+                });
+                await github.rest.issues.update({
+                  owner, repo, issue_number: issue.number, state: 'closed',
+                });
+              }
+              core.notice('Closed drift issue(s) on green');
+            }
+# endregion:skill-evals-jobs

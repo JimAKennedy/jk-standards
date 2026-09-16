@@ -11,7 +11,7 @@ Status: current (2026-09-16)
 
 **Task status**
 
-- [ ] Task 1 — skill-evals.yml reusable workflow
+- [x] Task 1 — skill-evals.yml reusable workflow
 - [ ] Task 2 — ci.yml wiring: eval-paths, skill-evals, ci-complete
 
 **Definition of Done**

@@ -27,6 +27,8 @@ jk-standards release-pins        # every adoption pin resolves to a real tag
 ruff check .                     # lint
 ruff format --check .            # format
 pytest -q                        # full test suite
+make eval                        # LLM-judged skill evals (needs ANTHROPIC_API_KEY;
+                                 # the tag push re-runs this suite in release.yml)
 grep -q "^version = \"$VERSION\"$" pyproject.toml   # the two version sites agree
 ```
 

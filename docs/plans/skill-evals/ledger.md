@@ -172,24 +172,24 @@ degrades them surfaces within a week with no diff in this repo.
 **Plan:** M003-S02-plan.md
 **Validation:** format, discipline, eval, gate
 **Evidence:** evidence/M003-S02.md
-**Status:** in-progress
+**Status:** done
 
 **Definition of Done**
 
-- [ ] The tag-path `verify` job runs the full corpus (agreed: full, not a
+- [x] The tag-path `verify` job runs the full corpus (agreed: full, not a
       smoke subset, at current corpus size)
-- [ ] `docs/skill-evals.md` exists with taxonomy front-matter and passes
+- [x] `docs/skill-evals.md` exists with taxonomy front-matter and passes
       the doc checks
-- [ ] The drift map pairs `evals/**` and the harness with that doc
-- [ ] `RELEASE.md`'s pre-tag checklist names `make eval` as the local
+- [x] The drift map pairs `evals/**` and the harness with that doc
+- [x] `RELEASE.md`'s pre-tag checklist names `make eval` as the local
       preflight
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R17 | Release gate: tag push runs the full eval suite; flaky-failure recovery is re-running the workflow job, never re-tagging | `.github/workflows/release.yml` | first post-landing tag's run recorded in evidence | `open` |
-| R20 | Governed doc: corpus format, adding a scenario, thresholds, reading a failure, cost model | `docs/skill-evals.md` | `doc-taxonomy`, `status-prose`, `count-drift` checks green over the new doc | `open` |
-| R21 | Drift-map mapping for corpus and harness changes | `.github/docs-drift-map.yml` | `doc-drift` check enforces the pair on a touching PR | `open` |
-| R22 | RELEASE.md pre-tag checklist gains the eval preflight | `RELEASE.md` | checklist line present; referenced target exists | `open` |
+| R17 | Release gate: tag push runs the full eval suite; flaky-failure recovery is re-running the workflow job, never re-tagging | `.github/workflows/release.yml` | first post-landing tag's run recorded in evidence | `done` |
+| R20 | Governed doc: corpus format, adding a scenario, thresholds, reading a failure, cost model | `docs/skill-evals.md` | `doc-taxonomy`, `status-prose`, `count-drift` checks green over the new doc | `done` |
+| R21 | Drift-map mapping for corpus and harness changes | `.github/docs-drift-map.yml` | `doc-drift` check enforces the pair on a touching PR | `done` |
+| R22 | RELEASE.md pre-tag checklist gains the eval preflight | `RELEASE.md` | checklist line present; referenced target exists | `done` |
 | N4 | No committed score snapshot or ratchet baseline — CI runs evals directly; scores are artifacts, thresholds are config. The committed-receipt model was considered and set aside with the CLI-based design | — | recorded here as a deliberate non-goal | `accepted` |
 
 ### Slice M003/S03 — Weekly drift schedule

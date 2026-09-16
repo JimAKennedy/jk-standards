@@ -117,8 +117,22 @@ jobs:
           path: dist/
           if-no-files-found: error
 
+  # The tag path runs the full eval corpus (decision recorded in
+  # docs/plans/skill-evals/ledger.md): no release ships unevaluated
+  # skills. The tag is already immutable here, so a flaky judge failure
+  # is resolved by re-running this job — never by re-tagging.
+  skill-evals:
+    # The callee's schedule-only notify job declares issues: write; it can
+    # never fire on a workflow_call, but permission composition is static,
+    # so the caller must still grant the ceiling.
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/skill-evals.yml
+    secrets: inherit
+
   github-release:
-    needs: [verify, package]
+    needs: [verify, package, skill-evals]
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the Release and upload its assets

@@ -11,7 +11,7 @@ Status: current (2026-09-16)
 
 **Task status**
 
-- [ ] Task 1 — release gate, governed doc, drift map, RELEASE.md
+- [x] Task 1 — release gate, governed doc, drift map, RELEASE.md
 
 **Definition of Done**
 

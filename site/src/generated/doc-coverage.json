@@ -1342,7 +1342,7 @@
       "signals": {
         "docstring": true,
         "drift": false,
-        "mention": false
+        "mention": true
       }
     },
     {
@@ -1354,7 +1354,7 @@
       "signals": {
         "docstring": true,
         "drift": false,
-        "mention": false
+        "mention": true
       }
     },
     {

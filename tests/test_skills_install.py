@@ -849,7 +849,7 @@ def test_upgrade_latest_resolves_releases_api(tmp_path, monkeypatch, capsys):
     archive = _upgrade_archive()
 
     def handler(req):
-        if "api.github.com" in req.full_url:
+        if req.full_url.startswith("https://api.github.com/"):
             assert req.full_url.endswith("/repos/owner/repo/releases/latest")
             return json.dumps({"tag_name": "v9.9.9"}).encode("utf-8")
         return archive

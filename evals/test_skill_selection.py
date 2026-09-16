@@ -48,17 +48,14 @@ SELECTION = [
         "doc-anti-drift",
     ),
     (
-        "Update the npm dependencies in the website package to their "
-        "latest minor versions.",
+        "Update the npm dependencies in the website package to their latest minor versions.",
         "none",
     ),
 ]
 
 
 def _inventory() -> str:
-    data = json.loads(
-        (ROOT / "site/src/generated/skills.json").read_text(encoding="utf-8")
-    )
+    data = json.loads((ROOT / "site/src/generated/skills.json").read_text(encoding="utf-8"))
     return "\n".join(f"- {s['name']}: {s['description']}" for s in data["skills"])
 
 
@@ -88,10 +85,5 @@ def test_skill_selection(task, expected):
         max_tokens=CFG.max_output_tokens,
         messages=[{"role": "user", "content": prompt}],
     )
-    answer = (
-        "".join(getattr(b, "text", "") for b in resp.content)
-        .strip()
-        .strip("`")
-        .lower()
-    )
+    answer = "".join(getattr(b, "text", "") for b in resp.content).strip().strip("`").lower()
     assert answer == expected, f"selection: expected {expected!r}, got {answer!r}"

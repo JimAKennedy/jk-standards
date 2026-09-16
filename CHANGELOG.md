@@ -8,6 +8,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **LLM-judged skill evaluation** (`evals/`, `Makefile`, `jk-standards.yaml`
+  `region:skill-evals-config`, `[eval]` extra pinning `deepeval==4.2.3`;
+  ledger `docs/plans/skill-evals/ledger.md`, milestone M002): `make eval`
+  runs every corpus case in two arms — the agent model with the skill's
+  SKILL.md as system context and without — judged against per-case rubrics
+  by a deepeval G-Eval metric on an Anthropic judge, asserting an absolute
+  threshold and, for cases that declare it, a with-skill lift
+  (`require_lift: false` with a mandatory written reason exempts
+  ceiling-prone review-shaped cases). A judge-free selection eval checks
+  the agent picks the right skill from the generated inventory, including
+  a no-skill-applies negative. Results files record models, run count,
+  thresholds, and transcripts; budget caps bound every run; the suite
+  skips (never false-greens) without `ANTHROPIC_API_KEY`. The recorded
+  run passes 10/10 with decisive lift on generation-shaped cases.
+
 - **Version-addressed install** (`src/jk_standards/skills_install.py`,
   README, `docs/skills.md`, both configuration references; ledger
   `docs/plans/install-upgrade/ledger.md`): `jk-standards install-skills

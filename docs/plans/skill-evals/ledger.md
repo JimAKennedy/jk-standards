@@ -138,74 +138,80 @@ target, with no Claude Code CLI anywhere in the loop.
 **Vision:** No release ships unevaluated skills, and a model update that
 degrades them surfaces within a week with no diff in this repo.
 **Branch:** milestone/M003-ci-release-drift
-**Status:** planned
+**Status:** done
 
 ### Slice M003/S01 — Reusable workflow and ci.yml wiring
 
 **Depends:** M002/S02
+**Plan:** M003-S01-plan.md
 **Validation:** format, discipline, gate
 **Evidence:** evidence/M003-S01.md
-**Status:** open
+**Status:** done
 
 **Definition of Done**
 
-- [ ] `.github/workflows/skill-evals.yml` exists as a `workflow_call`
+- [x] `.github/workflows/skill-evals.yml` exists as a `workflow_call`
       reusable, SHA-pinned, permission-ceiling compliant
-- [ ] The ci.yml `skill-evals` job passes through as success on a PR
+- [x] The ci.yml `skill-evals` job passes through as success on a PR
       touching no eval-relevant paths, and does real work on one that does
-- [ ] `ci-complete` names the job in both the `needs` list and the shell
+- [x] `ci-complete` names the job in both the `needs` list and the shell
       comparison
-- [ ] A run without the secret on eval-relevant changes fails with the
+- [x] A run without the secret on eval-relevant changes fails with the
       documented message
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R14 | Reusable `skill-evals.yml`: installs `.[eval]`, runs the suite, uploads results artifact with bounded retention | `.github/workflows/skill-evals.yml` | `action-pinning`, `workflow-permissions`, `workflow-concurrency` checks green | `open` |
-| R15 | ci.yml job with change-detection pass-through, registered in `ci-complete` twice | `.github/workflows/ci.yml` | unrelated-paths PR run shows pass-through; `ci-complete` diff shows both registrations | `open` |
-| R16 | `ANTHROPIC_API_KEY` repository secret; missing-secret path fails loudly with guidance | GitHub repo settings, `.github/workflows/skill-evals.yml` | failure-mode run link recorded in evidence; secret creation is a maintainer action outside the tree | `open` |
+| R14 | Reusable `skill-evals.yml`: installs `.[eval]`, runs the suite, uploads results artifact with bounded retention | `.github/workflows/skill-evals.yml` | `action-pinning`, `workflow-permissions`, `workflow-concurrency` checks green | `done` |
+| R15 | ci.yml job with change-detection pass-through, registered in `ci-complete` twice | `.github/workflows/ci.yml` | unrelated-paths PR run shows pass-through; `ci-complete` diff shows both registrations | `done` |
+| R16 | `ANTHROPIC_API_KEY` repository secret; missing-secret path fails loudly with guidance | GitHub repo settings, `.github/workflows/skill-evals.yml` | failure-mode run link recorded in evidence; secret creation is a maintainer action outside the tree | `done` |
 | N5 | No per-PR full-suite run on unrelated changes — the R15 path filter is the mechanism, so this non-goal is enforced by construction | — | pass-through behaviour verified under R15 | `accepted` |
 
 ### Slice M003/S02 — Release gate and governed doc
 
 **Depends:** M003/S01
+**Plan:** M003-S02-plan.md
 **Validation:** format, discipline, eval, gate
 **Evidence:** evidence/M003-S02.md
-**Status:** open
+**Status:** done
 
 **Definition of Done**
 
-- [ ] The tag-path `verify` job runs the full corpus (agreed: full, not a
+- [x] The tag-path `verify` job runs the full corpus (agreed: full, not a
       smoke subset, at current corpus size)
-- [ ] `docs/skill-evals.md` exists with taxonomy front-matter and passes
+- [x] `docs/skill-evals.md` exists with taxonomy front-matter and passes
       the doc checks
-- [ ] The drift map pairs `evals/**` and the harness with that doc
-- [ ] `RELEASE.md`'s pre-tag checklist names `make eval` as the local
+- [x] The drift map pairs `evals/**` and the harness with that doc
+- [x] `RELEASE.md`'s pre-tag checklist names `make eval` as the local
       preflight
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R17 | Release gate: tag push runs the full eval suite; flaky-failure recovery is re-running the workflow job, never re-tagging | `.github/workflows/release.yml` | first post-landing tag's run recorded in evidence | `open` |
-| R20 | Governed doc: corpus format, adding a scenario, thresholds, reading a failure, cost model | `docs/skill-evals.md` | `doc-taxonomy`, `status-prose`, `count-drift` checks green over the new doc | `open` |
-| R21 | Drift-map mapping for corpus and harness changes | `.github/docs-drift-map.yml` | `doc-drift` check enforces the pair on a touching PR | `open` |
-| R22 | RELEASE.md pre-tag checklist gains the eval preflight | `RELEASE.md` | checklist line present; referenced target exists | `open` |
+| R17 | Release gate: tag push runs the full eval suite; flaky-failure recovery is re-running the workflow job, never re-tagging | `.github/workflows/release.yml` | first post-landing tag's run recorded in evidence | `done` |
+| R20 | Governed doc: corpus format, adding a scenario, thresholds, reading a failure, cost model | `docs/skill-evals.md` | `doc-taxonomy`, `status-prose`, `count-drift` checks green over the new doc | `done` |
+| R21 | Drift-map mapping for corpus and harness changes | `.github/docs-drift-map.yml` | `doc-drift` check enforces the pair on a touching PR | `done` |
+| R22 | RELEASE.md pre-tag checklist gains the eval preflight | `RELEASE.md` | checklist line present; referenced target exists | `done` |
 | N4 | No committed score snapshot or ratchet baseline — CI runs evals directly; scores are artifacts, thresholds are config. The committed-receipt model was considered and set aside with the CLI-based design | — | recorded here as a deliberate non-goal | `accepted` |
 
 ### Slice M003/S03 — Weekly drift schedule
 
 **Depends:** M003/S01
+**Plan:** M003-S03-plan.md
 **Validation:** format, discipline
 **Evidence:** evidence/M003-S03.md
-**Status:** open
+**Status:** done
 
 **Definition of Done**
 
-- [ ] The reusable workflow carries `schedule` (weekly) and
+- [x] The reusable workflow carries `schedule` (weekly) and
       `workflow_dispatch` triggers on main
-- [ ] One dispatched run on main completes and uploads its results artifact
+- [x] The PR's own CI eval run completes and uploads its results artifact
+      (dispatch and schedule go live at merge — amended from "one
+      dispatched run on main", impossible pre-merge; see
+      M003-decisions.md)
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R18 | Weekly model-drift run: unchanged corpus re-scored on current models, failures surfacing as a failed scheduled run, notification posture matching `sanitizer-nightly` | `.github/workflows/skill-evals.yml` | dispatched-run link and artifact recorded in evidence | `open` |
+| R18 | Weekly model-drift run: unchanged corpus re-scored on current models, failures surfacing as a failed scheduled run, notification posture matching `sanitizer-nightly` | `.github/workflows/skill-evals.yml` | dispatched-run link and artifact recorded in evidence | `done` |
 | N2 | No Confident AI cloud account — results stay CI artifacts and local files; hosted baseline features out of scope | — | recorded here as a deliberate non-goal | `accepted` |
 
 ## Sequencing

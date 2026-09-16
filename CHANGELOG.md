@@ -8,6 +8,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Skill evals in CI, on every release tag, and on a weekly drift watch**
+  (`.github/workflows/skill-evals.yml`, `ci.yml`, `release.yml`,
+  `docs/skill-evals.md`; ledger `docs/plans/skill-evals/ledger.md`,
+  milestone M003 — completing the programme): a reusable `skill-evals`
+  workflow runs the eval suite with the repo's Anthropic secrets and
+  uploads the results artifact, failing loudly when the secret is absent.
+  `ci.yml` runs it per pull request only when eval-relevant paths changed
+  (a plain git-diff filter; `ci-complete` sanctions a skip solely on that
+  filter's own not-relevant verdict), `release.yml` runs the full corpus
+  on every tag so no release ships unevaluated skills, and a Monday
+  schedule re-scores the unchanged corpus on current models — model
+  drift surfacing as a single label-deduped `skill-evals-drift` issue.
+
 - **LLM-judged skill evaluation** (`evals/`, `Makefile`, `jk-standards.yaml`
   `region:skill-evals-config`, `[eval]` extra pinning `deepeval==4.2.3`;
   ledger `docs/plans/skill-evals/ledger.md`, milestone M002): `make eval`

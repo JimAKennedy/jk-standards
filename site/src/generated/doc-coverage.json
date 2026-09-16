@@ -1298,7 +1298,7 @@
       }
     },
     {
-      "documented": false,
+      "documented": true,
       "file": "src/jk_standards/skills_install.py",
       "kind": "function",
       "lineno": 169,
@@ -1306,7 +1306,7 @@
       "signals": {
         "docstring": false,
         "drift": false,
-        "mention": false
+        "mention": true
       }
     },
     {

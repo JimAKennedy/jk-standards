@@ -72,14 +72,15 @@ cost anywhere in the gate.
 compliance with a with/without-skill delta, plus selection — from one make
 target, with no Claude Code CLI anywhere in the loop.
 **Branch:** milestone/M002-eval-corpus-harness
-**Status:** planned
+**Status:** in-progress
 
 ### Slice M002/S01 — Harness end-to-end on one skill
 
 **Depends:** M001/S02
+**Plan:** M002-S01-plan.md
 **Validation:** format, unit, eval, gate
 **Evidence:** evidence/M002-S01.md
-**Status:** open
+**Status:** in-progress
 
 **Definition of Done**
 
@@ -113,9 +114,10 @@ target, with no Claude Code CLI anywhere in the loop.
 ### Slice M002/S02 — Corpus breadth and selection eval
 
 **Depends:** M002/S01
+**Plan:** M002-S02-plan.md
 **Validation:** format, eval
 **Evidence:** evidence/M002-S02.md
-**Status:** open
+**Status:** in-progress
 
 **Definition of Done**
 

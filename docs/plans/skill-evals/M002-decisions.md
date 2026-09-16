@@ -43,3 +43,14 @@ Append-only record per `/jk:auto` for skill-evals M002.
 - **Deferred:** the first live-run step (S01 Task 2's `eval` token and
   S02's recorded run) waits at the `.env` boundary — the user creates the
   file when ready; absence at that step is a planned pause, not a failure.
+
+## 2026-09-16 — in-flight judgment calls, executing M002/S01 Task 2
+
+- **Decision:** `ANTHROPIC_WORKSPACE_ID` support in the client (the API
+  rejects non-workspace-scoped keys without the header). — **Why:** any
+  consumer with an org-level key hits the same wall; five lines plus docs.
+- **Decision:** max_output_tokens 1500 → 4000, and the runner substitutes
+  "[no output produced within the token budget]" for empty text. —
+  **Why:** claude-sonnet-5 emits thinking blocks that can exhaust a tight
+  cap leaving no text; deepeval refuses an empty actual_output. The
+  sentinel keeps an empty run honestly scoreable instead of crashing.

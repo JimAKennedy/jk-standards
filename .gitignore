@@ -60,3 +60,7 @@ err.txt
 # ── sdlc-retro snapshot ledger (private telemetry: local paths, environment
 # manifests, per-repo activity) — the brief in retro/README.md stays tracked ──
 retro/snapshots/
+
+# skill-eval secrets and paid-run outputs
+.env
+evals/results/

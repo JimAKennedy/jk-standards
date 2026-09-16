@@ -13,6 +13,7 @@
 #   - secrets-scan             (gitleaks: needs full history + GITHUB_TOKEN)
 #   - reusable-workflow-smoke  (smoke-tests doc-discipline.yml's shape in Actions)
 #   - sanitizer-nightly-smoke  (smoke-tests sanitizer-nightly.yml's shape in Actions)
+#   - skill-evals (make eval)   (paid Anthropic API; needs ANTHROPIC_API_KEY/.env)
 #
 # Usage:
 #   scripts/verify.sh              # full gate (installs nothing; prefers ./.venv if present)
@@ -128,6 +129,7 @@ fi
 skip "secrets-scan (gitleaks — CI-only: needs full history + token)"
 skip "reusable-workflow-smoke (doc-discipline shape smoke — CI-only)"
 skip "sanitizer-nightly-smoke (sanitizer-nightly shape smoke — CI-only)"
+skip "skill-evals (make eval — paid API, needs ANTHROPIC_API_KEY; not laptop-default)"
 
 # --- summary -----------------------------------------------------------------
 echo "${BOLD}── summary ──${RST}"

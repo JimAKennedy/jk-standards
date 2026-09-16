@@ -167,4 +167,19 @@ release_pins:
     - MIGRATION-poly.md
     - MIGRATION-nfr-review.md
 # endregion:release-pins-config
+
+# LLM-judged skill evaluation (evals/harness; `make eval`). Thresholds start
+# generous with the ratchet time-boxed: revisit after two releases' score
+# distributions (decision recorded in docs/plans/skill-evals/M002-decisions.md).
+# region:skill-evals-config
+skill_evals:
+  agent_model: claude-sonnet-5
+  judge_model: claude-sonnet-5
+  runs: 3
+  default_threshold: 0.6
+  # 4000, not 1500: claude-sonnet-5 emits a thinking block before its text
+  # block, and a tight cap can spend itself on thinking leaving no text.
+  max_output_tokens: 4000
+  max_cases: 40
+# endregion:skill-evals-config
 # endregion:full-config

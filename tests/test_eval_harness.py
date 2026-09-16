@@ -170,3 +170,24 @@ def test_judge_uses_anthropic_only():
     # the no-OpenAI DoD, made greppable: no harness module names OPENAI
     for mod in (hconfig, hcorpus, hjudge, hresults, hrunner):
         assert "OPENAI" not in Path(mod.__file__).read_text(encoding="utf-8").upper()
+
+
+def test_runner_substitutes_sentinel_for_empty_text(tmp_path):
+    root = _repo(tmp_path, cases={"vss-basic": GOOD_CASE})
+    cfg = hconfig.load_config(root)
+    (case,) = hcorpus.load_corpus(root, cfg)
+
+    class _EmptyMessages(_FakeMessages):
+        def create(self, **kwargs):
+            resp = super().create(**kwargs)
+            resp.content[0].text = ""
+            return resp
+
+    client = _FakeClient()
+    client.messages = _EmptyMessages(client.calls)
+    out = hrunner.run_case(client, case, cfg, tmp_path and root)
+    assert all(
+        o == "[no output produced within the token budget]"
+        for arm in out.outputs.values()
+        for o in arm
+    )

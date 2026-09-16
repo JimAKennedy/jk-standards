@@ -65,7 +65,11 @@ def run_case(client, case: Case, cfg: EvalConfig, root: Path) -> CaseRun:
             if system is not None:
                 kwargs["system"] = system
             resp = client.messages.create(**kwargs)
-            outputs.append("".join(getattr(b, "text", "") for b in resp.content))
+            text = "".join(getattr(b, "text", "") for b in resp.content)
+            # A response whose budget went entirely to thinking blocks has no
+            # text; hand the judge an honest sentinel instead of an empty
+            # string deepeval refuses to score.
+            outputs.append(text or "[no output produced within the token budget]")
             run.usage.add(resp.usage)
         run.outputs[arm] = outputs
     return run

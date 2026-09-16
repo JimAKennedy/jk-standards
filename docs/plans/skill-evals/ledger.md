@@ -80,35 +80,35 @@ target, with no Claude Code CLI anywhere in the loop.
 **Plan:** M002-S01-plan.md
 **Validation:** format, unit, eval, gate
 **Evidence:** evidence/M002-S01.md
-**Status:** in-progress
+**Status:** done
 
 **Definition of Done**
 
-- [ ] `evals/README.md` documents the corpus format
-- [ ] One skill's scenarios run both arms (with/without skill text) and are
+- [x] `evals/README.md` documents the corpus format
+- [x] One skill's scenarios run both arms (with/without skill text) and are
       judged by the Anthropic-backed deepeval model with no OpenAI key
       referenced anywhere
-- [ ] `region:skill-evals-config` in `jk-standards.yaml` holds agent model
+- [x] `region:skill-evals-config` in `jk-standards.yaml` holds agent model
       id, judge model id, run count, and thresholds; every results file
       records them
-- [ ] Budget caps (per-case tokens, suite case cap) abort a run that
+- [x] Budget caps (per-case tokens, suite case cap) abort a run that
       exceeds them
-- [ ] `make eval` runs the suite given `ANTHROPIC_API_KEY`;
+- [x] `make eval` runs the suite given `ANTHROPIC_API_KEY`;
       `scripts/verify.sh`'s documented exclusion list names it
-- [ ] Offline harness logic (corpus loading, config, arm construction,
+- [x] Offline harness logic (corpus loading, config, arm construction,
       results serialization) has pytest coverage with the API mocked
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R4 | `evals/` corpus layout: scenario definition plus rubric per case, format documented | `evals/README.md`, `evals/` | offline pytest loads the corpus; format doc exists | `open` |
-| R7 | Harness lives outside the shipped package; registry and boundary invariants untouched | `evals/harness/` | `boundaries` and `import-cycle` checks stay green; base package metadata unchanged | `open` |
-| R8 | `[eval]` extra with exact deepeval pin (note the documented `evaluate()` API break at deepeval 1.0) plus `anthropic` SDK; base and `[dev]` stay LLM-free | `pyproject.toml` | `pip install -e ".[eval]"` recorded in evidence on the supported interpreter matrix | `open` |
-| R9 | Two-arm runs asserting absolute threshold and positive with-skill delta | `evals/harness/` | deepeval metric config; offline pytest covers arm construction | `open` |
-| R10 | Judge is a deepeval custom model on the Anthropic API, provider swappable | `evals/harness/` | offline pytest with mocked API; evidence records a grep showing no OpenAI key reference | `open` |
-| R11 | Non-determinism controls: fixed run count, median scoring, per-case thresholds, flaky marking; config in `region:skill-evals-config`; results files record model ids | `jk-standards.yaml`, `evals/harness/` | offline pytest asserts results schema carries model ids, run count, thresholds | `open` |
-| R12 | Budget guards: per-case token caps, suite case cap, printed cost/usage summary | `evals/harness/` | offline pytest: capped run aborts; summary present in a recorded live run | `open` |
-| R13 | `make eval` target; verify.sh exclusion list updated | `Makefile`, `scripts/verify.sh` | target documented; exclusion list names the eval job | `open` |
-| R19 | `eval` validation token declared with a cost warning; token added with this ledger, command resolves when the make target lands | `.jk/validations.yml`, `Makefile` | `jk-standards ledger` passes citing the token; `make eval` exists and matches the mapping | `open` |
+| R4 | `evals/` corpus layout: scenario definition plus rubric per case, format documented | `evals/README.md`, `evals/` | offline pytest loads the corpus; format doc exists | `done` |
+| R7 | Harness lives outside the shipped package; registry and boundary invariants untouched | `evals/harness/` | `boundaries` and `import-cycle` checks stay green; base package metadata unchanged | `done` |
+| R8 | `[eval]` extra with exact deepeval pin (note the documented `evaluate()` API break at deepeval 1.0) plus `anthropic` SDK; base and `[dev]` stay LLM-free | `pyproject.toml` | `pip install -e ".[eval]"` recorded in evidence on the supported interpreter matrix | `done` |
+| R9 | Two-arm runs asserting absolute threshold and positive with-skill delta | `evals/harness/` | deepeval metric config; offline pytest covers arm construction | `done` |
+| R10 | Judge is a deepeval custom model on the Anthropic API, provider swappable | `evals/harness/` | offline pytest with mocked API; evidence records a grep showing no OpenAI key reference | `done` |
+| R11 | Non-determinism controls: fixed run count, median scoring, per-case thresholds, flaky marking; config in `region:skill-evals-config`; results files record model ids | `jk-standards.yaml`, `evals/harness/` | offline pytest asserts results schema carries model ids, run count, thresholds | `done` |
+| R12 | Budget guards: per-case token caps, suite case cap, printed cost/usage summary | `evals/harness/` | offline pytest: capped run aborts; summary present in a recorded live run | `done` |
+| R13 | `make eval` target; verify.sh exclusion list updated | `Makefile`, `scripts/verify.sh` | target documented; exclusion list names the eval job | `done` |
+| R19 | `eval` validation token declared with a cost warning; token added with this ledger, command resolves when the make target lands | `.jk/validations.yml`, `Makefile` | `jk-standards ledger` passes citing the token; `make eval` exists and matches the mapping | `done` |
 | N1 | No Claude Code CLI runner and no `claude plugin eval` integration this iteration — plugin eval probed 2026-09-14 on CLI 2.1.236, still early-access per-org; corpus format kept portable to it | — | recorded here as a deliberate non-goal | `accepted` |
 
 ### Slice M002/S02 — Corpus breadth and selection eval

@@ -166,6 +166,23 @@ def test_judge_uses_anthropic_only():
     client = _FakeClient()
     j = hjudge.AnthropicJudge(client, model="claude-sonnet-5")
     assert j.generate("rate this") == "fake completion"
+    # schema path: a valid-JSON reply comes back as a validated instance
+    from pydantic import BaseModel
+
+    class Verdict(BaseModel):
+        score: float
+        reason: str
+
+    class _JsonMessages(_FakeMessages):
+        def create(self, **kwargs):
+            resp = super().create(**kwargs)
+            resp.content[0].text = '{"score": 0.8, "reason": "ok"}'
+            return resp
+
+    jc = _FakeClient()
+    jc.messages = _JsonMessages(jc.calls)
+    v = hjudge.AnthropicJudge(jc, model="m").generate("rate", schema=Verdict)
+    assert isinstance(v, Verdict) and v.score == 0.8
     assert j.get_model_name() == "claude-sonnet-5"
     # the no-OpenAI DoD, made greppable: no harness module names OPENAI
     for mod in (hconfig, hcorpus, hjudge, hresults, hrunner):
@@ -191,3 +208,20 @@ def test_runner_substitutes_sentinel_for_empty_text(tmp_path):
         for arm in out.outputs.values()
         for o in arm
     )
+
+
+def test_corpus_require_lift_flag(tmp_path):
+    flagged = GOOD_CASE + "require_lift: false\nrequire_lift_reason: ceiling-prone\n"
+    root = _repo(tmp_path, cases={"flagged": flagged})
+    cfg = hconfig.load_config(root)
+    (case,) = hcorpus.load_corpus(root, cfg)
+    assert case.require_lift is False
+    assert "ceiling" in case.require_lift_reason
+
+
+def test_corpus_require_lift_false_needs_reason(tmp_path):
+    bad = GOOD_CASE + "require_lift: false\n"
+    root = _repo(tmp_path, cases={"bad": bad})
+    cfg = hconfig.load_config(root)
+    with pytest.raises(hcorpus.CorpusError):
+        hcorpus.load_corpus(root, cfg)

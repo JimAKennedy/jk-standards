@@ -26,6 +26,12 @@ class Case:
     prompt: str
     rubric: tuple[str, ...]
     threshold: float
+    # Review-shaped tasks are ceiling-prone: a strong unaided model can tie
+    # a perfect score, so per-case lift there is flaky by construction.
+    # Opting out requires a written reason — same discipline as every
+    # escape hatch in this toolkit. The absolute threshold always applies.
+    require_lift: bool = True
+    require_lift_reason: str = ""
 
 
 def load_corpus(root: Path, cfg: EvalConfig) -> list[Case]:
@@ -43,6 +49,14 @@ def load_corpus(root: Path, cfg: EvalConfig) -> list[Case]:
             raise CorpusError(f"{name}: case.yaml needs skill, prompt, and rubric")
         if not (root / "skills" / skill / "SKILL.md").is_file():
             raise CorpusError(f"{name}: names skill '{skill}', which does not exist")
+        require_lift = bool(data.get("require_lift", True))
+        reason = str(data.get("require_lift_reason", "")).strip()
+        if not require_lift and not reason:
+            raise CorpusError(
+                f"{name}: require_lift: false needs a require_lift_reason — "
+                f"an unexplained exemption is the silent suppression this "
+                f"discipline forbids"
+            )
         cases.append(
             Case(
                 name=name,
@@ -50,6 +64,8 @@ def load_corpus(root: Path, cfg: EvalConfig) -> list[Case]:
                 prompt=prompt,
                 rubric=rubric,
                 threshold=float(data.get("threshold", cfg.default_threshold)),
+                require_lift=require_lift,
+                require_lift_reason=reason,
             )
         )
     return cases

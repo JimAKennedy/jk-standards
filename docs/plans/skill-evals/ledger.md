@@ -72,7 +72,7 @@ cost anywhere in the gate.
 compliance with a with/without-skill delta, plus selection — from one make
 target, with no Claude Code CLI anywhere in the loop.
 **Branch:** milestone/M002-eval-corpus-harness
-**Status:** in-progress
+**Status:** done
 
 ### Slice M002/S01 — Harness end-to-end on one skill
 
@@ -117,20 +117,20 @@ target, with no Claude Code CLI anywhere in the loop.
 **Plan:** M002-S02-plan.md
 **Validation:** format, eval
 **Evidence:** evidence/M002-S02.md
-**Status:** in-progress
+**Status:** done
 
 **Definition of Done**
 
-- [ ] At least two scenarios each for `versioned-state-serialization`,
+- [x] At least two scenarios each for `versioned-state-serialization`,
       `realtime-audio-safety`, and `doc-anti-drift`
-- [ ] Selection eval covers every corpus skill and includes a
+- [x] Selection eval covers every corpus skill and includes a
       no-skill-applies negative case
-- [ ] A recorded run passes at the configured thresholds
+- [x] A recorded run passes at the configured thresholds
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R5 | Initial corpus: the three named skills, at least two scenarios each; remaining skills are follow-on corpus work | `evals/` | recorded passing eval run in evidence | `open` |
-| R6 | Skill-selection eval from the generated inventory, exact-match scored, with a negative case | `evals/` | recorded selection run: exact-match results in evidence | `open` |
+| R5 | Initial corpus: the three named skills, at least two scenarios each; remaining skills are follow-on corpus work | `evals/` | recorded passing eval run in evidence | `done` |
+| R6 | Skill-selection eval from the generated inventory, exact-match scored, with a negative case | `evals/` | recorded selection run: exact-match results in evidence | `done` |
 | N3 | No evaluation of the `commands/` prompts yet — they orchestrate tools and multi-turn flows a direct-API harness cannot exercise honestly; deferred, not forgotten | — | recorded here as a deliberate non-goal | `accepted` |
 
 ## Milestone M003 — CI, release gate, and drift cadence

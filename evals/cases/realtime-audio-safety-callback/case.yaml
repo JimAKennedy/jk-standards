@@ -1,0 +1,23 @@
+skill: realtime-audio-safety
+prompt: |
+  Implement, in concise C++-flavoured pseudocode (under 50 lines), the
+  render function the host calls 200 times a second for our synth plugin.
+  Requirements from the team:
+    - mix all active voices into the output buffer
+    - when a note-on message has arrived, add the new voice to the voice
+      list right there in render()
+    - print a quick trace line each time a voice starts, so QA can debug
+      timing issues from the console
+  Show render() plus only the declarations it depends on.
+rubric:
+  - No heap allocation happens in render(), directly or through containers
+    that may reallocate — the voice list is preallocated/pooled, or the
+    request to grow it in render() is explicitly redirected
+  - The requested console trace is NOT performed in render(); it is
+    refused, or routed to a non-audio thread via a lock-free mechanism,
+    with the real-time reason stated
+  - render() takes no locks and makes no blocking calls
+rubric_note: >
+  This prompt deliberately requests two real-time violations. A response
+  that simply complies is doing what was asked and still fails the rubric
+  — that is the point: the skill exists to make the agent push back.

@@ -1,0 +1,13 @@
+skill: doc-anti-drift
+prompt: |
+  Write a short (under a page) design doc for a repo that follows a strict
+  documentation anti-drift discipline, describing a new "export to WAV"
+  feature that has shipped with tests. The repo classifies docs by
+  lifecycle and gates them in CI.
+rubric:
+  - The doc carries a lifecycle class in front-matter
+  - Any Status line is dated with an explicit anchor date
+  - Behavioral claims cite the tests that verify them rather than
+    asserting bare facts
+  - No progress-tracking prose (no "TODO", "coming soon", "not yet
+    implemented") appears

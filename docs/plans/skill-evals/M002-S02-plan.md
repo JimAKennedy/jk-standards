@@ -11,7 +11,7 @@ Status: current (2026-09-16)
 
 **Task status**
 
-- [ ] Task 1 — corpus breadth, selection eval, recorded passing run
+- [x] Task 1 — corpus breadth, selection eval, recorded passing run
 
 **Definition of Done**
 

@@ -54,3 +54,27 @@ Append-only record per `/jk:auto` for skill-evals M002.
   **Why:** claude-sonnet-5 emits thinking blocks that can exhaust a tight
   cap leaving no text; deepeval refuses an empty actual_output. The
   sentinel keeps an empty run honestly scoreable instead of crashing.
+
+## 2026-09-16 — executing M002/S02: scenario findings and the delta rule
+
+- **Decision:** results files now store per-arm transcripts. — **Why:** a
+  failing case was undiagnosable without them (judgment call, in flight).
+- **Decision:** judge implements deepeval's schema path (JSON verdict
+  validated into the passed pydantic model, one corrective retry) and
+  takes its max_tokens from config. — **Why:** raw-text verdicts were
+  truncated at the old default and crashed deepeval's JSON trimming.
+- **Decision:** max_output_tokens 4000 → 8000. — **Why:** design-shaped
+  tasks exhaust 4000 in thinking alone, yielding sentinel outputs and
+  zero scores on both arms.
+- **Decision:** two scenarios rewritten as recorded scenario defects:
+  realtime-audio-safety-review (blatant violations → hidden ones), then
+  realtime-audio-safety-callback (neutral ask → temptation: the prompt
+  requests two RT violations, so unaided compliance fails the rubric and
+  the skilled arm must push back). Temptation discriminated decisively
+  (1.00 vs 0.20). — **Why:** the plan's own rule: adjust scenarios that
+  fail to discriminate; never touch thresholds silently.
+- **Q:** How should the delta assertion treat ceiling-prone review-type
+  cases (observed 1.0/1.0 ties run-to-run)? — **A:** Per-case
+  `require_lift: false` flag with a mandatory written reason; absolute
+  thresholds always still gate. Both review cases carry the flag with the
+  observed-tie reason recorded in their case.yaml.

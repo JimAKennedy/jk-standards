@@ -1,0 +1,15 @@
+skill: versioned-state-serialization
+prompt: |
+  This C++-flavoured pseudocode format is already shipped; presets exist
+  in the wild as version 1:
+
+    // v1 layout: [u32 version][f32 cutoff][f32 resonance]
+
+  Add a new field `int mode` to the preset. Show the updated save() and
+  load(), and state what happens when a v1 file is loaded after your
+  change.
+rubric:
+  - The format version is bumped for the new layout rather than reusing v1
+  - load() still reads v1 files correctly via an explicit branch on the tag
+  - No path guesses at a layout; unknown versions are rejected or handled
+    explicitly rather than reinterpreted

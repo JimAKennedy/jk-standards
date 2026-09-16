@@ -53,9 +53,28 @@ judge call per output; the per-call `max_output_tokens` and suite-level
   read the transcript in the results file before touching anything.
 - *no with-skill lift*: the model already does the right thing without the
   skill; the scenario is too easy, or the skill's prose adds nothing —
-  both are findings worth a row, not a threshold tweak.
+  both are findings worth a row, not a threshold tweak. Review-shaped
+  cases are ceiling-prone by nature (a strong unaided model can tie a
+  perfect critique), so a case may declare `require_lift: false` with a
+  mandatory `require_lift_reason`; its absolute threshold still applies,
+  which keeps catching a skill that makes outputs *worse*.
 - Never lower a threshold to make a run pass; a threshold change is a
   deliberate, recorded decision.
+
+## The corpus
+
+| Case | Skill exercised |
+|---|---|
+| versioned-state-serialization-basic | versioned-state-serialization |
+| versioned-state-serialization-migration | versioned-state-serialization |
+| realtime-audio-safety-callback | realtime-audio-safety |
+| realtime-audio-safety-review | realtime-audio-safety |
+| doc-anti-drift-newdoc | doc-anti-drift |
+| doc-anti-drift-review | doc-anti-drift |
+
+`test_skill_selection.py` additionally checks that the agent model, shown
+the generated skill inventory, names the right skill for a task — including
+answering `none` when nothing applies. Exact match, no judge call.
 
 Offline harness logic is covered by `tests/test_eval_harness.py` (mocked
 client, runs in the ordinary `unit` token).

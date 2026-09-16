@@ -58,9 +58,7 @@ def _geval(case, judge):
 
     return GEval(
         name=f"rubric:{case.name}",
-        criteria=" ".join(
-            ["Judge the response strictly against each point:", *case.rubric]
-        ),
+        criteria=" ".join(["Judge the response strictly against each point:", *case.rubric]),
         evaluation_params=[
             LLMTestCaseParams.INPUT,
             LLMTestCaseParams.ACTUAL_OUTPUT,
@@ -82,14 +80,12 @@ def _score(case, judge, output: str) -> float:
 @pytest.fixture(scope="session")
 def session_state():
     client = _client()
-    judge = hjudge.AnthropicJudge(client, model=CFG.judge_model)
+    judge = hjudge.AnthropicJudge(client, model=CFG.judge_model, max_tokens=CFG.max_output_tokens)
     hrunner.check_suite_budget(CASES, CFG)
     usage = hrunner.Usage()
     yield client, judge, usage
     if _RESULTS:
-        out = ROOT / "evals" / "results" / (
-            datetime.date.today().isoformat() + ".json"
-        )
+        out = ROOT / "evals" / "results" / (datetime.date.today().isoformat() + ".json")
         hresults.write_results(out, CFG, _RESULTS)
         print(
             f"\n[skill-evals] {len(_RESULTS)} case(s); usage: "
@@ -115,13 +111,15 @@ def test_skill_compliance(case, session_state):
             "scores": with_scores,
             "without_scores": without_scores,
             "threshold": case.threshold,
+            # transcripts: without these a failing case cannot be diagnosed
+            "outputs": run.outputs,
         }
     )
     assert with_med >= case.threshold, (
-        f"{case.name}: with-skill median {with_med:.2f} below threshold "
-        f"{case.threshold:.2f}"
+        f"{case.name}: with-skill median {with_med:.2f} below threshold {case.threshold:.2f}"
     )
-    assert with_med > without_med, (
-        f"{case.name}: no with-skill lift (with {with_med:.2f} <= "
-        f"without {without_med:.2f}) — the skill text changed nothing"
-    )
+    if case.require_lift:
+        assert with_med > without_med, (
+            f"{case.name}: no with-skill lift (with {with_med:.2f} <= "
+            f"without {without_med:.2f}) — the skill text changed nothing"
+        )

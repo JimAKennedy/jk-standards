@@ -826,12 +826,8 @@ def test_upgrade_success_single_lock_write(tmp_path, monkeypatch, capsys):
     assert lock["jkStandardsVersion"] == "9.9.9"
     assert lock["skills"]["alpha"]["computedHash"] == _sha(_NEW_SKILL)
     assert lock["commands"]["status"]["computedHash"] == _sha(_NEW_COMMAND)
-    assert (tmp_path / ".agents/skills/alpha/SKILL.md").read_text(
-        encoding="utf-8"
-    ) == _NEW_SKILL
-    assert (tmp_path / ".claude/commands/jk/status.md").read_text(
-        encoding="utf-8"
-    ) == _NEW_COMMAND
+    assert (tmp_path / ".agents/skills/alpha/SKILL.md").read_text(encoding="utf-8") == _NEW_SKILL
+    assert (tmp_path / ".claude/commands/jk/status.md").read_text(encoding="utf-8") == _NEW_COMMAND
 
 
 def test_upgrade_via_install_commands_entrypoint(tmp_path, monkeypatch, capsys):
@@ -900,9 +896,7 @@ def test_upgrade_leaves_entry_with_own_ref_alone(tmp_path, monkeypatch, capsys):
     lock = json.loads(lock_path.read_text(encoding="utf-8"))
     assert lock["skills"]["pinned"]["ref"] == "refs/tags/v1.0.0"
     assert lock["skills"]["pinned"]["computedHash"] == h
-    assert (tmp_path / ".agents/skills/pinned/SKILL.md").read_text(
-        encoding="utf-8"
-    ) == pinned_body
+    assert (tmp_path / ".agents/skills/pinned/SKILL.md").read_text(encoding="utf-8") == pinned_body
     assert skills_install.resolve_ref(lock, lock["skills"]["pinned"]) == "refs/tags/v1.0.0"
 
 

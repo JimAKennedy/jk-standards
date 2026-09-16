@@ -12,7 +12,7 @@ Status: current (2026-09-15)
 **Task status**
 
 - [x] Task 1 — upgrade flow in skills_install, tests first
-- [ ] Task 2 — docs, changelog, and full gates
+- [x] Task 2 — docs, changelog, and full gates
 
 **Definition of Done**
 

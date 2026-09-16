@@ -4,7 +4,7 @@ class: gated
 
 # Skills index
 
-Status: current (2026-09-07)
+Status: current (2026-09-15)
 
 Agent skills shipped by this repo, under `skills/<name>/SKILL.md`. They are
 the authoring-time half of the discipline: the checks enforce the
@@ -54,7 +54,15 @@ once. `install-skills --update-lock` writes the field for you.
 ```
 jk-standards install-skills                      # → .agents/skills/
 jk-standards install-skills --dest .claude/skills # Claude Code layout
+jk-standards install-skills v0.17.0              # move the pin and reinstall
+jk-standards install-skills latest               # via the latest GitHub Release
 ```
+
+Upgrading is one command: a version argument verifies the release exists
+(a missing one exits 2 with the lock untouched), reinstalls every
+version-governed asset — skills and commands both, since one pin governs
+them — and rewrites the lock once, last. Entries carrying their own `ref`
+are governed separately and are untouched.
 
 The installer verifies each skill's SHA-256 against the lock file, so a
 consuming repo pins skill content the same way it pins hook and workflow

@@ -4,6 +4,23 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Version-addressed install** (`src/jk_standards/skills_install.py`,
+  README, `docs/skills.md`, both configuration references; ledger
+  `docs/plans/install-upgrade/ledger.md`): `jk-standards install-skills
+  v0.17.0` (or `latest`, resolved via the newest published GitHub Release —
+  not the newest tag) moves the lock's `jkStandardsVersion` and reinstalls
+  every version-governed asset, skills and commands both, in one atomic
+  operation: the download is the existence check, so a missing release
+  exits 2 with the lock untouched, and the lock is rewritten once, last,
+  with the new pin and the installed files' hashes. A pin differing from
+  the installed package prints a note, never an error. `--update-lock` is
+  unchanged: a version argument means "move to upstream release X";
+  `--update-lock` means "bless what is on disk".
+
 ## [0.17.0] - 2026-09-15
 
 ### Added

@@ -304,10 +304,15 @@ jk-standards doc-coverage --update-baseline
 jk-standards doc-coverage --update-baseline --allow-regression
                             # with --update-baseline: permit a write that
                             # LOWERS an existing floor (refused otherwise)
-jk-standards install-skills [--dest DIR] [--force|--check|--update-lock]
+jk-standards install-skills [vX.Y.Z|latest] [--dest DIR] [--force|--check|--update-lock]
                             # vendor skills from skills-lock.json
-                            # (default dest .agents/skills)
-jk-standards install-commands [--dest DIR] [--force|--check]
+                            # (default dest .agents/skills); a version
+                            # argument moves the lock to that release —
+                            # verified upstream before any mutation — and
+                            # reinstalls both asset kinds atomically
+                            # ('latest' resolves via the newest published
+                            # GitHub Release, not the newest tag)
+jk-standards install-commands [vX.Y.Z|latest] [--dest DIR] [--force|--check]
                             # vendor workflow commands from the same lock file
                             # (default dest .claude/commands/jk, so a command
                             # arrives namespaced as /jk:<name>)

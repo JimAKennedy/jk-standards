@@ -110,6 +110,8 @@ pip install jk-standards
 jk-standards install-skills --dest .agents/skills   # install missing skills
 jk-standards install-skills --check                 # verify hashes match the lock
 jk-standards install-skills --update-lock           # repin hashes + toolkit version
+jk-standards install-skills v0.17.0                 # move to a release and reinstall
+jk-standards install-skills latest                  # same, via the latest GitHub Release
 ```
 
 `install-skills` downloads each skill listed in `skills-lock.json` from its
@@ -119,6 +121,16 @@ Code). `--check` reports MISSING vs HASH MISMATCH per skill (exit 1 on drift);
 `--update-lock` refreshes the recorded hashes and pins the producing
 `jkStandardsVersion` into the lockfile so consumers know which toolkit version
 generated it.
+
+A version argument (`vX.Y.Z`, or `latest` resolved via the newest published
+GitHub Release) upgrades in one step: the download doubles as the existence
+check — a missing release exits 2 with the lock untouched — then both asset
+kinds reinstall at the new tag and the lock is rewritten once, last, with
+the new pin and the installed files' hashes. The two intents stay distinct:
+a version argument means *move to upstream release X*; `--update-lock`
+means *bless what is on disk*. If the new pin differs from the installed
+jk-standards package, the installer says so and suggests the pip upgrade —
+the checks run at the package's version, the vendored prose at the pin's.
 
 ### Companion: detection rules in nfr-review
 

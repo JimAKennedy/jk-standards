@@ -18,9 +18,12 @@ sys.path.insert(0, str(REPO / "evals"))
 
 from harness import config as hconfig  # noqa: E402
 from harness import corpus as hcorpus  # noqa: E402
-from harness import judge as hjudge  # noqa: E402
 from harness import results as hresults  # noqa: E402
 from harness import runner as hrunner  # noqa: E402
+
+# judge imports deepeval, which only the [eval] extra installs — CI's
+# LLM-free matrix must still collect this module, so the judge tests skip
+# there instead of breaking collection.
 
 CONFIG_BLOCK = """\
 # region:skill-evals-config
@@ -163,6 +166,11 @@ def test_results_record_provenance_and_median(tmp_path):
 
 
 def test_judge_uses_anthropic_only():
+    hjudge = pytest.importorskip(
+        "harness.judge",
+        reason="deepeval ([eval] extra) not installed",
+        exc_type=ImportError,
+    )
     client = _FakeClient()
     j = hjudge.AnthropicJudge(client, model="claude-sonnet-5")
     assert j.generate("rate this") == "fake completion"
@@ -184,9 +192,12 @@ def test_judge_uses_anthropic_only():
     v = hjudge.AnthropicJudge(jc, model="m").generate("rate", schema=Verdict)
     assert isinstance(v, Verdict) and v.score == 0.8
     assert j.get_model_name() == "claude-sonnet-5"
-    # the no-OpenAI DoD, made greppable: no harness module names OPENAI
-    for mod in (hconfig, hcorpus, hjudge, hresults, hrunner):
-        assert "OPENAI" not in Path(mod.__file__).read_text(encoding="utf-8").upper()
+
+
+def test_no_harness_module_references_openai():
+    # the no-OpenAI DoD, made greppable — by path, so it needs no imports
+    for src in sorted((REPO / "evals" / "harness").glob("*.py")):
+        assert "OPENAI" not in src.read_text(encoding="utf-8").upper(), src.name
 
 
 def test_runner_substitutes_sentinel_for_empty_text(tmp_path):

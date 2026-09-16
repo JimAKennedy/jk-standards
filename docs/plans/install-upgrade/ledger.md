@@ -22,9 +22,10 @@ atomically, decoupling the vendored-asset pin from the pip package version.
 
 ### Slice M001/S01 — The version argument
 
+**Plan:** M001-S01-plan.md
 **Validation:** format, unit, emit-fresh, discipline, gate
 **Evidence:** evidence/M001-S01.md
-**Status:** open
+**Status:** in-progress
 
 **Definition of Done**
 

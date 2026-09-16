@@ -11,7 +11,7 @@ Status: current (2026-09-16)
 
 **Task status**
 
-- [ ] Task 1 — verify the cadence surfaces and record the CI proof
+- [x] Task 1 — verify the cadence surfaces and record the CI proof
 
 **Definition of Done**
 

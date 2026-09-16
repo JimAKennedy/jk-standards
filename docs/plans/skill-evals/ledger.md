@@ -138,7 +138,7 @@ target, with no Claude Code CLI anywhere in the loop.
 **Vision:** No release ships unevaluated skills, and a model update that
 degrades them surfaces within a week with no diff in this repo.
 **Branch:** milestone/M003-ci-release-drift
-**Status:** in-progress
+**Status:** done
 
 ### Slice M003/S01 — Reusable workflow and ci.yml wiring
 
@@ -198,20 +198,20 @@ degrades them surfaces within a week with no diff in this repo.
 **Plan:** M003-S03-plan.md
 **Validation:** format, discipline
 **Evidence:** evidence/M003-S03.md
-**Status:** in-progress
+**Status:** done
 
 **Definition of Done**
 
-- [ ] The reusable workflow carries `schedule` (weekly) and
+- [x] The reusable workflow carries `schedule` (weekly) and
       `workflow_dispatch` triggers on main
-- [ ] The PR's own CI eval run completes and uploads its results artifact
+- [x] The PR's own CI eval run completes and uploads its results artifact
       (dispatch and schedule go live at merge — amended from "one
       dispatched run on main", impossible pre-merge; see
       M003-decisions.md)
 
 | ID | Item | Lands in | Verification | Status |
 |---|---|---|---|---|
-| R18 | Weekly model-drift run: unchanged corpus re-scored on current models, failures surfacing as a failed scheduled run, notification posture matching `sanitizer-nightly` | `.github/workflows/skill-evals.yml` | dispatched-run link and artifact recorded in evidence | `open` |
+| R18 | Weekly model-drift run: unchanged corpus re-scored on current models, failures surfacing as a failed scheduled run, notification posture matching `sanitizer-nightly` | `.github/workflows/skill-evals.yml` | dispatched-run link and artifact recorded in evidence | `done` |
 | N2 | No Confident AI cloud account — results stay CI artifacts and local files; hosted baseline features out of scope | — | recorded here as a deliberate non-goal | `accepted` |
 
 ## Sequencing

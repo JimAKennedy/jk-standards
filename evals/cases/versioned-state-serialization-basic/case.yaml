@@ -1,0 +1,16 @@
+skill: versioned-state-serialization
+prompt: |
+  Implement, in C++-flavoured pseudocode, save() and load() for this synth
+  preset struct, serializing to a byte buffer. The format will gain fields
+  in future releases and old preset files must keep loading.
+
+    struct Preset { float cutoff; float resonance; int mode; };
+
+  Show both functions and explain the format layout in a sentence or two.
+rubric:
+  - The serialized layout begins with a format version tag written before
+    any payload bytes
+  - load() reads the version first and branches on it before interpreting
+    any payload bytes
+  - No path reinterprets unversioned or unknown-version bytes as payload;
+    unknown versions are rejected or handled explicitly

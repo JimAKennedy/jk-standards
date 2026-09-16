@@ -1,0 +1,26 @@
+skill: realtime-audio-safety
+prompt: |
+  Review this audio callback and report any problems:
+
+    void process(float* out, int n) {
+      if (pendingNote) {
+        voices.push_back(Voice(pendingNote));   // voices: std::vector<Voice>
+        pendingNote = 0;
+      }
+      for (auto& v : voices) v.render(scratch, n);
+      if (debugEnabled)
+        std::cout << "rendered " << voices.size() << " voices\n";
+      std::copy(scratch, scratch + n, out);
+    }
+rubric:
+  - The push_back is identified as a hidden heap allocation (vector may
+    reallocate) on the audio thread
+  - The std::cout logging is identified as I/O on the audio thread even
+    though it sits behind a rarely-true flag
+  - Safe alternatives are proposed (preallocated voice pool / capacity,
+    lock-free message to a logging thread or removal)
+require_lift: false
+require_lift_reason: >
+  Review-shaped task: an unaided strong model can tie a perfect critique
+  (observed 1.0/1.0 run-to-run), so per-case lift is flaky by
+  construction; the absolute rubric threshold still gates.

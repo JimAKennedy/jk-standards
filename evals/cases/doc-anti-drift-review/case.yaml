@@ -1,0 +1,22 @@
+skill: doc-anti-drift
+prompt: |
+  Critique this excerpt from an enduring reference doc against strict
+  documentation anti-drift discipline and list every violation you find:
+
+    # Audio Engine
+    Status: current (2026-09-01)
+    The resampler clamps denormals before the mix stage (see
+    engine/src/mix.cpp:412). The engine supports all 14 filter modes,
+    and hot-reload keeps patches stable across preset changes.
+rubric:
+  - The file-and-line-number source reference is flagged as drift-prone
+    (line numbers rot; cite a symbol or named region instead)
+  - The hardcoded inventory count ("14 filter modes") is flagged as
+    drift-prone with a generated/interpolated count as the remedy
+  - The behavioral claims (denormal clamping, hot-reload stability) are
+    flagged for citing no verifying test
+require_lift: false
+require_lift_reason: >
+  Review-shaped task: an unaided strong model can tie a perfect critique
+  (observed 1.0/1.0 run-to-run), so per-case lift is flaky by
+  construction; the absolute rubric threshold still gates.

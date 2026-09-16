@@ -33,12 +33,12 @@
       "percent_covered": 98.72
     },
     "src/jk_standards/checks/doc_coverage.py": {
-      "missing_lines": 6,
-      "percent_covered": 95.71
+      "missing_lines": 1,
+      "percent_covered": 98.68
     },
     "src/jk_standards/checks/doc_coverage_cpp.py": {
-      "missing_lines": 97,
-      "percent_covered": 11.8
+      "missing_lines": 0,
+      "percent_covered": 99.44
     },
     "src/jk_standards/checks/doc_drift.py": {
       "missing_lines": 7,
@@ -129,11 +129,11 @@
       "percent_covered": 91.3
     }
   },
-  "toolkit_version": "0.16.0",
+  "toolkit_version": "0.17.0",
   "totals": {
-    "covered_lines": 2618,
-    "missing_lines": 268,
+    "covered_lines": 2720,
+    "missing_lines": 166,
     "num_statements": 2886,
-    "percent_covered": 89.11
+    "percent_covered": 93.09
   }
 }

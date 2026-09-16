@@ -132,7 +132,7 @@ independently.
 ```yaml
 # .pre-commit-config.yaml in a consuming repo
 - repo: https://github.com/JimAKennedy/jk-standards
-  rev: v0.16.0
+  rev: v0.17.0
   hooks:
     - id: doc-taxonomy
     - id: status-prose
@@ -143,14 +143,14 @@ independently.
 # .github/workflows/docs.yml in a consuming repo
 jobs:
   doc-discipline:
-    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.16.0
+    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.17.0
 ```
 
 ```yaml
 # .github/workflows/pre-commit.yml in a consuming repo
 jobs:
   pre-commit:
-    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.16.0
+    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.17.0
 ```
 
 One config file (`jk-standards.yaml`) supplies the project-specific surface: doc

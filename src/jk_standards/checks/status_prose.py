@@ -81,7 +81,9 @@ def run(root: Path, cfg: Config, base: str | None = None) -> int:
                     errors += 1
                     break
 
-    errors += _accuracy_arm(root, cfg, base, gated)
+    flagged = set()
+    errors += _accuracy_arm(root, cfg, base, gated, flagged)
+    errors += _worktree_arm(root, cfg, gated, flagged)
 
     if errors == 0:
         output.summary("status-prose: no violations in gated docs")
@@ -137,7 +139,13 @@ def _beyond_tolerance(anchor_date: str, last_date: str, tolerance_days: int) -> 
     return (last - anchor).days > tolerance_days
 
 
-def _accuracy_arm(root: Path, cfg: Config, base: str | None, gated: list[tuple[str, str]]) -> int:
+def _accuracy_arm(
+    root: Path,
+    cfg: Config,
+    base: str | None,
+    gated: list[tuple[str, str]],
+    flagged: set[str],
+) -> int:
     """Flag gated docs whose Status anchor predates their last commit in range.
 
     Diff-scoped like doc-drift (D019): only docs in ``changed_files`` are
@@ -185,7 +193,63 @@ def _accuracy_arm(root: Path, cfg: Config, base: str | None, gated: list[tuple[s
             f"({last}) — the doc changed after its Status date; refresh the anchor or "
             f"limit the change to the Status line",
         )
+        flagged.add(rel)
         errors += 1
 
     output.summary(f"status-prose: accuracy arm ran vs {base_ref} — {len(changed)} changed file(s)")
+    return errors
+
+
+def _worktree_arm(root: Path, cfg: Config, gated: list[tuple[str, str]], flagged: set[str]) -> int:
+    """Flag anchored gated docs with uncommitted substantive edits (#117).
+
+    The range arm compares an anchor against the doc's last *commit*, so a
+    pre-commit run has nothing to compare and stays silent — "validate,
+    then commit" is blind by construction, and the violation surfaces in CI
+    one commit too late. This arm closes the gap: a doc that is dirty in
+    the working tree or index is compared against *today*, base ref or not.
+
+    Same D020 posture as the range arm: any git failure is a skip with a
+    summary line, never a raise. A Status-only working-tree diff is never
+    substantive; an untracked doc has no HEAD side, so its whole content
+    counts as the edit. Docs the range arm already flagged are skipped —
+    one finding per doc, whichever arm sees it first.
+    """
+    try:
+        dirty = set(gitutil.dirty_paths(root))
+    except gitutil.GitError as e:
+        output.summary(f"status-prose: worktree arm skipped — git unreadable ({e})")
+        return 0
+    if not dirty:
+        return 0
+
+    today = date.today().isoformat()
+    errors = 0
+    for rel, text in gated:
+        if rel not in dirty or rel in flagged:
+            continue
+        anchor = _find_status_anchor(text)
+        if anchor is None:
+            continue
+        lineno, anchor_date = anchor
+        if not _beyond_tolerance(anchor_date, today, cfg.status_date_tolerance_days):
+            continue
+        try:
+            diff = gitutil.worktree_diff(root, rel)
+        except gitutil.GitError:
+            continue
+        # An empty diff for a dirty path means the file is untracked: no
+        # HEAD side exists, so the entire content is the edit.
+        if diff and _diff_is_status_only(diff):
+            continue
+        output.error(
+            rel,
+            lineno,
+            f"Status: anchor date {anchor_date} predates today ({today}) and the doc "
+            f"has an uncommitted substantive edit — refresh the anchor before "
+            f"committing, or limit the change to the Status line",
+        )
+        errors += 1
+    if errors:
+        output.summary(f"status-prose: worktree arm flagged {errors} dirty doc(s)")
     return errors

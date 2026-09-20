@@ -6,7 +6,7 @@ description: Every check the toolkit ships — rule, mechanism, and escape hatch
 
 import checksData from '../../../generated/checks.json';
 
-Status: current (2026-09-15)
+Status: current (2026-09-20)
 
 Each check is exposed as a CLI subcommand (`jk-standards <name>`), and the
 doc-facing ones also ship as pre-commit hooks. All checks emit
@@ -79,6 +79,31 @@ presence arm still runs
 [verified: test_checks::test_status_prose_accuracy_skips_without_base_ref_presence_green].
 A summary line records whether the arm ran (naming the base ref and
 changed-file count) or skipped, so CI-vs-local behaviour is legible.
+
+**The worktree arm.** The range arm compares an anchor against the doc's
+last *commit*, so a pre-commit run has nothing to compare and stays silent
+— the violation used to surface only in CI, one commit too late. The
+worktree arm closes that gap: a gated doc with an uncommitted substantive
+edit is compared against today, with no base ref required
+[verified: test_checks::test_worktree_arm_flags_dirty_substantive_edit_without_base].
+A Status-only working-tree edit is never substantive
+[verified: test_checks::test_worktree_arm_ignores_status_only_dirty_edit],
+a clean tree stays silent
+[verified: test_checks::test_worktree_arm_silent_on_clean_tree],
+an anchor already at today passes
+[verified: test_checks::test_worktree_arm_passes_todays_anchor],
+and the tolerance window applies unchanged
+[verified: test_checks::test_worktree_arm_respects_tolerance_window].
+Untracked docs stay outside governance (they are invisible to CI checkouts
+too)
+[verified: test_checks::test_worktree_arm_ignores_untracked_docs].
+
+Relatedly, a doc-drift failure whose mapped doc carries a dated anchor now
+says so up front — fixing the drift by editing the doc is itself an edit
+that stales the anchor, and the warning turns that two-round-trip chain
+into one
+[verified: test_doc_drift::test_failure_notes_status_anchor_chain]
+[verified: test_doc_drift::test_failure_has_no_anchor_note_for_unanchored_doc].
 
 ## file-line-refs
 

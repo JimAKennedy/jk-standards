@@ -34,6 +34,11 @@ from jk_standards.config import Config, ConfigError
 
 TRAILER = "Docs-Not-Affected"
 
+# A dated Status anchor in a mapped doc means fixing a drift finding by
+# editing that doc will also stale the anchor (#117) — the failure message
+# warns about the chain so one round trip suffices.
+_STATUS_ANCHOR_RE = re.compile(r"^Status:.*\(20\d{2}-\d{2}-\d{2}\)", re.IGNORECASE | re.MULTILINE)
+
 # A `"name": "value"` manifest entry, capturing the value so its shape can be
 # judged. Block-opening lines are deliberately not matched any more: see
 # is_deps_only_diff for why position-based membership cannot work on a diff.
@@ -178,12 +183,25 @@ def run(root: Path, cfg: Config, base: str | None = None) -> int:
             continue
         shown = ", ".join(triggered[:5])
         more = f" (+{len(triggered) - 5} more)" if len(triggered) > 5 else ""
+        # #117: satisfying this finding by editing the doc is itself an edit,
+        # which stales the doc's own Status anchor and trips status-prose one
+        # commit later. Warn about the chain up front so one round trip does.
+        anchor_note = ""
+        doc_path = root / doc
+        if doc_path.is_file() and _STATUS_ANCHOR_RE.search(
+            doc_path.read_text(encoding="utf-8", errors="replace")
+        ):
+            anchor_note = (
+                f" Note: {doc} carries a dated Status anchor — a substantive "
+                f"edit must also refresh it (status-prose)."
+            )
         output.error(
             doc,
             1,
             f"Doc drift: change touches {shown}{more} but not {doc!r}. "
             f"Reason: {mapping.get('reason', 'mapped source')} — update {doc} "
-            f"or add a '{TRAILER}: <reason>' trailer to any commit in the range.",
+            f"or add a '{TRAILER}: <reason>' trailer to any commit in the range."
+            f"{anchor_note}",
         )
         errors += 1
 

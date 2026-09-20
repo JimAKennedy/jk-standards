@@ -33,16 +33,16 @@
       "percent_covered": 98.72
     },
     "src/jk_standards/checks/doc_coverage.py": {
-      "missing_lines": 1,
-      "percent_covered": 98.68
+      "missing_lines": 6,
+      "percent_covered": 95.71
     },
     "src/jk_standards/checks/doc_coverage_cpp.py": {
-      "missing_lines": 0,
-      "percent_covered": 99.44
+      "missing_lines": 97,
+      "percent_covered": 11.8
     },
     "src/jk_standards/checks/doc_drift.py": {
       "missing_lines": 7,
-      "percent_covered": 90.77
+      "percent_covered": 91.24
     },
     "src/jk_standards/checks/doc_taxonomy.py": {
       "missing_lines": 0,
@@ -81,8 +81,8 @@
       "percent_covered": 91.41
     },
     "src/jk_standards/checks/status_prose.py": {
-      "missing_lines": 9,
-      "percent_covered": 90.23
+      "missing_lines": 12,
+      "percent_covered": 90.56
     },
     "src/jk_standards/checks/workflow_concurrency.py": {
       "missing_lines": 2,
@@ -109,8 +109,8 @@
       "percent_covered": 91.67
     },
     "src/jk_standards/gitutil.py": {
-      "missing_lines": 3,
-      "percent_covered": 96.25
+      "missing_lines": 5,
+      "percent_covered": 92.93
     },
     "src/jk_standards/output.py": {
       "missing_lines": 0,
@@ -131,9 +131,9 @@
   },
   "toolkit_version": "0.18.0",
   "totals": {
-    "covered_lines": 2784,
-    "missing_lines": 178,
-    "num_statements": 2962,
-    "percent_covered": 92.81
+    "covered_lines": 2728,
+    "missing_lines": 285,
+    "num_statements": 3013,
+    "percent_covered": 88.94
   }
 }

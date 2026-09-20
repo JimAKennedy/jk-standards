@@ -281,7 +281,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_drift.py",
       "kind": "function",
-      "lineno": 55,
+      "lineno": 60,
       "name": "is_deps_only_diff",
       "signals": {
         "docstring": true,
@@ -293,7 +293,7 @@
       "documented": true,
       "file": "src/jk_standards/checks/doc_drift.py",
       "kind": "function",
-      "lineno": 129,
+      "lineno": 134,
       "name": "run",
       "signals": {
         "docstring": false,
@@ -1058,6 +1058,18 @@
       }
     },
     {
+      "documented": true,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
+      "lineno": 158,
+      "name": "dirty_paths",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
       "documented": false,
       "file": "src/jk_standards/gitutil.py",
       "kind": "function",
@@ -1123,6 +1135,18 @@
       "kind": "function",
       "lineno": 68,
       "name": "tracked_paths",
+      "signals": {
+        "docstring": true,
+        "drift": false,
+        "mention": false
+      }
+    },
+    {
+      "documented": true,
+      "file": "src/jk_standards/gitutil.py",
+      "kind": "function",
+      "lineno": 178,
+      "name": "worktree_diff",
       "signals": {
         "docstring": true,
         "drift": false,

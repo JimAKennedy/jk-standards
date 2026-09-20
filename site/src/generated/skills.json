@@ -36,7 +36,7 @@
       "path": "skills/realtime-audio-safety/SKILL.md"
     },
     {
-      "description": "Discipline for documentation that summarises external research, scholarship, or practitioner knowledge — make provenance explicit, credit precisely, and never let summarised prior work read as original research. Use whenever documentation states claims derived from published sources.",
+      "description": "Discipline for documentation that summarises external research, scholarship, or practitioner knowledge — make provenance explicit, credit precisely, verify that every citation names a work that exists and says what you claim, and never let summarised prior work read as original research. Use whenever documentation states claims derived from published sources.",
       "name": "research-provenance",
       "path": "skills/research-provenance/SKILL.md"
     },

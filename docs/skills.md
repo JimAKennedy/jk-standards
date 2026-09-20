@@ -54,7 +54,7 @@ once. `install-skills --update-lock` writes the field for you.
 ```
 jk-standards install-skills                      # → .agents/skills/
 jk-standards install-skills --dest .claude/skills # Claude Code layout
-jk-standards install-skills v0.18.0              # move the pin and reinstall
+jk-standards install-skills v0.19.0              # move the pin and reinstall
 jk-standards install-skills latest               # via the latest GitHub Release
 ```
 

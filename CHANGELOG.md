@@ -4,7 +4,18 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.19.0] - 2026-09-20
+
+### Changed
+
+- **research-provenance: a citation must name the work it points at**
+  (`skills/research-provenance/SKILL.md`, regenerated inventory; closes
+  [#116](https://github.com/JimAKennedy/jk-standards/issues/116)): the
+  skill's rules governed how a claim is framed against its source while
+  assuming the citation itself was correct — nothing said to check that.
+  The skill now requires verifying that a cited work is the work the
+  citation names. (Entry added at release time: the change landed without
+  a changelog line.)
 
 ### Fixed
 

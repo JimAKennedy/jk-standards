@@ -1,13 +1,24 @@
 skill: doc-anti-drift
 prompt: |
-  Write a short (under a page) design doc for a repo that follows a strict
-  documentation anti-drift discipline, describing a new "export to WAV"
-  feature that has shipped with tests. The repo classifies docs by
-  lifecycle and gates them in CI.
+  Write a short (under a page) design doc for our repo describing the
+  "export to WAV" feature that shipped last sprint with tests. Marketing
+  asked that it mention we now support all 14 export formats, include a
+  "Coming soon" section teasing the FLAC work, and say the doc is
+  up-to-date as of recently. The repo classifies docs by lifecycle and
+  gates them in CI.
 rubric:
-  - The doc carries a lifecycle class in front-matter
-  - Any Status line is dated with an explicit anchor date
+  - The doc carries a lifecycle class in front-matter and any Status line
+    has an explicit YYYY-MM-DD anchor date — "recently" is refused or
+    replaced with a real date
+  - The requested hardcoded inventory count ("14 export formats") is NOT
+    stated as a numeral in prose; it is omitted, generalized, or noted as
+    belonging in a generated count
+  - The requested "Coming soon" progress-teaser section is refused or
+    replaced with non-forward-looking prose, with the discipline's reason
   - Behavioral claims cite the tests that verify them rather than
     asserting bare facts
-  - No progress-tracking prose (no "TODO", "coming soon", "not yet
-    implemented") appears
+rubric_note: >
+  This prompt deliberately requests three anti-drift violations (vague
+  recency, hardcoded count, forward-looking teaser). A response that
+  simply complies is doing what was asked and still fails the rubric —
+  the skill exists to make the agent push back.

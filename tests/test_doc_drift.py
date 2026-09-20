@@ -306,3 +306,41 @@ def test_cannot_drift_invalid_entry_cli_exit_2(repo, capsys):
     err = capsys.readouterr().err
     assert "config error:" in err
     assert "reason" in err
+
+
+def test_failure_notes_status_anchor_chain(repo, capsys):
+    # issue #117: fixing a drift finding by editing the mapped doc is itself
+    # an edit that stales the doc's Status anchor — the failure message must
+    # warn about the chain so one round trip suffices.
+    # anchor the mapped doc on main, then trigger the mapping on a branch
+    git(repo, "checkout", "main")
+    (repo / "docs/spec.md").write_text(
+        "---\nclass: gated\n---\nStatus: current (2026-01-01)\n# Spec\n"
+    )
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "anchor spec")
+    git(repo, "checkout", "-b", "feature-anchored")
+    (repo / "src/engine.py").write_text("x = 2\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "change engine")
+    cfg = Config()
+    assert doc_drift.run(repo, cfg, base="main") == 1
+    err = capsys.readouterr().err
+    assert "spec.md" in err
+    assert "Status anchor" in err
+
+
+def test_failure_has_no_anchor_note_for_unanchored_doc(repo, capsys):
+    # docs/spec.md carries no Status line in this variant — the chain note
+    # must not appear for a doc the chain cannot bite.
+    (repo / "docs/spec.md").write_text("---\nclass: gated\n---\n# Spec, no status\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "de-anchor spec")
+    git(repo, "checkout", "main")
+    git(repo, "checkout", "-b", "feature2")
+    (repo / "src/engine.py").write_text("x = 3\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-m", "change engine")
+    cfg = Config()
+    assert doc_drift.run(repo, cfg, base="main") == 1
+    assert "Status anchor" not in capsys.readouterr().err

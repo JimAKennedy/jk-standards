@@ -153,3 +153,32 @@ def commit_trailers(root: Path, base: str, trailer: str) -> list[str]:
     log = _git(root, "log", "--format=%B", f"{merge_base}..HEAD")
     prefix = f"{trailer}:"
     return [line.strip() for line in log.splitlines() if line.startswith(prefix)]
+
+
+def dirty_paths(root: Path) -> list[str]:
+    """Paths with uncommitted changes: staged, unstaged, or untracked.
+
+    Parsed from ``git status --porcelain``; a rename line keeps only its
+    destination (the file that now exists to be checked). Raises
+    :class:`GitError` like every helper here — callers choose their own
+    fail-open posture.
+    """
+    out = _git(root, "status", "--porcelain")
+    paths: list[str] = []
+    for line in out.splitlines():
+        if len(line) < 4:
+            continue
+        path = line[3:]
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        paths.append(path.strip().strip('"'))
+    return paths
+
+
+def worktree_diff(root: Path, path: str) -> str:
+    """Diff of ``path`` between HEAD and the working tree (staged + unstaged).
+
+    Empty for an untracked file — git has no HEAD side to diff against; the
+    caller treats that as wholly substantive.
+    """
+    return _git(root, "diff", "HEAD", "--", path)

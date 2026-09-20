@@ -34,7 +34,7 @@ A typed lifecycle for documentation, machine-enforced:
 | doc-coverage | Every module has at least one public unit reached by a docstring, drift-map glob, or doc mention, so no code is wholly undescribed; a per-module baseline ratchets the percentage and an optional advisory floor warns without failing |
 | generated-freshness | Generated docs must diff clean against a fresh run of their generator |
 | behavioral-claims | Prose claims marked `[verified: Suite.Test]` must cite a test that actually exists (checked against a scraped test index); `[⚠ unverified]` markers are counted as an honest-state metric |
-| status-prose | Gated docs may not contain progress-tracking prose; `Status:` lines require a `(YYYY-MM-DD)` anchor |
+| status-prose | Gated docs may not contain progress-tracking prose; `Status:` lines require a `(YYYY-MM-DD)` anchor, and a stale anchor is caught both in range (CI) and in the uncommitted working tree (pre-commit) |
 | file-line-refs | Enduring docs and source comments cite symbols/regions, never `foo.cpp:429` — line numbers rot |
 | count-drift | Inventory facts ("N presets", "N chapters") live in one generated JSON and are interpolated, never restated |
 | action-pinning | Every GitHub Actions `uses:` is pinned to a 40-char commit SHA; a floating ref (`@v6`, `@main`) is flagged with `file:line`, with a `# action-pin-ok: <reason>` escape hatch and local `./` refs accepted |

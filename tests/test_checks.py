@@ -1039,3 +1039,79 @@ def test_skill_lint_marker_exempts(tmp_path):
 
 def test_skill_lint_no_skills_dir_skips(tmp_path):
     assert skill_lint.run(tmp_path, Config()) == 0
+
+
+# --- status-prose worktree arm (issue #117) ----------------------------------
+#
+# The range arm compares an anchor against the doc's last COMMIT, so a
+# pre-commit run has nothing to compare and stays silent — the violation
+# only appears in CI after the commit lands. The worktree arm closes that
+# gap: an uncommitted substantive edit to an anchored gated doc is compared
+# against today, with no base ref required.
+
+
+def _wt_repo(tmp_path, anchor: str, body: str = "Original body.\n"):
+    _init_repo(tmp_path)
+    doc = f"---\nclass: gated\n---\nStatus: current ({anchor})\n\n{body}"
+    _commit(tmp_path, "docs/a.md", doc, "add doc")
+    return tmp_path
+
+
+def test_worktree_arm_flags_dirty_substantive_edit_without_base(tmp_path, capsys):
+    root = _wt_repo(tmp_path, "2020-01-01")
+    (root / "docs/a.md").write_text(
+        "---\nclass: gated\n---\nStatus: current (2020-01-01)\n\nEdited body.\n",
+        encoding="utf-8",
+    )
+    assert status_prose.run(root, Config(), base=None) == 1
+    assert "uncommitted" in capsys.readouterr().err
+
+
+def test_worktree_arm_ignores_status_only_dirty_edit(tmp_path):
+    root = _wt_repo(tmp_path, "2020-01-01")
+    (root / "docs/a.md").write_text(
+        "---\nclass: gated\n---\nStatus: current (2023-06-01)\n\nOriginal body.\n",
+        encoding="utf-8",
+    )
+    assert status_prose.run(root, Config(), base=None) == 0
+
+
+def test_worktree_arm_silent_on_clean_tree(tmp_path):
+    root = _wt_repo(tmp_path, "2020-01-01")
+    assert status_prose.run(root, Config(), base=None) == 0
+
+
+def test_worktree_arm_passes_todays_anchor(tmp_path):
+    import datetime
+
+    today = datetime.date.today().isoformat()
+    root = _wt_repo(tmp_path, today)
+    (root / "docs/a.md").write_text(
+        f"---\nclass: gated\n---\nStatus: current ({today})\n\nEdited body.\n",
+        encoding="utf-8",
+    )
+    assert status_prose.run(root, Config(), base=None) == 0
+
+
+def test_worktree_arm_ignores_untracked_docs(tmp_path):
+    # Untracked docs are deliberately outside governance (iter_docs
+    # intersects with git's tracked set so local runs agree with CI
+    # checkouts); surfacing them is issue #96's scope, which #117 names
+    # as a distinct mechanism. The arm must not see this doc at all.
+    root = _wt_repo(tmp_path, "2020-01-01")
+    write(root, "docs/new.md", "---\nclass: gated\n---\nStatus: current (2020-05-05)\n\nBody.\n")
+    assert status_prose.run(root, Config(), base=None) == 0
+
+
+def test_worktree_arm_respects_tolerance_window(tmp_path):
+    import datetime
+
+    near = (datetime.date.today() - datetime.timedelta(days=3)).isoformat()
+    root = _wt_repo(tmp_path, near)
+    (root / "docs/a.md").write_text(
+        f"---\nclass: gated\n---\nStatus: current ({near})\n\nEdited body.\n",
+        encoding="utf-8",
+    )
+    cfg = Config()
+    cfg.status_date_tolerance_days = 7
+    assert status_prose.run(root, cfg, base=None) == 0

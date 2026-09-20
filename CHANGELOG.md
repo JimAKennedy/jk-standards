@@ -4,6 +4,23 @@ All notable changes to jk-standards are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **status-prose's accuracy arm is no longer blind before the commit that
+  trips it** (`src/jk_standards/checks/status_prose.py`,
+  `src/jk_standards/checks/doc_drift.py`, `src/jk_standards/gitutil.py`;
+  fixes [#117](https://github.com/JimAKennedy/jk-standards/issues/117)):
+  a new worktree arm compares a dirty gated doc's Status anchor against
+  today — no base ref needed, so pre-commit and `make check-fast` now
+  catch what previously surfaced only in CI, one commit too late.
+  Status-only edits stay exempt, the tolerance window applies, untracked
+  docs remain #96's scope, and the arm fails open on git errors like the
+  range arm. doc-drift failures whose mapped doc carries a dated anchor
+  now warn about the fix-one-trip-the-other chain up front, so one round
+  trip suffices.
+
 ## [0.18.0] - 2026-09-16
 
 ### Added

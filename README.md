@@ -110,7 +110,7 @@ pip install jk-standards
 jk-standards install-skills --dest .agents/skills   # install missing skills
 jk-standards install-skills --check                 # verify hashes match the lock
 jk-standards install-skills --update-lock           # repin hashes + toolkit version
-jk-standards install-skills v0.18.0                 # move to a release and reinstall
+jk-standards install-skills v0.19.0                 # move to a release and reinstall
 jk-standards install-skills latest                  # same, via the latest GitHub Release
 ```
 
@@ -144,7 +144,7 @@ independently.
 ```yaml
 # .pre-commit-config.yaml in a consuming repo
 - repo: https://github.com/JimAKennedy/jk-standards
-  rev: v0.18.0
+  rev: v0.19.0
   hooks:
     - id: doc-taxonomy
     - id: status-prose
@@ -155,14 +155,14 @@ independently.
 # .github/workflows/docs.yml in a consuming repo
 jobs:
   doc-discipline:
-    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.18.0
+    uses: JimAKennedy/jk-standards/.github/workflows/doc-discipline.yml@v0.19.0
 ```
 
 ```yaml
 # .github/workflows/pre-commit.yml in a consuming repo
 jobs:
   pre-commit:
-    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.18.0
+    uses: JimAKennedy/jk-standards/.github/workflows/pre-commit.yml@v0.19.0
 ```
 
 One config file (`jk-standards.yaml`) supplies the project-specific surface: doc

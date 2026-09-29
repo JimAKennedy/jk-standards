@@ -51,15 +51,19 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::skill-evals needs the ANTHROPIC_API_KEY repository secret — forked PRs cannot see it; a maintainer re-runs this from a branch in this repo."
+            echo "::error::skill-evals needs the ANTHROPIC_API_KEY secret — forked PRs cannot see it (a maintainer re-runs this from a branch in this repo), and Dependabot PRs read only Dependabot secrets (gh secret set ANTHROPIC_API_KEY --app dependabot)."
             exit 1
           fi
       - name: Run the eval suite
+        id: suite
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
         run: python -m pytest evals/ -q
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      # Upload on failure too: a red drift run's scores are the ones worth
+      # reading, and without this they are discarded with the job.
+      - if: ${{ !cancelled() && steps.suite.outcome != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: skill-evals-results
           path: evals/results/*.json

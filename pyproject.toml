@@ -35,7 +35,7 @@ dev = [
 # LLM-free, and only the paid eval path pulls these. deepeval is pinned
 # exactly — its evaluate() API broke at 1.0 and its surface moves fast.
 eval = [
-  "deepeval==4.2.3",
+  "deepeval==4.2.6",
   "anthropic>=0.40",
 ]
 # Optional native grammar for the C++ doc-coverage enumerator. This is the ONLY
